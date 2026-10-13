@@ -289,6 +289,13 @@ function card(m, flagged, peers) {
   a.href = m.download;
   a.style.marginTop = '10px';
   body.append(a);
+  // 反馈入口（2026-10-13）：链接里只带**编号** —— 那一页只是「写反馈」的表单，
+  // 反馈的正文与图片都不公开（只有维护者能在审核口读到），所以这里不存在泄露别人反馈的问题。
+  const fbBtn = el('a', 'btn', '提交反馈');
+  fbBtn.href = `/feedback?mod=${encodeURIComponent(m.id)}`;
+  fbBtn.style.marginTop = '10px';
+  fbBtn.style.marginLeft = '8px';
+  body.append(fbBtn);
   if (m.homepage) {
     const s = el('div', 'kv dim');
     s.style.marginTop = '8px';

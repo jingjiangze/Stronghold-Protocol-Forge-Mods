@@ -68,6 +68,10 @@
   <a id="vMain" class="viewtab" href="?view=main" data-jump="main">待审<span class="viewtab__n" id="nMain">0</span></a>
   <a id="vApproved" class="viewtab" href="?view=approved" data-jump="approved">已通过<span class="viewtab__n" id="nApproved">0</span></a>
   <a id="vRejected" class="viewtab" href="?view=rejected" data-jump="rejected">已打回<span class="viewtab__n" id="nRejected">0</span></a>
+  <!-- 「反馈」是**另一个页面**，不是第四个视图：视图白名单仍然只有 main / approved / rejected，
+       坏 view 照旧 404（selftest-admin 那两条断言不受影响）。这一格是静态链接，
+       `paintView()` 只按 id 动 vMain / vApproved / vRejected 三格，不会来管它。 -->
+  <a id="vFeedback" class="viewtab" href="__ADMIN_PAGE__/feedback-view">反馈</a>
   <!-- 「已隐藏」**不是第四个视图** —— 白名单里仍然只有 main / approved / rejected，坏 view 照旧 404。
        但它是一个**真按钮**（不是装饰用的计数格）：点它 = 勾上筛选栏的「显示已隐藏」+ 滚到那一条，
        否则业主勾掉的那几条就真的找不回来了。业主 2026-10-11 实测：「上面的跳转按钮有问题」。
