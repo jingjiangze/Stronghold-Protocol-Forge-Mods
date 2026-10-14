@@ -209,8 +209,29 @@ function card(m, flagged, peers) {
   const fb = FUNC_BADGE[FUNC_OF(m)];
   head.append(el('span', fb[0], fb[1]));
   if (flagged) head.append(el('span', 'badge warn', '含疑似官方素材'));
+  // ⭐ 会改对局结果（2026-10-14）：`combat: true` 的告知义务，业主口径是「标注清楚就算尽到，不另设闸门」
+  // （AGENTS.md §5.1）。所以**不在名字旁边下判词**，只把事实画成一个中性徽标，解释放下面那一行。
+  if (m.combat === true) head.append(el('span', 'badge warn', '会改对局结果'));
   body.append(head);
   body.append(el('div', 'kv dim', `${(m.size / 1048576).toFixed(2)} MB · 上传于 ${String(m.uploadedAt).slice(0, 10)} · 编号 ${m.id}`));
+
+  // ⭐ 会改对局结果的那一行解释（与徽标配套）：说清「改了什么」而不是只丢一个词。
+  if (m.combat === true) {
+    body.append(el('div', 'kv dim',
+      '⚠ 这个包会改对局结果（`combat: true`）—— 它可能改变伤害 / 命中 / 胜负判定，'
+      + '不是纯界面或素材包。装之前请先看它的备注与 PROVENANCE.md。'));
+  }
+
+  // ⭐ 契约预检（site/packcheck.mjs）：引擎装载期会点名拒的那几条，**下载之前**就摆出来。
+  // 这一层不拦上传（收不收由审核台的人定），但"装了才知道装不上"不该由玩家来发现。
+  const pc = Array.isArray(m.packcheck) ? m.packcheck : [];
+  if (pc.length) {
+    const warn = el('div', 'kv warn');
+    warn.textContent = '⚠ 预检发现这个包可能装载失败：'
+      + pc.map((c) => c.detail).join('；')
+      + '（以引擎装载结果为准）';
+    body.append(warn);
+  }
 
   // 同 id 提示（指令㉑）：同一行里把「另一条是谁」和「为什么一次只能装一条」都说清。
   if (peers && peers.length) {
