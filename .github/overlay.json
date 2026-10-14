@@ -1,17 +1,27 @@
 {
-  "note": "本仓 master 相对上游的**叠加层唯一真相**。同步时 `.github/overlay-check.mjs` 逐条验：anchors 丢一条就红（挂载点被同步弄丢是最危险的静默故障），reservedRoutes 在上游命中就触发退役流程。",
+  "note": "本仓 master 相对上游的**叠加层唯一真相**。同步时 `.github/overlay-check.mjs` 逐条验：anchors 丢一条就红（挂载点被同步弄丢是最危险的静默故障），noTouch 那段与上游不一致也红（我方代码不许挂进上游函数体内）。",
   "upstream": "XiaMo233M/Stronghold-Protocol-Forge-Mods",
   "branches": { "mirror": "main", "product": "master" },
   "mounts": [
     { "file": "site/server.mjs", "kind": "import", "anchor": "from './feedback.mjs'", "why": "反馈这一层的入口" },
-    { "file": "site/server.mjs", "kind": "render", "anchor": "__FB_MOD__", "why": "反馈表单页要注入记录编号（先过 ID_RE）" },
-    { "file": "site/server.mjs", "kind": "render", "anchor": "__ADMIN_PAGE__", "why": "审核台导航那一格要跳到另一个页面" },
+    { "file": "site/feedback.mjs", "kind": "render", "anchor": "export function fillFeedbackPage", "why": "反馈两页的占位符填充（住在自有模块，不寄在上游 renderPage 体内）" },
+    { "file": "site/server.mjs", "kind": "render", "anchor": "const renderFeedbackPage", "why": "反馈两页自己发：读盘 + 调 fillFeedbackPage + 送响应" },
+    { "file": "site/server.mjs", "kind": "route", "anchor": "p === '/feedback'", "why": "公开的写反馈表单页" },
     { "file": "site/server.mjs", "kind": "route", "anchor": "p === `/${ADMIN_PATH}/feedback-view`", "why": "维护者读反馈那一页" },
     { "file": "site/server.mjs", "kind": "route", "anchor": "p === '/api/feedback' || p.startsWith('/api/feedback/')", "why": "公开写 + 管理读的分派起点" },
     { "file": "site/server.mjs", "kind": "route", "anchor": "`${ADMIN_API}/fb-state`", "why": "标处理状态（一次一条 + 幂等）" },
-    { "file": "site/pages/admin.html", "kind": "entry", "anchor": "__ADMIN_PAGE__/feedback-view", "why": "审核台导航「反馈」那一格" },
+    { "file": "site/pages/admin.html", "kind": "entry", "anchor": "id=\"vFeedback\"", "why": "审核台导航「反馈」那一格（地址由脚本从 API 前缀推，不需服务端注入）" },
     { "file": "site/pages/mods.html", "kind": "entry", "anchor": "/feedback?mod=", "why": "每张卡片的「提交反馈」入口" }
   ],
+  "noTouch": [
+    {
+      "file": "site/server.mjs",
+      "start": "const renderPage = (res, name, opts = {}) => {",
+      "end": "  send(res, 200, html, { 'content-type': 'text/html; charset=utf-8' });\n};",
+      "why": "上游的「老住户」：他每加一个筛选维度就往这个函数体里插一行（__KINDS__ / __FUNCS__ / __MAX_MB__ 都是这么长出来的）。S1 之后我方在这里**一行都不挂** ⇒ 上游改这里时同步零冲突。"
+    }
+  ],
+  "noTouchStale": "start/end 锚点在上游已找不到 ⇒ 只出 ::warning:: 不拦合并（那是清单过期，不是东西丢了）：上游重构了自己的函数时，我方代码并不在里面，合并本身是安全的；要人做的是更新这份清单。",
   "mine": [
     "site/feedback.mjs",
     "site/selftest-feedback.mjs",

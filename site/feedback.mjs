@@ -1,8 +1,9 @@
 // 反馈面：能写哪些栏、多长算长、什么字节算「一张图片」。
 //
 // 与 `zip.mjs` / `review.mjs` 同一层 —— **只用 node 内置模块，不引第三方**。
-// 单独成文件的理由只有一个：让 `server.mjs` 里那两段端点不必各自写一份校验，
-// 「反馈的字段闭集」与「图片白名单」在全站**只有一份定义**。
+// 单独成文件的理由有两条：让 `server.mjs` 里那两段端点不必各自写一份校验，
+// 「反馈的字段闭集」与「图片白名单」在全站**只有一份定义**；再就是反馈那两页的
+// 占位符填充也住在这里 —— 不寄在上游的 `renderPage` 里（见 `fillFeedbackPage` 的注释）。
 //
 // 端点本身在 `server.mjs`（公开写：`POST /api/feedback`、`POST /api/feedback/image`；
 // 只有维护者能读：`GET /api/<ADMIN_PATH>/feedback`）。这里不放任何 HTTP 逻辑。
@@ -133,4 +134,31 @@ export function sniffImage(buf) {
  */
 export function fbGroupKey(id, packId) {
   return packId ? `pack:${packId}` : `rec:${id}`;
+}
+
+/**
+ * 反馈那两页的**占位符填充**（纯字符串变换，不读盘也不碰 res）。
+ *
+ * 为什么在这里而不是上游的 `renderPage` 里（2026-10-14 的 S1）：`renderPage` 是上游的
+ * 「老住户」—— 他每加一个筛选维度就往中间插一行（`__KINDS__`、`__FUNCS__`、`__MAX_MB__`
+ * 都是这样陆续长出来的），我方挂进去的那几行**每轮同步必撞**。搬回这一层之后
+ * `server.mjs` 里那个函数**逐字节等于上游**，`.github/overlay-check.mjs` 的 `noTouch` 就是钉这条的。
+ *
+ * 纪律与 `renderPage` 逐字同源，一条都不放松：
+ *   · **URL 上的任意值绝不进 HTML**：`fbMod` 先过调用方给的正则 —— 传的就是服务端那个 `ID_RE`，
+ *     不在此处另造一套口径；形状不对就当没给（空串），不报错、不原样透出；
+ *   · 只认这四个槽，页面里其余字节原样保留；
+ *   · 读盘与发送留给 `server.mjs`：这一层仍然没有任何 HTTP / IO 逻辑（与文件开头那条承诺一致）。
+ */
+export function fillFeedbackPage(
+  html,
+  { css = '', adminApi = '', adminPage = '', fbMod = '', idRe = FB_ID_RE } = {},
+) {
+  const raw = String(fbMod ?? '');
+  const safe = idRe.test(raw) ? raw : '';
+  return String(html)
+    .split('__CSS__').join(css)
+    .split('__ADMIN_API__').join(adminApi)
+    .split('__ADMIN_PAGE__').join(adminPage)
+    .split('__FB_MOD__').join(safe);
 }
