@@ -1,0 +1,164 @@
+name: sync-upstream-mods
+
+# 工坊站这条线的自动同步：`main` = 纯上游镜像（只准快进），`master` = 产品分支（叠加层住这里）。
+# 形状照已在姊妹仓跑绿的 `mirror-upstream-forge.yml`（真实 138 提交合并 + 门控 + 失败必响）：
+#   1. `main` 只 **fast-forward**；发现 `main` 上有自有提交 ⇒ 报错退出，不 force、不猜。
+#   2. `master` 用 **merge，不 reset** —— 叠加层提交不会被上游盖掉。
+#   3. **门控在 push 之前**（GITHUB_TOKEN 推分支不会再触发别的 workflow）：五个自测串行 + 叠加层检查器。
+#   4. **失败必须响**：冲突/门控红 ⇒ 推 `sync-conflict|sync-gatefail/<sha>-<branch>`（只放清单）+ 开 issue + `exit 1`。
+#      绝不推带 `<<<<<<<` 的树，也绝不「什么都没跑却报绿」。
+#
+# ⚠ on.schedule：本仓是 fork，GitHub 默认禁用 fork 的 scheduled workflows（同级 fork 实测 `event=schedule` 运行数 0），
+#   所以节拍靠外部 `workflow_dispatch` / `repository_dispatch`（types: `sync-upstream-mods`）。
+#   额度：public 仓用 standard runner **免费不限量**（实测短路一轮 8 秒、带门控一轮约 2–4 分钟）。
+#
+# 上游以后自己实现 mod 相关接口时：`overlay-check.mjs` 命中 `reservedRoutes` ⇒ 退出码 2，
+# 本工作流把它当**提示**而不是失败（合并照旧放行），由人按 `retireWhen` 删掉我方那一份。
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [sync-upstream-mods]
+  schedule:
+    - cron: '37 3,9,15,21 * * *'
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: sync-upstream-mods
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_URL: https://github.com/XiaMo233M/Stronghold-Protocol-Forge-Mods.git
+  UPSTREAM_REPO: XiaMo233M/Stronghold-Protocol-Forge-Mods
+
+jobs:
+  mirror-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.f.outputs.sha }}
+    steps:
+      - name: Fetch both sides
+        id: f
+        run: |
+          set -euo pipefail
+          git init -q w && cd w
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git remote add upstream "$UPSTREAM_URL"
+          git fetch -q --no-tags origin main:refs/remotes/origin/main master:refs/remotes/origin/master
+          git fetch -q --no-tags upstream main:refs/remotes/upstream/main
+          UP=$(git rev-parse refs/remotes/upstream/main)
+          MIRROR=$(git rev-parse refs/remotes/origin/main)
+          echo "sha=$UP" >> "$GITHUB_OUTPUT"
+          echo "upstream=$UP origin/main=$MIRROR"
+          if [ "$UP" = "$MIRROR" ]; then echo "main 已是上游最新"; exit 0; fi
+          if ! git merge-base --is-ancestor "$MIRROR" "$UP"; then
+            echo "::error::main 上有自有提交（$MIRROR）—— main 必须是纯镜像：请把它们搬到 master"
+            exit 1
+          fi
+          git push -q origin "$UP:refs/heads/main"
+          echo "main 快进 $MIRROR -> $UP"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sync-master:
+    needs: mirror-main
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out master (full history)
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Merge upstream into master (never reset)
+        id: m
+        run: |
+          set -uo pipefail
+          UP="${{ needs.mirror-main.outputs.sha }}"
+          git remote add upstream "$UPSTREAM_URL" 2>/dev/null || git remote set-url upstream "$UPSTREAM_URL"
+          git fetch -q --no-tags upstream main
+          PRE=$(git rev-parse HEAD)
+          echo "pre=$PRE" >> "$GITHUB_OUTPUT"
+          if [ "$PRE" = "$UP" ] || git merge-base --is-ancestor "$UP" HEAD; then
+            echo "上游 $UP 已在 master 里 —— 无事可做"
+            echo "done=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git config user.name "stronghold-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git merge --no-edit "$UP" -m "sync: upstream $UP into master"; then
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            git diff --name-only --diff-filter=U > "${RUNNER_TEMP}/conflicts.txt" || true
+            git merge --abort || true
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            echo "::error::上游 $UP 与 master 冲突（清单见 SYNC-CONFLICTS 分支与本次摘要）"
+          fi
+
+      - name: GATE — 五个自测（串行，同端口那两条不并行）
+        if: steps.m.outputs.merged == 'true'
+        run: |
+          set -uo pipefail
+          node --version
+          # ③ selftest-compat 与 ④ selftest-publisher 同用 PORT 8807 ⇒ 严格串行
+          for t in selftest.mjs selftest-admin.mjs selftest-compat.mjs selftest-publisher.mjs selftest-feedback.mjs; do
+            printf '%-26s ' "$t"
+            node "site/$t" > "/tmp/$t.log" 2>&1; rc=$?
+            printf 'rc=%s pass=%s fail=%s\n' "$rc" "$(grep -ac '  ✓' /tmp/$t.log)" "$(grep -ac '✗' /tmp/$t.log)"
+            [ "$rc" = 0 ] || { echo "::error::$t 红 —— 看本次运行的日志"; exit 1; }
+          done
+          # 文档与实际脱节也算红：README「改完必跑」那一节必须列到第五个自测
+          grep -qa 'selftest-feedback.mjs' site/README.md || { echo "::error::README 的自测清单漏了 selftest-feedback"; exit 1; }
+
+      - name: GATE — 叠加层（挂载点不许丢；上游抢名字只提示不拦）
+        if: steps.m.outputs.merged == 'true'
+        run: |
+          set -uo pipefail
+          git fetch -q --no-tags upstream main
+          git worktree add -q ../up FETCH_HEAD --detach
+          node .github/overlay-check.mjs --work . --up ../up
+          rc=$?
+          if [ "$rc" = 2 ]; then echo "::warning::上游已实现同名接口 —— 合并照旧放行，按 overlay.json 的 retireWhen 减我方叠加层"; exit 0; fi
+          exit $rc
+
+      - name: Push master
+        if: steps.m.outputs.merged == 'true'
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:refs/heads/master"
+          UP="${{ needs.mirror-main.outputs.sha }}"
+          {
+            echo "### master 已同步"
+            echo "- 上游：\`$UP\`；master -> \`$(git rev-parse HEAD)\`"
+            echo "- 本轮合入提交数：$(git rev-list --count '${{ steps.m.outputs.pre }}..$UP')"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail loudly (conflict or red gate -> branch + issue, never a silent green)
+        if: steps.m.outputs.done != 'true' && (steps.m.outputs.merged != 'true' || failure())
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          UP="${{ needs.mirror-main.outputs.sha }}"; SHORT="${UP:0:8}"
+          if [ "${{ steps.m.outputs.merged }}" = "true" ]; then
+            BR="sync-gatefail/$SHORT"; REASON="上游合进来了但门控红（五个自测或叠加层检查）—— \`master\` 未改动。"
+            git checkout -B "$BR"; git commit --allow-empty -m "blocked upstream sync (gate): $SHORT"
+          else
+            BR="sync-conflict/$SHORT"; REASON="上游 $SHORT 与 \`master\` 冲突，清单见 SYNC-CONFLICTS.md。\`master\` 未改动。"
+            { echo "# 上游 $UP 没能同步进 master"; echo; echo '## 冲突文件'; echo '```'
+              cat "${RUNNER_TEMP}/conflicts.txt" 2>/dev/null || echo '(空：可能是改名/重命名冲突)'; echo '```'; } > SYNC-CONFLICTS.md
+            git checkout -B "$BR"; git add SYNC-CONFLICTS.md; git commit -m "conflict report: upstream $SHORT"
+          fi
+          git push -f origin "HEAD:refs/heads/$BR"
+          if ! gh issue list --state open --search "upstream sync blocked $SHORT in:title" --json number -q 'length' | grep -q '^0$'; then
+            echo "已有针对 $SHORT 的 issue"
+          else
+            gh issue create --title "upstream sync blocked: $SHORT" \
+              --body "$REASON\n\n分支 \`$BR\`（只放清单，没有带冲突标记的树）。修完重跑 sync-upstream-mods。" \
+              || echo "::warning::issue 没建成，看运行摘要"
+          fi
+          exit 1

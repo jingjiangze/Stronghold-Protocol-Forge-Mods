@@ -1,0 +1,30 @@
+{
+  "note": "本仓 master 相对上游的**叠加层唯一真相**。同步时 `.github/overlay-check.mjs` 逐条验：anchors 丢一条就红（挂载点被同步弄丢是最危险的静默故障），reservedRoutes 在上游命中就触发退役流程。",
+  "upstream": "XiaMo233M/Stronghold-Protocol-Forge-Mods",
+  "branches": { "mirror": "main", "product": "master" },
+  "mounts": [
+    { "file": "site/server.mjs", "kind": "import", "anchor": "from './feedback.mjs'", "why": "反馈这一层的入口" },
+    { "file": "site/server.mjs", "kind": "render", "anchor": "__FB_MOD__", "why": "反馈表单页要注入记录编号（先过 ID_RE）" },
+    { "file": "site/server.mjs", "kind": "render", "anchor": "__ADMIN_PAGE__", "why": "审核台导航那一格要跳到另一个页面" },
+    { "file": "site/server.mjs", "kind": "route", "anchor": "p === `/${ADMIN_PATH}/feedback-view`", "why": "维护者读反馈那一页" },
+    { "file": "site/server.mjs", "kind": "route", "anchor": "p === '/api/feedback' || p.startsWith('/api/feedback/')", "why": "公开写 + 管理读的分派起点" },
+    { "file": "site/server.mjs", "kind": "route", "anchor": "`${ADMIN_API}/fb-state`", "why": "标处理状态（一次一条 + 幂等）" },
+    { "file": "site/pages/admin.html", "kind": "entry", "anchor": "__ADMIN_PAGE__/feedback-view", "why": "审核台导航「反馈」那一格" },
+    { "file": "site/pages/mods.html", "kind": "entry", "anchor": "/feedback?mod=", "why": "每张卡片的「提交反馈」入口" }
+  ],
+  "mine": [
+    "site/feedback.mjs",
+    "site/selftest-feedback.mjs",
+    "site/pages/feedback.html",
+    "site/pages/feedback-admin.html",
+    "docs/FEEDBACK-API.md"
+  ],
+  "reservedRoutes": ["/api/feedback", "/api/feedback/image", "fb-state", "feedback-view", "/feedback?mod="],
+  "routeOrder": "我方挂载点**必须**排在上游自己的分发链之后、最终 404 之前 —— 上游将来实现同名接口时他的先生效，我这份退化成兜底，不做「谁先写谁静默吃掉」。",
+  "retireWhen": "扫描器在上游源码里命中 reservedRoutes ⇒ 删对应 mounts 与 mine 里不再需要的文件，PR 标题写 `retire:`，并在 PR 正文点名被谁取代。",
+  "gate": {
+    "selftests": ["selftest.mjs", "selftest-admin.mjs", "selftest-compat.mjs", "selftest-publisher.mjs", "selftest-feedback.mjs"],
+    "serial": "③ selftest-compat 与 ④ selftest-publisher 同用 PORT 8807，必须串行；⑤ 用 8811。",
+    "判据": "比**失败名称集合**判净新增，不比总数（上游会自己加用例，总数天然会漂）；一条都没跑到也算红。"
+  }
+}
