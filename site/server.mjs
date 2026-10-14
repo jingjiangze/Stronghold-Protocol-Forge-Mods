@@ -75,6 +75,12 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readZipEntries, readZipFile, looksLikeZip } from './zip.mjs';
 import { reviewName, reviewLabel, reviewEntries, hasBlocker, reviewContainer, reviewSelfDecl, reviewCompatPackJson, needsAcknowledge, ACK_CODES } from './review.mjs';
+import {
+  FB_FIELDS, FB_KINDS, FB_SEVERITIES, FB_TEXT_MAX, FB_SHORT_MAX, FB_BODY_MAX,
+  FB_IMG_MAX, FB_IMG_BYTES_MAX, FB_MODS_MAX, FB_PAGE_DEFAULT, FB_PAGE_MAX,
+  FB_DEDUPE_RE, FB_ID_RE, FB_STATES, FB_REASON_MAX, fbStateOf,
+  normalizeFeedback, sniffImage, fbGroupKey,
+} from './feedback.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PAGES = join(HERE, 'pages');
@@ -798,6 +804,149 @@ const isCompat = (id) => dirOf(id)?.area === 'compat';
  */
 const isHidden = (m) => !!m && m.hidden === true;
 
+// ---------------------------------------------------------------- 反馈面（2026-10-13 新增）
+/**
+ * mod 反馈**住在被反馈那条记录的目录里**：不进 `meta.json`，也不在 `DATA_DIR` 根新建区。
+ *
+ * 两个理由，都是这仓库已有的纪律：
+ *   ① `DATA_DIR` 根「只有上游那几个目录」是 `selftest-compat.mjs` 断言过的不变量
+ *      （多出一个散文件就等于某条失败路径没清理干净）。反馈**不在根上新开区** ⇒ 不牵动这条；
+ *      （2026-10-14 上游为「硬删（档 3）」加了 `tombstones/`，那条断言与 `selftest-feedback.mjs`
+ *      的同类断言都已按这份清单放行。）
+ *   ② 业主 2026-10-13 的口径是「**反馈正文与图片只有网站维护者能看到**」。
+ *      把反馈存在 `meta.json` **外面**，公开面（`/api/mods`、`/mods`、`/api/status`、
+ *      `/api/publisher/mine`）读的都是 `meta.json` —— 于是「不泄露」是**数据结构本身**保证的，
+ *      不依赖某个端点记得少写一个字段。
+ *
+ * ```
+ * <区>/<记录编号>/feedback/<反馈编号>.json        一条反馈（正文 + 元数据 + 图片清单 + 图片令牌哈希）
+ * <区>/<记录编号>/feedback/<反馈编号>-<序>.<ext>   图片原字节（不转码不缩放；ext 由魔数嗅探结果给）
+ * ```
+ *
+ * ⚠️ 零删除：反馈**没有删除口**。要打回/隐藏某条反馈请删目录（人工），
+ *    与站点「整条链上没有任何一处删数据」的立场一致。
+ */
+const FB_DIR_NAME = 'feedback';
+const fbDirOf = (id) => { const f = dirOf(id); return f ? join(f.dir, FB_DIR_NAME) : null; };
+/** 图片令牌**只存哈希**（与认领码 / 发布者令牌同一套：盘上没有明文可偷，备份也一样）。 */
+const fbTokHashOf = (tok) => sha256Hex(`sp-modsite/feedback-image-token/v1:${String(tok || '')}`);
+/**
+ * 「这枚图片令牌是不是这一条反馈的」—— 与 `publisherTokenOk` 同一口径：
+ * 输入先哈希成定长 32 字节，再逐条 `timingSafeEqual`，**形状不对的输入也照比一次**，
+ * 不因长度不同提前返回（否则「像不像令牌」会从耗时上漏出去）。
+ */
+function fbTokenOk(fb, token) {
+  const list = Array.isArray(fb?.imageTokens) ? fb.imageTokens : [];
+  const given = Buffer.from(fbTokHashOf(token), 'hex');
+  let hit = false;
+  for (const t of list) {
+    let buf = EMPTY32;
+    const h = String(t?.h || '');
+    if (/^[0-9a-f]{64}$/.test(h)) { try { buf = Buffer.from(h, 'hex'); } catch { buf = EMPTY32; } }
+    if (buf.length === given.length && timingSafeEqual(buf, given)) hit = true;
+  }
+  return hit;
+}
+/** 某条记录下的全部反馈（时间正序；没有目录就是空数组）。**只给管理口与幂等判据用。** */
+function listFeedback(id) {
+  const d = fbDirOf(id);
+  if (!d || !existsSync(d)) return [];
+  let names = [];
+  try { names = readdirSync(d); } catch { return []; }
+  return names
+    .filter((n) => n.endsWith('.json') && FB_ID_RE.test(n.slice(0, -5)))
+    .map((n) => readJson(join(d, n)))
+    .filter((x) => x && FB_ID_RE.test(String(x.id || '')) && String(x.mod || '') === id)
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+}
+/**
+ * 「同一个 mod」的折叠索引（业主需求 ②：单个看 + 合并看）。
+ * 分组键与判据见 `feedback.mjs` 的 `fbGroupKey` —— 两条：同 `packId`、或 `compatOf` 双向有链。
+ *
+ * ⚠️ 这里**会**为普通投稿解一次 zip 取 `pack.json.id`（走 `signatureOf`，同一条记录有缓存），
+ *    与公开列表 `/api/mods` 用的是同一份推导，不另立判据。
+ * @returns {Promise<{ byRec: Map<string,string>, members: Map<string,string[]> }>}
+ */
+async function fbGroupIndex() {
+  const subs = allSubs();
+  const packIdOf = new Map();
+  for (const s of subs) {
+    let pid = (s.pack && s.pack.id) || null;
+    if (!pid && s.kind !== 'compat') {
+      const sig = await signatureOf(s);
+      pid = sig.packId || null;
+    }
+    packIdOf.set(s.id, pid);
+  }
+  const parent = new Map(subs.map((s) => [s.id, s.id]));
+  const find = (x) => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r);
+    let cur = x;
+    while (parent.get(cur) !== r) { const nx = parent.get(cur); parent.set(cur, r); cur = nx; }
+    return r;
+  };
+  const union = (a, b) => {
+    if (!parent.has(a) || !parent.has(b)) return;      // compatOf 指向一条已被删掉的记录：不并、也不报错
+    const ra = find(a); const rb = find(b);
+    if (ra !== rb) parent.set(rb, ra);
+  };
+  // 判据①：同一个 pack id ⇒ 同一款（线上实测有两组这样的情形）
+  const firstByPack = new Map();
+  for (const [id, pid] of packIdOf) {
+    if (!pid) continue;
+    const first = firstByPack.get(pid);
+    if (first) union(first, id); else firstByPack.set(pid, id);
+  }
+  // 判据②：compatOf 链（双向 —— 只要 A 说它由 B 改来，A、B 就是一款）
+  for (const s of subs) {
+    const of = String(s.compatOf || '');
+    if (ID_RE.test(of)) union(of, s.id);
+  }
+  const members = new Map();
+  for (const s of subs) {
+    const root = find(s.id);
+    if (!members.has(root)) members.set(root, []);
+    members.get(root).push(s.id);
+  }
+  for (const [k, v] of members) members.set(k, v.sort());
+  const byRec = new Map();
+  for (const [root, ids] of members) {
+    const pid = ids.map((i) => packIdOf.get(i)).find(Boolean) || null;
+    const label = fbGroupKey(root, pid);      // 组名：有 pack id 就用它，没有就退回组根的记录编号
+    for (const i of ids) byRec.set(i, label);
+  }
+  return { byRec, members, packIdOf };
+}
+/** 一条记录所在的**整组**编号（含它自己；索引里没有就它一条）。 */
+function fbGroupMembers(index, id) {
+  for (const [, ids] of index.members) if (ids.includes(id)) return ids;
+  return [id];
+}
+/** 反馈里图片那一栏对**外**的发法：只给元数据，`url` 一律由管理口现拼。 */
+const fbImageMeta = (img) => ({
+  n: img.n, bytes: img.bytes, sha256: img.sha256, mediaType: img.mediaType, at: img.at,
+});
+
+/**
+ * 把一张反馈图片发出去。**与 `sendFile` 的区别是刻意的**：
+ *   · `content-disposition: inline`（维护者要在浏览器里直接看图，不是下载一堆附件）；
+ *   · `content-type` 只来自**落盘时嗅探的结果**（不读扩展名、不读客户端报的）；
+ *   · `x-content-type-options: nosniff` —— 站点没有 CSP，这一条是图片这一路唯一的浏览器侧护栏。
+ * 调用方必须**先过** `adminAllowed()` + `isAdmin()` 两道，这个函数自己不看凭据。
+ */
+const sendFbImage = (res, path, mediaType) => {
+  const st = statSync(path);
+  res.writeHead(200, {
+    'content-type': mediaType,
+    'content-length': st.size,
+    'x-content-type-options': 'nosniff',
+    'content-disposition': 'inline',
+    'cache-control': 'no-store',
+  });
+  createReadStream(path).pipe(res);
+};
+
 /** 包里的 pack.json（只读它一条，最多 1 MB；读不到/解析不了都返回 null）。 */
 async function packJsonFor(file) {
   const m = await readZipFile(file, ['pack.json']);
@@ -1236,6 +1385,7 @@ const ADMIN_VIEWS = ['main', 'approved', 'rejected'];
  * 列表页多一个 __KINDS__（当前分类筛选，同样白名单校验过；只填进 data 属性，不拼 HTML）。
  * ⭐ __MAX_MB__（2026-10-14 上传断连修复）：上传页要**在本地先判体积**、并把「上限多少 MB」
  *    写进 413 的提示里，所以这个数必须由服务端注入 —— 前端自己写死 100 就会与 `MAX_MB` 漂移。
+ * 反馈页多一个 __FB_MOD__（要反馈的那条记录编号，同样**先过 ID_RE** 才注入）。
  */
 const renderPage = (res, name, opts = {}) => {
   const p = join(PAGES, name);
@@ -1244,6 +1394,9 @@ const renderPage = (res, name, opts = {}) => {
   const kinds = Array.isArray(opts.kinds) ? opts.kinds.filter((k) => PACK_KINDS.includes(k)) : [];
   // ⭐ 功能类目的当前筛选（同一个白名单纪律：只注入闭集里过滤过的值）。
   const funcs = Array.isArray(opts.funcs) ? opts.funcs.filter((k) => FUNC_KINDS.includes(k)) : [];
+  // __FB_MOD__ 与 __KINDS__ 同一口径：URL 上的任意值**绝不**进 HTML，形状不对就当没给。
+  const fbRaw = String(opts.fbMod || '');
+  const fbMod = ID_RE.test(fbRaw) ? fbRaw : '';
   const html = readFileSync(p, 'utf8')
     .split('__CSS__').join('/theme.css?v=3')
     .split('__ADMIN_API__').join(ADMIN_API)
@@ -1251,6 +1404,10 @@ const renderPage = (res, name, opts = {}) => {
     // __KINDS__ 只注入**闭集里过滤过**的值（逗号分隔）；不传就是空串（= 现状）。
     .split('__KINDS__').join(kinds.join(','))
     .split('__FUNCS__').join(funcs.join(','))
+    .split('__FB_MOD__').join(fbMod)
+    // __ADMIN_PAGE__ = 审核页那一族的**页面**前缀（`/${ADMIN_PATH}`），与 __ADMIN_API__（`/api/...`）是两回事：
+    // 审核页导航里那个「反馈」格要跳到**另一个页面**，不是第四个 view —— 白名单仍然只有三个。
+    .split('__ADMIN_PAGE__').join(`/${ADMIN_PATH}`)
     // 上传上限（MB）：整数。只注入数字，别的什么都不拼。
     .split('__MAX_MB__').join(String(MAX_BYTES / 1048576));
   send(res, 200, html, { 'content-type': 'text/html; charset=utf-8' });
@@ -1390,6 +1547,11 @@ const server = createServer(async (req, res) => {
     // ℹ️ 这一页**本身不校验令牌**（页面里什么都没有，就是几个空表单）——
     //    真正的门在 `/api/publisher/*` 那几个端点上，每个都独立验令牌、独立限流。
     if (req.method === 'GET' && (p === '/mine' || p === '/mine.html')) return renderPage(res, 'mine.html');
+    // 反馈页（2026-10-13）：`/feedback?mod=<记录编号>`。它**只是那张写反馈的表单** ——
+    // 反馈的正文与图片只有维护者能看到，所以这里**没有**任何「看别人反馈」的公开口。
+    if (req.method === 'GET' && p === '/feedback') {
+      return renderPage(res, 'feedback.html', { fbMod: url.searchParams.get('mod') || '' });
+    }
     if (req.method === 'GET' && (p === '/mods' || p === '/mods.html')) {
       // ⭐ 分类筛选（需求 ③）：`/mods?kind=functional` / `?kind=functional,documentation`。
       // **不传 = 现状**（全量、三区照旧）。非法值 400 而不是悄悄忽略 —— 「筛了没变化」最难查。
@@ -1413,6 +1575,21 @@ const server = createServer(async (req, res) => {
         return sendJson(res, 404, { error: `没有这个视图：view 只能是 ${ADMIN_VIEWS.join(' / ')}` });
       }
       return sendAdminPage(res, view);
+    }
+    /**
+     * 反馈的审核侧页面（`/反馈` 那一格，2026-10-13）：**与审核页同一道门**（`ADMIN_IPS` + 令牌 / Basic）。
+     *
+     * 它是**另一个页面**，不是审核台的第四个视图 —— `ADMIN_VIEWS` 白名单仍然只有
+     * `main / approved / rejected`，`?view=<坏值>` 那条 404 判据一个字没动，
+     * `selftest-admin.mjs` 里那几条（三页相加 + 已隐藏 = 全部、坏 view 照旧 404）不受影响。
+     * 为什么不塞进 `admin.html`：那一页是一整个内联 `<script>`，它只要在顶层抛一次错，
+     * 后面所有 `onclick` 与自动载入就全哑（2026-10-11 的 TDZ 事故就是这么来的，
+     * `selftest-admin.mjs` 治的就是这一类）。反馈这块**单独一页**，两边互不带下去。
+     */
+    if (req.method === 'GET' && p === `/${ADMIN_PATH}/feedback-view`) {
+      if (!adminAllowed(req)) return sendJson(res, 403, { error: '这个地址不在管理白名单里（ADMIN_IPS）' });
+      if (!isAdmin(req)) return askForLogin(res);
+      return renderPage(res, 'feedback-admin.html');
     }
     if (req.method === 'GET' && p === '/healthz') {
       return sendJson(res, 200, { ok: true, at: nowIso(), submissions: allSubs().length });
@@ -1707,6 +1884,169 @@ const server = createServer(async (req, res) => {
           ? '已收到。包里有疑似官方素材（见 flags），它已被单独存放并会公开标注；维护者人工确认后再决定上不上线。'
           : '已收到。维护者会下载下来跑测试，通过后再上线。',
       });
+    }
+
+    // ================================================================
+    // ⭐ **mod 反馈**（`/api/feedback*`，2026-10-13 新增）
+    //
+    // 业主需求四条：① 任何人都能给某个 mod 提交反馈；② 每个 mod 可单独查看、也可多个 mod 合并
+    // 查看；③ 支持 agent 接入；④ 支持文字与图片 —— 但**反馈正文与图片只有网站维护者能看到**。
+    //
+    // 落点与边界**全部照抄站内已有的纪律**，没有新发明：
+    //   · **写端点限流**：复用 `publisherRateLimited`（每 IP 每 10 分钟 60 次）。反馈是「操作」不是
+    //     「上传」，与 `/api/submit` 那个 10/10min 的桶不是一回事。**没有为反馈另开一档阈值** ——
+    //     限流与 agent 配额是单独一份提案，不由这个功能顺带改掉。
+    //   · **一次只认一个 mod**：报文里出现 `ids` / `batch` / `items` / `list` ⇒ 400（§8.1 那条铁律）。
+    //     「合并查看」是**读**侧的事，写侧永远单条。
+    //   · **凭据只存哈希**：图片令牌（决定「谁能往这条反馈上贴图」）盘上只有 sha256，
+    //     明文只在那一个 201 响应里出现一次 —— 与认领码 / 发布者令牌逐字同一套做法。
+    //   · **幂等 + 零删除**：同一个 `dedupe` 键重复提交 ⇒ 返回已有那条、`changed:false`、不写第二笔；
+    //     逐字节相同的图重复贴 ⇒ 不重写。反馈**没有任何删除口**。
+    //
+    // ⚠️ 隐私边界（这条最重要）：**只有** `GET ${ADMIN_API}/feedback*` 能读反馈，
+    //   而它排在 `adminAllowed()` + `isAdmin()` 两道防线**后面**。反馈**不进 `meta.json`**，
+    //   所以 `/api/mods`、`/mods`、`/api/status`、`/api/publisher/*`、`/api/file/*`
+    //   一个都读不到它 —— selftest-feedback 用「公开响应逐字节不变」把这条钉住。
+    // ================================================================
+    if (p === '/api/feedback' || p.startsWith('/api/feedback/')) {
+      const batchKeys = ['ids', 'batch', 'items', 'list'].filter((k) => url.searchParams.has(k));
+      if (batchKeys.length) {
+        return sendJson(res, 400, { error: `一次只收一个 mod 的反馈；报文里出现了批量栏：${batchKeys.join(' / ')}（批量是读侧的能力，写侧没有）` });
+      }
+
+      // ---- ① 提交一条反馈（文字）。公开、无需账号 —— 与 `/api/submit` 同一立场。
+      if (req.method === 'POST' && p === '/api/feedback') {
+        if (publisherRateLimited(ip)) return sendJson(res, 429, { error: '操作太频繁了，过一会儿再来' });
+        const mod = (url.searchParams.get('mod') || '').trim();
+        const dedupe = (url.searchParams.get('dedupe') || '').trim();
+        if (!ID_RE.test(mod)) return sendJson(res, 400, { error: 'mod 形状不对（6–32 位小写字母/数字，放在查询串 ?mod=）' });
+        if (dedupe && !FB_DEDUPE_RE.test(dedupe)) {
+          return sendJson(res, 400, { error: 'dedupe 只能是 6–64 位字母/数字/_/-（它是幂等键，agent 重试时带同一个值）' });
+        }
+        // ⚠️ 只有**公开在架**的 mod 收得到反馈。待审 / 已打回 / 已申请自撤的那些一律不开这一门 ——
+        //   否则「能不能给某条提交反馈」就变成探待审队列的口子。
+        //   不存在与没上线**回同一个 404、同一句话**（与站点那条 `没有这个地址` 逐字相同）。
+        const target = allSubs().find((s) => s.id === mod);
+        if (!target || !isPubliclyVisible(target)) return sendJson(res, 404, { error: '没有这个地址' });
+
+        const declared = Number(req.headers['content-length'] || 0);
+        if (declared && declared > FB_BODY_MAX) {
+          return sendJson(res, 413, { error: `反馈报文 ${(declared / 1024).toFixed(0)} KB，上限 ${(FB_BODY_MAX / 1024).toFixed(0)} KB` });
+        }
+        const rawBody = await readBody(req, FB_BODY_MAX);
+        let parsed = null;
+        try { parsed = JSON.parse(rawBody.toString('utf8') || '{}'); }
+        catch { return sendJson(res, 400, { error: '反馈必须是 JSON', code: 'FB_BAD_BODY' }); }
+        const norm = normalizeFeedback(parsed);
+        if (norm.error) return sendJson(res, 400, { error: norm.error, code: norm.code });
+
+        const dir = fbDirOf(mod);
+        mkdirSync(dir, { recursive: true });
+        // 幂等：同一个 dedupe 键已有 ⇒ 把那条还给它，**不写第二笔**（agent 网络重试是常态）。
+        if (dedupe) {
+          const hit = listFeedback(mod).find((x) => x.dedupe === dedupe);
+          if (hit) {
+            return sendJson(res, 200, {
+              ok: true, changed: false, feedbackId: hit.id, mod, modName: target.name,
+              at: hit.at, images: (Array.isArray(hit.images) ? hit.images : []).length,
+              note: '这个 dedupe 键已经有一条反馈了，没有写第二笔（重复提交按幂等处理）。',
+            });
+          }
+        }
+        const fbId = idOf();
+        const imageToken = tokenOf();
+        const at = nowIso();
+        const fb = {
+          id: fbId, mod, at, ip,
+          ...norm.fb,
+          dedupe: dedupe || null,
+          images: [],
+          // 明文不落盘：这里只存哈希（见 fbTokHashOf）。
+          imageTokens: [{ h: fbTokHashOf(imageToken), at, by: 'feedback' }],
+        };
+        writeJson(join(dir, `${fbId}.json`), fb);
+        audit('feedbackSubmit', {
+          id: mod, ip, actor: 'public',
+          detail: { fbId, kind: fb.kind, severity: fb.severity, chars: fb.text.length, engineVersion: fb.engineVersion, dedupe: dedupe || null },
+        });
+        return sendJson(res, 201, {
+          ok: true, changed: true, feedbackId: fbId, mod, modName: target.name,
+          state: 'reported', at, images: 0,
+          kind: fb.kind, severity: fb.severity,
+          // ⭐ 图片令牌：明文只在这一个响应里出现一次，盘上只有哈希。
+          imageToken,
+          imagePath: `/api/feedback/image?mod=${mod}&fb=${fbId}`,
+          imageNote: '贴图片时把这串令牌放进 `x-feedback-token` 头。没有它任何人都能往别人这条反馈上塞图，'
+            + '所以这一步不能省；站点只存它的哈希，丢了找不回明文（重新提交一条即可）。',
+          limits: { textMax: FB_TEXT_MAX, shortMax: FB_SHORT_MAX, imgMax: FB_IMG_MAX, imgBytesMax: FB_IMG_BYTES_MAX, bodyBytesMax: FB_BODY_MAX },
+          fields: FB_FIELDS, kinds: FB_KINDS, severities: FB_SEVERITIES,
+          message: '已收到。这条反馈**只有维护者看得到**（正文与图片都不公开）；维护者会连同一个 mod 的几条记录合并起来看。',
+        });
+      }
+
+      // ---- ② 给某条反馈贴一张图片（裸字节 + 图片令牌）。
+      if (req.method === 'POST' && p === '/api/feedback/image') {
+        if (publisherRateLimited(ip)) return sendJson(res, 429, { error: '操作太频繁了，过一会儿再来' });
+        const mod = (url.searchParams.get('mod') || '').trim();
+        const fbId = (url.searchParams.get('fb') || '').trim();
+        if (!ID_RE.test(mod) || !FB_ID_RE.test(fbId)) return sendJson(res, 400, { error: 'mod / fb 形状不对（都是 6–32 位小写字母/数字，放在查询串上）' });
+        const fb = listFeedback(mod).find((x) => x.id === fbId);
+        // 「这条反馈不存在」与「这个 mod 根本没有反馈」不区分 —— 同一句 404，不泄露队列内容。
+        if (!fb) return sendJson(res, 404, { error: '没有这个地址' });
+        const tok = String(req.headers['x-feedback-token'] || '').trim();
+        if (!fbTokenOk(fb, tok)) {
+          return sendJson(res, 401, { error: '需要图片令牌（`x-feedback-token` 头，值是那一次提交反馈的响应里给的 imageToken，只显示一次）' });
+        }
+        const imgs = Array.isArray(fb.images) ? fb.images : [];
+        if (imgs.length >= FB_IMG_MAX) return sendJson(res, 400, { error: `一条反馈最多 ${FB_IMG_MAX} 张图，这一条已经贴满了` });
+        const declared = Number(req.headers['content-length'] || 0);
+        if (declared && declared > FB_IMG_BYTES_MAX) {
+          return sendJson(res, 413, { error: `图片 ${(declared / 1024 / 1024).toFixed(1)} MB，单张上限 ${(FB_IMG_BYTES_MAX / 1024 / 1024).toFixed(0)} MB` });
+        }
+        const body = await readBody(req, FB_IMG_BYTES_MAX);
+        if (!body.length) return sendJson(res, 400, { error: '没有收到文件' });
+        const sniff = sniffImage(body);
+        if (!sniff) {
+          return sendJson(res, 400, {
+            code: 'FB_NOT_AN_IMAGE',
+            error: '只收 PNG / JPEG / GIF / WEBP（这个文件头认不出来）。SVG 与 HTML **不收** —— 那是脚本面不是图片面。',
+          });
+        }
+        const sha = createHash('sha256').update(body).digest('hex');
+        const dup = imgs.find((i) => i.sha256 === sha);
+        if (dup) {
+          return sendJson(res, 200, {
+            ok: true, changed: false, feedbackId: fbId, mod,
+            image: fbImageMeta(dup), images: imgs.length,
+            note: '这张图与已经贴上的第 ' + dup.n + ' 张**逐字节相同**，没有写第二份。',
+          });
+        }
+        const n = imgs.reduce((m, i) => Math.max(m, Number(i.n) || 0), 0) + 1;
+        const file = `${fbId}-${n}.${sniff.ext}`;
+        // 与 `/api/submit` 同一条纪律：先落 `DATA_DIR` 根下的临时名，全过了才搬进记录目录；
+        // 任何失败路径由请求处理器的 finally 收掉（DATA_DIR 根下不许留下散文件）。
+        const tmp = join(DATA_DIR, `${fbId}-${n}.fbimg.part`);
+        writeFileSync(tmp, body);
+        partToClean = tmp;
+        renameSync(tmp, join(fbDirOf(mod), file));
+        partToClean = null;
+        const rec = { n, file, bytes: body.length, sha256: sha, mediaType: sniff.mediaType, at: nowIso() };
+        // 只往 images 那一栏**追加一笔**，其余字段（正文、kind、severity、令牌哈希）一字不动。
+        writeJson(join(fbDirOf(mod), `${fbId}.json`), { ...fb, images: [...imgs, rec] });
+        audit('feedbackImage', {
+          id: mod, ip, actor: 'public',
+          detail: { fbId, n, bytes: body.length, mediaType: sniff.mediaType },
+        });
+        return sendJson(res, 201, {
+          ok: true, changed: true, feedbackId: fbId, mod,
+          image: fbImageMeta(rec),
+          images: [...imgs, rec].map(fbImageMeta),
+          note: '图片已贴上这一条反馈。**不公开** —— 只有维护者能从管理口取它（`GET ' + ADMIN_API + '/feedback/file`）。',
+        });
+      }
+
+      // 反馈**没有公开读口**（业主口径：只有维护者能看到）；读它请走管理口那两条。
+      return sendJson(res, 404, { error: '没有这个反馈端点' });
     }
 
     // ================================================================
@@ -2398,6 +2738,224 @@ const server = createServer(async (req, res) => {
         // ⭐ 审核台要一眼看到「发布者自撤待确认」那一条（裁定 ② / 需求 B）。
         //    只**加**一个字段，`submissions` 的形状与从前逐字相同（既有页面读法不受影响）。
         return sendJson(res, 200, { submissions: subs, withdrawQueue: withdrawQueue().map((s) => ({ id: s.id, name: s.name, at: s.withdrawRequestedAt ?? null, reason: s.withdrawReason ?? null })) });
+      }
+
+      // ================================================================
+      // ⭐ **mod 反馈：只有维护者能读**（`GET ${ADMIN_API}/feedback`、`.../feedback/file`）
+      //
+      // 走到这里已经过了 `adminAllowed()`（ADMIN_IPS）+ `isAdmin()`（令牌 / Basic）两道 ——
+      // 反馈的正文与图片**只有这一条路**能看到，公开面与发布者面一个都读不到它。
+      //
+      // 三种读法（业主需求 ②「每个 mod 可单独查看，也可多个 mod 合并查看」+ ③ agent 接入）：
+      //   · `?mod=<编号>`               单独看一条记录（最窄的那一档）
+      //   · `?mod=a,b,c`                **合并**看几条（读侧批量；写侧永远单条，见 §8.1）
+      //   · `?group=<编号>`             把「同一款 mod」的几条记录并起来看（同 packId + compatOf 链）
+      //   · `?all=1&cursor=<偏移>&limit=<50>` 全量翻页 —— agent 做汇总用这一条
+      // 一次请求只**读**、不改任何记录：反馈没有决定类端点（要处理它请当作审核的一部分人工做）。
+      // ================================================================
+      if (req.method === 'GET' && p === `${ADMIN_API}/feedback/file`) {
+        const mod = (url.searchParams.get('mod') || '').trim();
+        const fbId = (url.searchParams.get('fb') || '').trim();
+        const n = Number(url.searchParams.get('n') || '');
+        if (!ID_RE.test(mod) || !FB_ID_RE.test(fbId) || !Number.isInteger(n) || n < 1 || n > FB_IMG_MAX) {
+          return sendJson(res, 400, { error: `mod / fb 要是 6–32 位小写字母数字，n 要是 1–${FB_IMG_MAX}` });
+        }
+        const fb = listFeedback(mod).find((x) => x.id === fbId);
+        const img = fb && (Array.isArray(fb.images) ? fb.images : []).find((i) => Number(i.n) === n);
+        if (!img) return sendJson(res, 404, { error: '没有这张图片' });
+        const file = join(fbDirOf(mod), String(img.file || ''));
+        if (!existsSync(file)) return sendJson(res, 404, { error: '没有这张图片' });
+        // 发的时候**重新嗅一次头**，content-type 只认磁盘上的字节 —— 不读扩展名、也不读记录里那一栏。
+        // （落盘与读取之间文件若被别的途径换过，这里就是最后一道；认不出来就 404，一个字节都不发。）
+        let head = null;
+        try { head = readFileSync(file).subarray(0, 16); } catch { return sendJson(res, 404, { error: '读不了这张图片' }); }
+        const sniffed = sniffImage(head);
+        if (!sniffed) return sendJson(res, 404, { error: '认不出这张图的文件头，不发' });
+        return sendFbImage(res, file, sniffed.mediaType);
+      }
+
+      if (req.method === 'GET' && p === `${ADMIN_API}/feedback`) {
+        const modParam = (url.searchParams.get('mod') || '').trim();
+        const groupParam = (url.searchParams.get('group') || '').trim();
+        const wantAll = url.searchParams.get('all') === '1';
+        const batchKeys = ['ids', 'batch', 'items', 'list'].filter((k) => url.searchParams.has(k));
+        if (batchKeys.length) {
+          return sendJson(res, 400, { error: `合并查看请用 mod=a,b（逗号分隔）或 group=<编号>；报文里出现了：${batchKeys.join(' / ')}` });
+        }
+        const all = allSubs();
+        const byId = new Map(all.map((s) => [s.id, s]));
+        let ids = [];
+        let mode = '';
+        if (wantAll) { ids = all.map((s) => s.id); mode = 'all'; } else if (groupParam) {
+          if (!ID_RE.test(groupParam)) return sendJson(res, 400, { error: 'group 形状不对（6–32 位小写字母/数字）' });
+          if (!byId.has(groupParam)) return sendJson(res, 404, { error: '没有这条投稿' });
+          const index = await fbGroupIndex();
+          ids = fbGroupMembers(index, groupParam);
+          mode = 'group';
+        } else if (modParam) {
+          const parts = modParam.split(',').map((s) => s.trim()).filter(Boolean);
+          if (!parts.length) return sendJson(res, 400, { error: 'mod 是空的（要给记录编号，多个用逗号分隔）' });
+          const bad = parts.filter((x) => !ID_RE.test(x));
+          if (bad.length) return sendJson(res, 400, { error: `mod 形状不对：${bad.join(' / ')}（6–32 位小写字母/数字）` });
+          if (parts.length > FB_MODS_MAX) return sendJson(res, 400, { error: `一次最多合并看 ${FB_MODS_MAX} 个 mod（要更多请用 ?all=1 翻页）` });
+          ids = [...new Set(parts)];
+          mode = 'merged';
+        } else {
+          return sendJson(res, 400, { error: `要给一个读法：?mod=<编号>[,<编号>…]（单条或合并）· ?group=<编号>（折叠同一款）· ?all=1（全量翻页，agent 用）` });
+        }
+        // 折叠索引：groupKey 与 members 都来自同一份判据（同 packId / compatOf 双向链）。
+        const index = await fbGroupIndex();
+        // 按处理状态筛（闭集，可逗号多选）：**不认识的值直接 400，不悄悄忽略** ——
+        // 与 `?kind=` 那一条同一口径（「我筛了但结果没变」是查不出来的误会）。
+        const stateRaw = String(url.searchParams.get('state') || '').trim();
+        let stateWanted = null;
+        if (stateRaw) {
+          const parts = stateRaw.split(',').map((s) => s.trim()).filter(Boolean);
+          const bad = parts.filter((s) => !FB_STATES.includes(s));
+          if (bad.length) {
+            return sendJson(res, 400, { error: `state 只能是 ${FB_STATES.join(' / ')}（可以多选：逗号分隔）。不认识的值：${bad.join(' / ')}` });
+          }
+          if (parts.length) stateWanted = [...new Set(parts)];
+        }
+        const limitRaw = Number(url.searchParams.get('limit') || FB_PAGE_DEFAULT);
+        const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, FB_PAGE_MAX) : FB_PAGE_DEFAULT;
+        const cursorRaw = Number(url.searchParams.get('cursor') || 0);
+        const offset = Number.isInteger(cursorRaw) && cursorRaw >= 0 ? cursorRaw : 0;
+
+        const mods = ids.map((id) => {
+          const s = byId.get(id);
+          const fbs = s ? listFeedback(id) : [];
+          return {
+            id,
+            name: s ? s.name : null,
+            exists: !!s,
+            area: s ? s.area : null,
+            state: s ? s.state : null,
+            kind: s ? s.kind : null,
+            packKind: s ? kindOfRec(s) : null,
+            packId: s ? index.packIdOf.get(id) ?? null : null,
+            groupKey: s ? index.byRec.get(id) ?? null : null,
+            feedbackCount: fbs.length,
+            // 还没看过的条数（缺省读成 `new`）—— 审核台那一格与导航徽标都用它。
+            feedbackNew: fbs.filter((x) => fbStateOf(x) === 'new').length,
+            imageCount: fbs.reduce((n, x) => n + (Array.isArray(x.images) ? x.images.length : 0), 0),
+          };
+        });
+        let items = [];
+        for (const id of ids) {
+          const s = byId.get(id);
+          for (const fb of listFeedback(id)) {
+            const imgs = Array.isArray(fb.images) ? fb.images : [];
+            items.push({
+              id: fb.id, mod: id, modName: s ? s.name : null,
+              area: s ? s.area : null, state: s ? s.state : null,
+              packId: s ? index.packIdOf.get(id) ?? null : null,
+              groupKey: s ? index.byRec.get(id) ?? null : null,
+              at: fb.at, kind: fb.kind, severity: fb.severity,
+              // 处理状态（维护者侧那一栏）。老文件里没有这一栏 ⇒ 读成 `new`（不回填、不猜）。
+              state: fbStateOf(fb), stateAt: fb.stateAt ?? null, stateReason: fb.stateReason ?? null,
+              text: fb.text, engineVersion: fb.engineVersion ?? null, contact: fb.contact ?? null,
+              ip: fb.ip ?? null, dedupe: fb.dedupe ?? null,
+              images: imgs.map((i) => ({ ...fbImageMeta(i), url: `${ADMIN_API}/feedback/file?mod=${id}&fb=${fb.id}&n=${i.n}` })),
+            });
+          }
+        }
+        // 时间倒序（最近的一条先看），与审核台列表那一口径一致。
+        items.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+        // 状态筛在**翻页之前**做：`?all=1&state=new` 的 cursor 要数的是「筛过之后的那一批」，
+        // 否则翻两页就会跳过或重复未处理的条目。
+        const shown = stateWanted ? items.filter((x) => stateWanted.includes(x.state)) : items;
+        const paged = wantAll ? shown.slice(offset, offset + limit) : shown;
+        const groups = {};
+        for (const m of mods) {
+          if (!m.groupKey) continue;
+          if (!groups[m.groupKey]) groups[m.groupKey] = [];
+          groups[m.groupKey].push(m.id);
+        }
+        const tally = (key, list = items) => list.reduce((acc, x) => { acc[x[key]] = (acc[x[key]] || 0) + 1; return acc; }, {});
+        return sendJson(res, 200, {
+          ok: true, mode, at: nowIso(),
+          items: paged,
+          mods,
+          groups,
+          counts: {
+            records: ids.length,
+            missing: mods.filter((m) => !m.exists).map((m) => m.id),
+            items: shown.length,               // **筛过之后**的条数（屏幕上真实那一批）
+            matched: items.length,             // 没筛之前一共几条（「筛掉了多少」要能对证）
+            shown: paged.length,
+            filtered: stateWanted ? stateWanted.join(',') : null,
+            byKind: tally('kind', shown),
+            bySeverity: tally('severity', shown),
+            byState: tally('state', shown),
+            withImages: shown.filter((x) => x.images.length).length,
+            imageFiles: shown.reduce((n, x) => n + x.images.length, 0),
+          },
+          limits: { modsMax: FB_MODS_MAX, pageMax: FB_PAGE_MAX, imgMax: FB_IMG_MAX, textMax: FB_TEXT_MAX },
+          cursor: wantAll && offset + paged.length < shown.length ? String(offset + paged.length) : null,
+          privacy: '这一份响应含反馈正文与图片地址，**只在管理口内**（过 ADMIN_IPS + 令牌/Basic 才发得出）。'
+            + '公开面（/api/mods、/mods、/api/status、/api/publisher/*）读不到这里的任何一个字节。',
+        });
+      }
+
+      // 标状态：`new`（没看过）/ `read`（看过了）/ `doing`（在办）/ `done`（办完）。
+      // **一次只认一条**（`id` + `fb` 都要明确写出）—— AGENTS.md §8.1 那一族端点的铁律，
+      // 报文里出现 `ids` / `batch` / `items` / `list` 一律 400。幂等：目标值已经是它 ⇒ `changed:false`，
+      // **不写盘、不留第二笔流水**。只动状态那一栏，正文 / 图片 / 图片令牌哈希一个字节都不碰。
+      if (req.method === 'POST' && p === `${ADMIN_API}/fb-state`) {
+        const raw = await readBody(req, 16 * 1024);
+        let inObj = {};
+        try { inObj = JSON.parse(raw.toString('utf8') || '{}'); } catch { return sendJson(res, 400, { error: 'JSON 读不了' }); }
+        const batchKeys = ['ids', 'batch', 'items', 'list'].filter((k) => k in inObj);
+        if (batchKeys.length) {
+          return sendJson(res, 400, {
+            error: `本端点只认一条明确指定的反馈（id + fb），不收「一批」（多了这些键：${batchKeys.join(' / ')}）。要标 N 条就发 N 次，每条单独核对。`,
+          });
+        }
+        const id = String(inObj.id || '');
+        const fbId = String(inObj.fb || '');
+        const state = String(inObj.state || '');
+        const reason = inObj.reason == null ? null : String(inObj.reason).trim();
+        if (!ID_RE.test(id)) return sendJson(res, 400, { error: 'id 形状不对（投稿编号：6–32 位小写字母/数字）' });
+        if (!FB_ID_RE.test(fbId)) return sendJson(res, 400, { error: 'fb 形状不对（反馈编号：6–32 位小写字母/数字）' });
+        if (!FB_STATES.includes(state)) {
+          return sendJson(res, 400, { error: `state 只能是 ${FB_STATES.join(' / ')}` });
+        }
+        if (reason && reason.length > FB_REASON_MAX) {
+          return sendJson(res, 400, { error: `理由太长（最多 ${FB_REASON_MAX} 字，这一条 ${reason.length} 字）` });
+        }
+        const dir = fbDirOf(id);
+        if (!dir) return sendJson(res, 404, { error: '没有这条投稿' });
+        const file = join(dir, `${fbId}.json`);
+        const rec = readJson(file);
+        // 「这条反馈不存在」与「它不属于这个 mod」回同一句话 —— 不做存在性探针。
+        if (!rec || String(rec.mod || '') !== id) return sendJson(res, 404, { error: '没有这条反馈' });
+        const cur = fbStateOf(rec);
+        const sameReason = reason === null || reason === (rec.stateReason ?? null);
+        if (cur === state && sameReason) {
+          return sendJson(res, 200, {
+            ok: true, changed: false, id, fb: fbId, state, at: rec.stateAt ?? null,
+            note: `这一条已经是 ${state} 了，没有写第二笔（幂等）。`,
+          });
+        }
+        const at = nowIso();
+        const hist = Array.isArray(rec.stateHistory) ? rec.stateHistory : [];
+        writeJson(file, {
+          ...rec,
+          state,
+          stateAt: at,
+          stateBy: 'admin',
+          stateReason: reason ?? (rec.stateReason ?? null),
+          stateHistory: [...hist, { at, from: cur, to: state, by: 'admin', reason: reason ?? null }],
+        });
+        audit('fbState', {
+          id, ip, actor: 'admin', admin: true,
+          detail: { fb: fbId, from: cur, to: state, hasReason: !!reason },
+        });
+        return sendJson(res, 200, {
+          ok: true, changed: true, id, fb: fbId, from: cur, state, at,
+          untouched: '正文 / 图片 / 图片令牌哈希 一字未动；只改状态这一栏（流水只加不减）。',
+        });
       }
 
       if (req.method === 'GET' && p.startsWith(`${ADMIN_API}/detail/`)) {
@@ -3973,6 +4531,12 @@ server.listen(PORT, HOST, () => {
   console.log(`  以新为准 ${ADMIN_API}/supersede（同一个 pack.id 的新版上线后，把旧的转 superseded + replacedBy；`
     + '只认一对、必须同 pack.id、不得成环；下架不删文件）');
   console.log(`  手工发码 ${ADMIN_API}/issue-claim（老记录认领 / 令牌丢失找回；明文只出现一次，盘上只存哈希）`);
+  console.log(`  提交反馈 POST /api/feedback?mod=<编号>[&dedupe=<幂等键>]（公开、无账号；正文 JSON，限流同发布者那一档）`);
+  console.log(`            POST /api/feedback/image?mod=&fb=（裸字节 + x-feedback-token；只收 PNG/JPEG/GIF/WEBP，一条最多 ${FB_IMG_MAX} 张）`);
+  console.log(`  看反馈   GET ${ADMIN_API}/feedback?mod=<编号> | ?mod=a,b（合并）| ?group=<编号>（折叠同款）| ?all=1&cursor=&limit=`);
+  console.log(`            GET ${ADMIN_API}/feedback/file?mod=&fb=&n= —— **反馈正文与图片只有维护者能读**`);
+  console.log(`  反馈页面 ${BASE_URL}/${ADMIN_PATH}/feedback-view（审核台导航里那一格「反馈」；同一道门）`);
+  console.log(`  标状态   POST ${ADMIN_API}/fb-state（id + fb 一条一次；new/read/doing/done；幂等、不写第二笔）`);
   console.log(`  数据目录 ${DATA_DIR}`);
   console.log(`  审计日志 ${AUDIT_LOG}（追加式 JSONL；不记令牌明文）`);
   console.log(`  上传上限 ${(MAX_BYTES / 1048576).toFixed(0)} MB`);

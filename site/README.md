@@ -215,10 +215,12 @@ node site/selftest.mjs             # ① 公网投稿链（上传 → 下载 →
 node site/selftest-admin.mjs       # ② 审核台 / 公网列表**页面**跑不跑得起来（见下）
 node site/selftest-compat.mjs      # ③ 兼容包整条链 + 反例（临时数据目录，不碰你的数据，不联网）
 node site/selftest-publisher.mjs   # ④ 发布者自助（认领 / 改元数据 / 换包体 / 自撤 / 三档删除 / 功能类目 6 类）+ 管理员确认 + 筛选 + 审计日志
+node site/selftest-feedback.mjs    # ⑤ mod 反馈（提交 / 单看与合并 / 图文 / 仅维护者可读 / 公开面逐字节不变）
 ```
 
 ⚠️ **四个必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`
 （另外两个各用 8799/8801 与 8809），同时跑会互相抢端口、结果不可信。
+⑤ `selftest-feedback.mjs` 用 **8811**，与上面四个都不撞，可单独跑。
 服务器上的绝对路径写法见下面「改完必跑的**四个**自测」。
 
 `selftest-admin.mjs` 专治一类「接口全好、页面却是死的」故障：审核台是一整个内联 `<script>`，
@@ -627,6 +629,59 @@ ADMIN_TOKEN=… node site/migrate-funkind.mjs --data … --write --base http://1
 
 公开面的可见性判据只有一条：`isPubliclyVisible = state === 'approved' && withdrawRequested !== true`。
 
+## mod 反馈：提交、单独看与合并看（2026-10-13 新增）
+
+业主需求四条：① 任何人都能给某个 mod 提交反馈；② 每个 mod 可单独查看、也可多个 mod 合并查看；
+③ 支持 agent 接入；④ 支持文字与图片 —— 而**反馈正文与图片只有网站维护者看得到**。
+完整接口规格（字段、限制、错误码、agent 用法）在 [`../docs/FEEDBACK-API.md`](../docs/FEEDBACK-API.md)，
+这一节只讲**站上怎么点、怎么读**。
+
+| 动作 | 端点 | 鉴权 |
+|---|---|---|
+| 提交反馈（文字） | `POST /api/feedback?mod=<记录编号>[&dedupe=<幂等键>]` | **无**（公开，与 `/api/submit` 同一立场） |
+| 贴一张图 | `POST /api/feedback/image?mod=&fb=`（裸字节 + `x-feedback-token` 头） | 图片令牌 |
+| 看反馈 | `GET /api/<ADMIN_PATH>/feedback?mod=` \| `?mod=a,b` \| `?group=` \| `?all=1` | 管理口两道（`ADMIN_IPS` + 令牌 / Basic） |
+| 取某一张图 | `GET /api/<ADMIN_PATH>/feedback/file?mod=&fb=&n=` | 同上 |
+| 标处理状态 | `POST /api/<ADMIN_PATH>/fb-state`（`{id, fb, state, reason?}`） | 同上 |
+| **维护者看的那一页** | `GET /<ADMIN_PATH>/feedback-view`（审核台导航里多了「反馈」那一格） | 同上 |
+| 人手填的表单页 | `GET /feedback?mod=<记录编号>`（`/mods` 每张卡片有「提交反馈」入口） | 无 |
+
+四条要点：
+
+- **只有维护者能读，而且结构上就漏不出去**：反馈写在**被反馈那条记录的 `feedback/` 子目录**里，
+  **不进 `meta.json`**；而公开面（`/api/mods`、`/mods`、`/api/status`、`/api/publisher/*`、`/api/file/*`）
+  读的就是 `meta.json`。`selftest-feedback.mjs` 用「写完反馈后 `/api/mods` **逐字节不变**」把这条钉住。
+  公开面也**没有**任何读反馈的路：`GET /api/feedback` ⇒ 404。
+- **「同一款 mod」要折叠着看**：站上一份 mod 常常是几条记录 —— 同一个 `pack.json.id` 的两条
+  （引擎不允许同 id 并存），以及原件 + 兼容改写版（`compatOf` 那条链）。按记录编号分组会把反馈
+  劈成几半，所以读侧判据是 **同 `packId` ∪ `compatOf` 双向链**，`?group=<编号>` 一次给全组。
+- **图片只收栅格图**（PNG / JPEG / GIF / WEBP，按**文件头**判），**SVG 与 HTML 一律 400** ——
+  站点没有 CSP 响应头，一张内嵌脚本的 SVG 就是持久型 XSS，而它看起来完全「像一张图」。
+  单张 ≤2 MB、一条 ≤4 张；站点零依赖 ⇒ **不转码、不缩图**，存进去的字节 = 发出来的字节；
+  发的时候**再嗅一次头**才定 `content-type`，认不出就 404、一个字节都不发。
+- **状态与页面**：`new / read / doing / done` 四档 —— 文件里**没有**这一栏就读成 `new`（不回填、不猜；
+  缺省绝不可能是 `done`，否则「没人看过」会被统计成「办完了」）。标状态**一次只认一条**（`id` + `fb` 都要明确写出，
+  出现 `ids`/`batch`/`items`/`list` ⇒ 400，与 §8.1 同一条铁律），幂等（目标值已是它 ⇒ `changed:false`、不留第二笔流水），
+  **只动状态那一栏**：正文 / 图片 / 令牌哈希不碰。读侧配 `?state=new`（可多选）与 `counts.byState` / `mods[].feedbackNew`。
+  维护者那一页是 `GET /<ADMIN_PATH>/feedback-view`：**单独一页，不是审核台的第四个视图** ——
+  `ADMIN_VIEWS` 白名单仍然只有 `main / approved / rejected`（坏 `?view=` 照旧 404，`selftest-admin.mjs` 那条断言没动）。
+  为什么不塞进 `admin.html`：那一页是一整个内联 `<script>`，顶层抛一次错就把后面所有绑定点全带哑
+  （2026-10-11 的 TDZ 事故就是这类），分开才互不牵连。
+
+落盘形态（备份照旧只备份 `DATA_DIR`）：
+
+```
+<区>/<记录编号>/feedback/<反馈编号>.json      正文 + 元数据 + 图片清单 + **图片令牌哈希** + 状态与流水
+<区>/<记录编号>/feedback/<反馈编号>-<序>.<ext> 图片原字节
+```
+
+反馈**不住在 `DATA_DIR` 根、也不新开区**：它落在被反馈那条记录的目录里面。根下依旧只有上游那几个目录
+（`submissions/` `flagged/` `compat/`，加上 2026-10-14 硬删用的 `tombstones/`），`selftest-feedback.mjs` 钉的就是这个。
+图片令牌与认领码、发布者令牌同一套做法：**盘上只有 sha256**（域分隔前缀
+`sp-modsite/feedback-image-token/v1:`），明文只在提交那一次的响应里出现一回，`audit.jsonl` 里
+一个凭据字节都不写。写端点复用发布者那一档限流（每 IP 每 10 分钟 60 次）；
+**没有为反馈另开阈值** —— agent 配额与限流是单独一份提案。
+反馈**没有删除口、也没有「标记已处理」那类决定端点**（那需要新的操作纪律，见 FEEDBACK-API §7 待裁决）。
 
 ## 数据与备份
 
@@ -637,26 +692,28 @@ ADMIN_TOKEN=… node site/migrate-funkind.mjs --data … --write --base http://1
   - `tombstones/<编号>.json` —— ⚠️ **只给硬删（档 3）用**：物理删除前先落的墓碑（id / 包名 / 包内 id / sha256 / 大小 / 删掉的文件清单 / 时间 / actor / ip / 理由）。
     **它不参与任何业务读**（公开面、审核台都不读），只有两个用途：事后查、以及让 `/restore` 能区分「被物理删过（410）」与「压根没这条（404）」
   - `audit.jsonl` —— 只追加的跨记录事件流
+  - 三个区的每一条都可能多一个 `<编号>/feedback/`子目录 —— **mod 反馈**（`<反馈编号>.json` + 图片原字节），
+    只有管理口读得到，公开面不看它；⚠️ 它住在记录目录**里面**，所以「硬删（档 3）」会连反馈一起物理删掉
 - **备份就备份这一个目录**；没有数据库
 - 想清掉一条投稿：删掉对应目录即可（公开列表会立刻少一条）
 - 想**一次清掉所有疑似素材**：`rm -rf <DATA_DIR>/flagged`（它们本来就是为了便于整体处理才分开存的）
 
 ## 更新服务器上这一个服务
 
-运行时代码只有 `server.mjs` / `review.mjs` / `zip.mjs` 三个 `.mjs`，加一个 `pages/`（4 个 `.html` + `theme.css`）；目录里另有四个 `selftest*.mjs`，同一次一起传。更新时**先备份、再换文件、再重启**，全程只碰 `/opt/sp-modsite` 与 `sp-modsite.service`：
+运行时代码只有 `server.mjs` / `review.mjs` / `zip.mjs` / `feedback.mjs` 四个 `.mjs`，加一个 `pages/`（6 个 `.html` + `theme.css`）；目录里另有五个 `selftest*.mjs`，同一次一起传。更新时**先备份、再换文件、再重启**，全程只碰 `/opt/sp-modsite` 与 `sp-modsite.service`：
 
 ```bash
 # ① 备份 + 记下旧版哈希（可回滚的硬条件）
 TS=$(date +%Y%m%d-%H%M%S)
 cp -a /opt/sp-modsite /opt/sp-modsite.bak-$TS
-sha256sum /opt/sp-modsite/{server.mjs,review.mjs,zip.mjs} | tee /opt/sp-modsite.bak-$TS.sha256
+sha256sum /opt/sp-modsite/{server.mjs,review.mjs,zip.mjs,feedback.mjs} | tee /opt/sp-modsite.bak-$TS.sha256
 ```
 
 ```powershell
 # ② 本机（Windows）传上去。--exclude runtime 免得动服务器上自装的 Node
-scp site\server.mjs site\review.mjs site\zip.mjs sp:/opt/sp-modsite/
+scp site\server.mjs site\review.mjs site\zip.mjs site\feedback.mjs sp:/opt/sp-modsite/
 scp site\pages\*.html site\pages\theme.css sp:/opt/sp-modsite/pages/
-scp site\selftest.mjs site\selftest-admin.mjs site\selftest-compat.mjs site\selftest-publisher.mjs sp:/opt/sp-modsite/
+scp site\selftest.mjs site\selftest-admin.mjs site\selftest-compat.mjs site\selftest-publisher.mjs site\selftest-feedback.mjs sp:/opt/sp-modsite/
 ```
 
 ```bash
@@ -667,6 +724,8 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/healthz
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/mods
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/theme.css
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/feedback        # 200 = 反馈表单页在
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/api/feedback    # 必须 404 = 反馈**没有**公开读口
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/review-2228      # 401 = 登录框在，正常
 
 # ④ 回滚（一条）
@@ -719,7 +778,7 @@ cp -a /opt/sp-modsite.bak-<时间戳>/. /opt/sp-modsite/ && systemctl restart sp
 失败路径真的走分类函数。**在改前的文件上这一节必须红**（index 10 条 + mine 8 条），改后必须全绿；
 `site/selftest-admin.mjs` 的 DOM 桩也必须提供 `AbortController`（否则页面点上传会 ReferenceError）。
 
-### 改完必跑的**四个**自测（2026-10-13 起）
+### 改完必跑的**五个**自测（2026-10-13 起）
 
 ```bash
 cd /opt/sp-modsite
@@ -727,13 +786,20 @@ cd /opt/sp-modsite
 /opt/sp-modsite/runtime/node/bin/node selftest-admin.mjs       # ② 审核台 / 公网列表**页面**跑不跑得起来
 /opt/sp-modsite/runtime/node/bin/node selftest-compat.mjs      # ③ 兼容包整条链 + 反例
 /opt/sp-modsite/runtime/node/bin/node selftest-publisher.mjs   # ④ 发布者自助（三档删除 / 功能类目）+ 管理员确认 + 筛选 + 审计日志
+/opt/sp-modsite/runtime/node/bin/node selftest-feedback.mjs    # ⑤ mod 反馈：提交 / 单看与合并 / 图文 / 仅维护者可读
 ```
 
-**四个全绿才算改完**（`selftest-publisher.mjs` 是 2026-10-13 新增的那一个，专测本次这条链）。
-⚠️ **四个必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`，
-**同时跑会互相抢端口**（`EADDRINUSE`，或更糟 —— 一个连到另一个的实例上，结果不可信）。
-四个都跑在**临时数据目录**（`/tmp/...`）上，**不碰** `/var/lib/sp-modsite`，不联网。
+**五个全绿才算改完**（`selftest-publisher.mjs` 与 `selftest-feedback.mjs` 是 2026-10-13 新增的那两个，
+各测一条链：发布者自助、mod 反馈）。
+⚠️ **③ 与 ④ 必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`，
+**同时跑会互相抢端口**（`EADDRINUSE`，或更糟 —— 一个连到另一个的实例上，结果不可信）；
+① ② ⑤ 各用 8799/8801、8809、8811，与它们都不撞。
+五个都跑在**临时数据目录**（`/tmp/...`）上，**不碰** `/var/lib/sp-modsite`，不联网。
 服务器上 `node` 不在 `PATH` 里，用单元文件里那个绝对路径（`/opt/sp-modsite/runtime/node/bin/node`）。
+
+> 第五个专门钉两条**隐私与安全**的反面：写完反馈后 `/api/mods` 必须**逐字节不变**（反馈不能漏进公开面），
+> 以及图片这一路 **SVG / HTML 必须被拒**（站点没有 CSP，那是脚本面不是图片面）。这两条哪天变绿成红，
+> 就是有人在反馈这一层改歪了。
 
 > `/var/lib/sp-modsite`（数据）**不在**这套步骤里 —— 更新代码不碰数据；回滚也不会回退数据。
 > 服务器上的 `sync.service`、gunicorn、nginx 等都不属于本服务，别动。
