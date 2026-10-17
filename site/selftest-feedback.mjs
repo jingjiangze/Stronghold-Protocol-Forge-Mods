@@ -18,6 +18,9 @@
 //      `/api/status`（回执令牌那一读）里搜不到反馈正文；公开面不存在任何读反馈的路
 //   ⑥  站点既有不变量不破：`DATA_DIR` 根下没有 `.part` 散文件；跑完文件数**只增不减**（零删除）；
 //      那条记录的 `decision.json` 与 `meta.json` 一个字节都没被反馈动过
+//   ⑦b S1（2026-10-14 把叠加层从上游 `renderPage` 里搬出来）换到的三条口径：
+//      样式表链接与上游那一份逐字相同、审核台「反馈」那一格推导出的地址命中真路由、
+//      `server.mjs` 里不再出现 `__FB_MOD__` / `__ADMIN_PAGE__` 的填充
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, readdirSync, existsSync, writeFileSync, rmSync } from 'node:fs';
@@ -360,10 +363,29 @@ try {
   const apiPathView = await admin('/api/admin/feedback-view');
   check(apiPathView.status === 404, '把 `-view` 挂到 API 前缀上 ⇒ 404（页面只有一条路，不开第二道门）');
   const navHtml = await (await fetch(`${BASE}/admin`, { headers: { 'x-admin-token': TOKEN } })).text();
-  check(navHtml.includes('href="/admin/feedback-view"'), '审核台导航里多了「反馈」那一格（真实地址）');
+  check(navHtml.includes('id="vFeedback"'), '审核台导航里多了「反馈」那一格');
+  check(!navHtml.includes('__ADMIN_PAGE__'), '审核台页面里没有未替换的页面前缀占位符（那格的地址改由脚本推）');
+  check(navHtml.includes("$('vFeedback').href = API.replace"), '那一格的 href 确实由脚本挂上（不是留一个死链）');
+  // 地址是**推导**出来的，所以判据也按同一条推导走一遍并真去访问：公式写错就红，不靠肉眼比对字符串。
+  const apiInNav = (navHtml.match(/const API = '([^']*)'/) || [])[1] || '';
+  const fbHref = apiInNav.replace(/^\/api(?=\/)/, '') + '/feedback-view';
+  const fbHrefOk = fbHref === '/admin/feedback-view'
+    && (await fetch(`${BASE}${fbHref}`, { headers: { 'x-admin-token': TOKEN } })).status === 200;
+  check(fbHrefOk, '按页面里的推导算出的地址就是那条真路由', fbHref);
   check(navHtml.includes('?view=main') && navHtml.includes('?view=approved') && navHtml.includes('?view=rejected'),
     '三个视图那三条真实地址一个字没动（反馈不是第四个视图）');
   check((await fetch(`${BASE}/api/feedback-view`)).status === 404, '把 `-view` 挂到公开前缀上 ⇒ 404（不给出第二条路）');
+
+  console.log('⑦b S1 的三条口径（渲染解耦后）');
+  const serverSrc = readFileSync(join(HERE, 'server.mjs'), 'utf8');
+  const cssUpstream = (serverSrc.match(/\.split\('__CSS__'\)\.join\('([^']*)'\)/) || [])[1] || '';
+  const cssFeedback = (serverSrc.match(/const FEEDBACK_THEME_CSS = '([^']*)'/) || [])[1] || '';
+  check(cssFeedback !== '' && cssFeedback === cssUpstream,
+    '反馈页的样式表链接与上游 `renderPage` 注入的那一份**逐字相同**（版本串漂移就红）', `${cssFeedback} vs ${cssUpstream}`);
+  check(fbPage.includes(`href="${cssFeedback}"`) && viewHtml.includes(`href="${cssFeedback}"`),
+    '两页都真的带上了这份链接（不是只有常量对得上）');
+  check(!/\.split\('__FB_MOD__'\)/.test(serverSrc) && !/\.split\('__ADMIN_PAGE__'\)/.test(serverSrc),
+    '`server.mjs` 里已没有这两个槽的填充 ⇒ 上游 `renderPage` 体内不留我方代码（填充住在 feedback.mjs）');
   const metaAfter = readFileSync(join(dataDir, 'submissions', A.id, 'meta.json'), 'utf8');
   check(metaAfter === metaSnapBefore, '标状态后 `meta.json` 逐字节不变（公开面读取源照旧干净）');
 

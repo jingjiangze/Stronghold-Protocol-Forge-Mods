@@ -79,7 +79,7 @@ import {
   FB_FIELDS, FB_KINDS, FB_SEVERITIES, FB_TEXT_MAX, FB_SHORT_MAX, FB_BODY_MAX,
   FB_IMG_MAX, FB_IMG_BYTES_MAX, FB_MODS_MAX, FB_PAGE_DEFAULT, FB_PAGE_MAX,
   FB_DEDUPE_RE, FB_ID_RE, FB_STATES, FB_REASON_MAX, fbStateOf,
-  normalizeFeedback, sniffImage, fbGroupKey,
+  normalizeFeedback, sniffImage, fbGroupKey, fillFeedbackPage,
 } from './feedback.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -947,6 +947,36 @@ const sendFbImage = (res, path, mediaType) => {
   createReadStream(path).pipe(res);
 };
 
+/**
+ * 样式表链接。这个串**必须**与上游 `renderPage` 里 `__CSS__` 注入的那个一致，否则反馈页
+ * 与其余页面吃到不同缓存版本（浏览器上一份新CSS一份旧CSS，最难查的那种）。
+ * 抄一份在这里是 S1 换掉「寄在 renderPage 体内」这笔账的**唯一**代价，
+ * 由 `selftest-feedback.mjs` 逐字比对上游那一行来守（对不上就红）。
+ */
+const FEEDBACK_THEME_CSS = '/theme.css?v=3';
+
+/**
+ * 反馈那两页**自己发**（S1，2026-10-14）：形状与上游的 `renderPage` 一致，但**不经过它**。
+ *
+ * 为什么不复用 `renderPage`：那个函数是上游每次加筛选维度都要插一行的老住户（`__KINDS__`
+ * / `__FUNCS__` / `__MAX_MB__` 都长在里面），我方往它体内挂代码 ⇒ 每轮上游同步必撞一块。
+ * 现在它**逐字节等于上游**，判据由 `.github/overlay-check.mjs` 的 `noTouch` 守。
+ * 少掉的那几个槽（`__VIEW__` / `__KINDS__` / `__FUNCS__` / `__MAX_MB__`）反馈页一个都不用 ——
+ * 真需要谁的注入值，就在调用处把值当参数传进来，不靠共享一个全局填充器。
+ */
+const renderFeedbackPage = (res, name, opts = {}) => {
+  const p = join(PAGES, name);
+  if (!existsSync(p)) return send(res, 404, '页面不存在', { 'content-type': 'text/plain; charset=utf-8' });
+  const html = fillFeedbackPage(readFileSync(p, 'utf8'), {
+    css: FEEDBACK_THEME_CSS,
+    adminApi: ADMIN_API,
+    adminPage: `/${ADMIN_PATH}`,
+    fbMod: opts.fbMod,
+    idRe: ID_RE,
+  });
+  send(res, 200, html, { 'content-type': 'text/html; charset=utf-8' });
+};
+
 /** 包里的 pack.json（只读它一条，最多 1 MB；读不到/解析不了都返回 null）。 */
 async function packJsonFor(file) {
   const m = await readZipFile(file, ['pack.json']);
@@ -1385,7 +1415,6 @@ const ADMIN_VIEWS = ['main', 'approved', 'rejected'];
  * 列表页多一个 __KINDS__（当前分类筛选，同样白名单校验过；只填进 data 属性，不拼 HTML）。
  * ⭐ __MAX_MB__（2026-10-14 上传断连修复）：上传页要**在本地先判体积**、并把「上限多少 MB」
  *    写进 413 的提示里，所以这个数必须由服务端注入 —— 前端自己写死 100 就会与 `MAX_MB` 漂移。
- * 反馈页多一个 __FB_MOD__（要反馈的那条记录编号，同样**先过 ID_RE** 才注入）。
  */
 const renderPage = (res, name, opts = {}) => {
   const p = join(PAGES, name);
@@ -1394,9 +1423,6 @@ const renderPage = (res, name, opts = {}) => {
   const kinds = Array.isArray(opts.kinds) ? opts.kinds.filter((k) => PACK_KINDS.includes(k)) : [];
   // ⭐ 功能类目的当前筛选（同一个白名单纪律：只注入闭集里过滤过的值）。
   const funcs = Array.isArray(opts.funcs) ? opts.funcs.filter((k) => FUNC_KINDS.includes(k)) : [];
-  // __FB_MOD__ 与 __KINDS__ 同一口径：URL 上的任意值**绝不**进 HTML，形状不对就当没给。
-  const fbRaw = String(opts.fbMod || '');
-  const fbMod = ID_RE.test(fbRaw) ? fbRaw : '';
   const html = readFileSync(p, 'utf8')
     .split('__CSS__').join('/theme.css?v=3')
     .split('__ADMIN_API__').join(ADMIN_API)
@@ -1404,10 +1430,6 @@ const renderPage = (res, name, opts = {}) => {
     // __KINDS__ 只注入**闭集里过滤过**的值（逗号分隔）；不传就是空串（= 现状）。
     .split('__KINDS__').join(kinds.join(','))
     .split('__FUNCS__').join(funcs.join(','))
-    .split('__FB_MOD__').join(fbMod)
-    // __ADMIN_PAGE__ = 审核页那一族的**页面**前缀（`/${ADMIN_PATH}`），与 __ADMIN_API__（`/api/...`）是两回事：
-    // 审核页导航里那个「反馈」格要跳到**另一个页面**，不是第四个 view —— 白名单仍然只有三个。
-    .split('__ADMIN_PAGE__').join(`/${ADMIN_PATH}`)
     // 上传上限（MB）：整数。只注入数字，别的什么都不拼。
     .split('__MAX_MB__').join(String(MAX_BYTES / 1048576));
   send(res, 200, html, { 'content-type': 'text/html; charset=utf-8' });
@@ -1547,11 +1569,6 @@ const server = createServer(async (req, res) => {
     // ℹ️ 这一页**本身不校验令牌**（页面里什么都没有，就是几个空表单）——
     //    真正的门在 `/api/publisher/*` 那几个端点上，每个都独立验令牌、独立限流。
     if (req.method === 'GET' && (p === '/mine' || p === '/mine.html')) return renderPage(res, 'mine.html');
-    // 反馈页（2026-10-13）：`/feedback?mod=<记录编号>`。它**只是那张写反馈的表单** ——
-    // 反馈的正文与图片只有维护者能看到，所以这里**没有**任何「看别人反馈」的公开口。
-    if (req.method === 'GET' && p === '/feedback') {
-      return renderPage(res, 'feedback.html', { fbMod: url.searchParams.get('mod') || '' });
-    }
     if (req.method === 'GET' && (p === '/mods' || p === '/mods.html')) {
       // ⭐ 分类筛选（需求 ③）：`/mods?kind=functional` / `?kind=functional,documentation`。
       // **不传 = 现状**（全量、三区照旧）。非法值 400 而不是悄悄忽略 —— 「筛了没变化」最难查。
@@ -1577,19 +1594,29 @@ const server = createServer(async (req, res) => {
       return sendAdminPage(res, view);
     }
     /**
-     * 反馈的审核侧页面（`/反馈` 那一格，2026-10-13）：**与审核页同一道门**（`ADMIN_IPS` + 令牌 / Basic）。
+     * 反馈那两页（2026-10-13 上线；2026-10-14 S1 把这两个口并成**一块**）。
      *
-     * 它是**另一个页面**，不是审核台的第四个视图 —— `ADMIN_VIEWS` 白名单仍然只有
-     * `main / approved / rejected`，`?view=<坏值>` 那条 404 判据一个字没动，
-     * `selftest-admin.mjs` 里那几条（三页相加 + 已隐藏 = 全部、坏 view 照旧 404）不受影响。
-     * 为什么不塞进 `admin.html`：那一页是一整个内联 `<script>`，它只要在顶层抛一次错，
-     * 后面所有 `onclick` 与自动载入就全哑（2026-10-11 的 TDZ 事故就是这么来的，
-     * `selftest-admin.mjs` 治的就是这一类）。反馈这块**单独一页**，两边互不带下去。
+     * 位置钉在上游分发链的**末尾**（`/healthz` 之前）—— 这是我方叠加层的固定纪律：
+     * 上游将来自己实现 `/feedback` 或 `…-view` 时**他的先生效**，我这份退化成兜底，不抢命名。
+     * 并成一块的收益就是同步时只可能撞这一处，而不是老住户 `renderPage` 那种「每轮必撞」。
+     *
+     * · `/feedback?mod=<记录编号>` 只是那张**写**反馈的表单；反馈正文与图片只有维护者能看到，
+     *   所以这里不存在任何「看别人反馈」的公开口。
+     * · `/<ADMIN_PATH>/feedback-view` 是审核侧那一页，与审核台**同一道门**（`ADMIN_IPS` + 令牌 / Basic）。
+     *   它是**另一个页面**，不是审核台的第四个视图 —— `ADMIN_VIEWS` 白名单仍然只有
+     *   `main / approved / rejected`，`?view=<坏值>` 那条 404 判据一个字没动，
+     *   `selftest-admin.mjs` 里那几条（三页相加 + 已隐藏 = 全部、坏 view 照旧 404）不受影响。
+     *   为什么不塞进 `admin.html`：那一页是一整个内联 `<script>`，它只要在顶层抛一次错，
+     *   后面所有 `onclick` 与自动载入就全哑（2026-10-11 的 TDZ 事故就是这么来的，
+     *   `selftest-admin.mjs` 治的就是这一类）。反馈这块**单独一页**，两边互不带下去。
      */
+    if (req.method === 'GET' && p === '/feedback') {
+      return renderFeedbackPage(res, 'feedback.html', { fbMod: url.searchParams.get('mod') || '' });
+    }
     if (req.method === 'GET' && p === `/${ADMIN_PATH}/feedback-view`) {
       if (!adminAllowed(req)) return sendJson(res, 403, { error: '这个地址不在管理白名单里（ADMIN_IPS）' });
       if (!isAdmin(req)) return askForLogin(res);
-      return renderPage(res, 'feedback-admin.html');
+      return renderFeedbackPage(res, 'feedback-admin.html');
     }
     if (req.method === 'GET' && p === '/healthz') {
       return sendJson(res, 200, { ok: true, at: nowIso(), submissions: allSubs().length });

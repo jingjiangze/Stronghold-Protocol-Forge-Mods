@@ -69,9 +69,11 @@
   <a id="vApproved" class="viewtab" href="?view=approved" data-jump="approved">已通过<span class="viewtab__n" id="nApproved">0</span></a>
   <a id="vRejected" class="viewtab" href="?view=rejected" data-jump="rejected">已打回<span class="viewtab__n" id="nRejected">0</span></a>
   <!-- 「反馈」是**另一个页面**，不是第四个视图：视图白名单仍然只有 main / approved / rejected，
-       坏 view 照旧 404（selftest-admin 那两条断言不受影响）。这一格是静态链接，
-       `paintView()` 只按 id 动 vMain / vApproved / vRejected 三格，不会来管它。 -->
-  <a id="vFeedback" class="viewtab" href="__ADMIN_PAGE__/feedback-view">反馈</a>
+       坏 view 照旧 404（selftest-admin 那两条断言不受影响）。地址不在这里写死：
+       审核前缀由环境变量决定，这一格在脚本里从 `API` 推出来（见 `vFeedback` 那一句），
+       这样服务端不必为它多注入一个页面前缀。`paintView()` 只按 id 动 vMain / vApproved /
+       vRejected 三格，不会来管它。 -->
+  <a id="vFeedback" class="viewtab" href="#">反馈</a>
   <!-- 「已隐藏」**不是第四个视图** —— 白名单里仍然只有 main / approved / rejected，坏 view 照旧 404。
        但它是一个**真按钮**（不是装饰用的计数格）：点它 = 勾上筛选栏的「显示已隐藏」+ 滚到那一条，
        否则业主勾掉的那几条就真的找不回来了。业主 2026-10-11 实测：「上面的跳转按钮有问题」。
@@ -234,6 +236,11 @@ const FUNC_TITLE = {
 let TOKEN = sessionStorage.getItem('adminToken') || '';
 const API = '__ADMIN_API__';
 const api = (p, opt = {}) => fetch(API + p, { ...opt, headers: { 'x-admin-token': TOKEN, ...(opt.headers || {}) } });
+
+// 「反馈」那一格（导航第四格）跳的是**另一个页面**，不是第四个视图，所以它的地址得自己拼：
+// `API` = `/api/<ADMIN_PATH>`（服务端注入的，前缀由环境变量决定）⇒ 去掉 `/api` 就是页面那一族的前缀。
+// 为什么不在 HTML 里写死：那要么暴露真实的审核前缀，要么在前缀被改过的部署上是坏链接。
+$('vFeedback').href = API.replace(/^\/api(?=\/)/, '') + '/feedback-view';
 
 // 「兼容者」空值的显示口径：**如实显示「未填」**。
 // 不许显示成空白（会让人以为那一栏就是原作者），也不许编一个名字顶上。
