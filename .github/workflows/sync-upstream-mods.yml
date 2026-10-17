@@ -4,7 +4,7 @@ name: sync-upstream-mods
 # 形状照已在姊妹仓跑绿的 `mirror-upstream-forge.yml`（真实 138 提交合并 + 门控 + 失败必响）：
 #   1. `main` 只 **fast-forward**；发现 `main` 上有自有提交 ⇒ 报错退出，不 force、不猜。
 #   2. `master` 用 **merge，不 reset** —— 叠加层提交不会被上游盖掉。
-#   3. **门控在 push 之前**（GITHUB_TOKEN 推分支不会再触发别的 workflow）：五个自测串行 + 叠加层检查器。
+#   3. **门控在 push 之前**（GITHUB_TOKEN 推分支不会再触发别的 workflow）：六个自测串行 + 叠加层检查器。
 #   4. **失败必须响**：冲突/门控红 ⇒ 推 `sync-conflict|sync-gatefail/<sha>-<branch>`（只放清单）+ 开 issue + `exit 1`。
 #      绝不推带 `<<<<<<<` 的树，也绝不「什么都没跑却报绿」。
 #
@@ -99,20 +99,22 @@ jobs:
             echo "::error::上游 $UP 与 master 冲突（清单见 SYNC-CONFLICTS 分支与本次摘要）"
           fi
 
-      - name: GATE — 五个自测（串行，同端口那两条不并行）
+      - name: GATE — 六个自测（串行，同端口那两条不并行）
         if: steps.m.outputs.merged == 'true'
         run: |
           set -uo pipefail
           node --version
           # ③ selftest-compat 与 ④ selftest-publisher 同用 PORT 8807 ⇒ 严格串行
-          for t in selftest.mjs selftest-admin.mjs selftest-compat.mjs selftest-publisher.mjs selftest-feedback.mjs; do
+          # selftest-packcheck 是纯函数自测（不起服务、不占端口），排在最后，跟谁都不抢。
+          for t in selftest.mjs selftest-admin.mjs selftest-compat.mjs selftest-publisher.mjs selftest-feedback.mjs selftest-packcheck.mjs; do
             printf '%-26s ' "$t"
             node "site/$t" > "/tmp/$t.log" 2>&1; rc=$?
             printf 'rc=%s pass=%s fail=%s\n' "$rc" "$(grep -ac '  ✓' /tmp/$t.log)" "$(grep -ac '✗' /tmp/$t.log)"
             [ "$rc" = 0 ] || { echo "::error::$t 红 —— 看本次运行的日志"; exit 1; }
           done
-          # 文档与实际脱节也算红：README「改完必跑」那一节必须列到第五个自测
+          # 文档与实际脱节也算红：README「改完必跑」那一节必须列到第六个自测
           grep -qa 'selftest-feedback.mjs' site/README.md || { echo "::error::README 的自测清单漏了 selftest-feedback"; exit 1; }
+          grep -qa 'selftest-packcheck.mjs' site/README.md || { echo "::error::README 的自测清单漏了 selftest-packcheck"; exit 1; }
 
       - name: GATE — 叠加层（挂载点不许丢；上游抢名字只提示不拦）
         if: steps.m.outputs.merged == 'true'
@@ -145,7 +147,7 @@ jobs:
           set -uo pipefail
           UP="${{ needs.mirror-main.outputs.sha }}"; SHORT="${UP:0:8}"
           if [ "${{ steps.m.outputs.merged }}" = "true" ]; then
-            BR="sync-gatefail/$SHORT"; REASON="上游合进来了但门控红（五个自测或叠加层检查）—— \`master\` 未改动。"
+            BR="sync-gatefail/$SHORT"; REASON="上游合进来了但门控红（六个自测或叠加层检查）—— \`master\` 未改动。"
             git checkout -B "$BR"; git commit --allow-empty -m "blocked upstream sync (gate): $SHORT"
           else
             BR="sync-conflict/$SHORT"; REASON="上游 $SHORT 与 \`master\` 冲突，清单见 SYNC-CONFLICTS.md。\`master\` 未改动。"

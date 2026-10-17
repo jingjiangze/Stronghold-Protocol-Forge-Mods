@@ -216,12 +216,14 @@ node site/selftest-admin.mjs       # ② 审核台 / 公网列表**页面**跑�
 node site/selftest-compat.mjs      # ③ 兼容包整条链 + 反例（临时数据目录，不碰你的数据，不联网）
 node site/selftest-publisher.mjs   # ④ 发布者自助（认领 / 改元数据 / 换包体 / 自撤 / 三档删除 / 功能类目 6 类）+ 管理员确认 + 筛选 + 审计日志
 node site/selftest-feedback.mjs    # ⑤ mod 反馈（提交 / 单看与合并 / 图文 / 仅维护者可读 / 公开面逐字节不变）
+node site/selftest-packcheck.mjs   # ⑥ 契约预检（纯函数：闭集 / 未知键 / api 类型 / content 名单 / combat 告知）
 ```
 
 ⚠️ **四个必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`
 （另外两个各用 8799/8801 与 8809），同时跑会互相抢端口、结果不可信。
 ⑤ `selftest-feedback.mjs` 用 **8811**，与上面四个都不撞，可单独跑。
-服务器上的绝对路径写法见下面「改完必跑的**四个**自测」。
+⑥ `selftest-packcheck.mjs` **不起服务、不占端口**（纯函数自测），随时可单独跑。
+服务器上的绝对路径写法见下面「改完必跑的**六个**自测」。
 
 `selftest-admin.mjs` 专治一类「接口全好、页面却是死的」故障：审核台是一整个内联 `<script>`，
 它只要在**顶层抛一次错**，后面所有 `onclick` 与自动载入就全都不执行 —— 页面不报错也不崩，
@@ -544,6 +546,41 @@ git add packs/<包 id> && git commit -m "收录 <包 id>（来源：<URL>）" &&
 - ⭐ **两栏的一致性判据只有一份**（`server.mjs` 的 `packKindFor()`）：写 `funcKind` 时技术维度
   **自动归位**（四个真功能类 ⇒ `functional`；`documentation` ⇒ `documentation`；`uncategorized` ⇒ `unknown`）。
   想让它不派生，就在**同一次报文**里再显式给一个 `packKind`（显式值优先）。两栏因此不可能各说各话。
+
+---
+
+### 契约预检（`site/packcheck.mjs`，2026-10-14 起）
+
+**为什么有它**：站点的审核是「人看」，而**契约**（能声明哪些顶层键、`content` 认哪些名字、
+`combat` 该不该写）原本只有**引擎在装载期**才判。于是存在这样一条路：一个 `pack.json` 写了引擎
+不认识的键、或用了 `server.meta` 却没写 `combat: true`，在站上一路绿灯到公开，玩家下载后
+**装的时候才被点名拒**（`PACK_UNKNOWN_FIELD` / `META_NEEDS_COMBAT` …）。
+
+**它做什么**：上传记录被读到时（`signatureOf` 里同一次解 zip 顺带跑），对包内 `pack.json` 跑一遍
+纯函数预检，把结论**如实标在记录上**：
+
+| 码 | 级别 | 判据（逐条对齐引擎） |
+|---|---|---|
+| `PACK_JSON_UNREADABLE` | blocker | 读不到包内 `pack.json`（缺条目 / 超 1 MB / 不是 JSON） |
+| `PACK_UNKNOWN_FIELD` | blocker | 顶层键不在引擎 `PACK_FIELDS`（**36 键**）里 —— 引擎装载期整包拒 |
+| `BAD_API_TYPE` | blocker | `api` 不是字符串（区间语义留给引擎，见下） |
+| `CONTENT_NOT_ARRAY` / `CONTENT_UNKNOWN_FILE` | blocker | `content` 不是数组 / 里有引擎不认识的数据文件名（**14 个**） |
+| `COMBAT_UNDECLARED` | blocker | 用了 `server.meta` / `server.battle` / `server.modules[].matchClass` 却没写 `combat: true` |
+| `COMBAT_DECLARED` | info | 写了 `combat: true` —— 提醒把这件事标注到站上备注（告知义务，见 AGENTS.md §5.1） |
+
+**三条边界（刻意，别"顺手"扩）**：
+1. **不做区间比对**。`api` 的区间语义由引擎 `shared/packs.js appVersionMatches` 判；站侧复刻一份
+   就是**第二份实现**，两边一漂移就会出现「站说能装、引擎说不能」。本仓纪律是**只有一份实现**
+   （见 `approveGate` 的注释），所以这里只看 `api` 的**类型**。
+2. **不拦上传**。结论进记录、随卡片展示；收不收仍由审核台的人定（§3：素材/口径的取舍是人判的）。
+3. **不改包**。只读 `pack.json` 这一条，绝不回写 zip（自测里有一条专门钉"跑完入参一字不变"）。
+
+**公开面新增两栏**（`GET /api/mods` 的每一条）：
+- `combat`：`true` / `false` / `null`（没写）。公网卡片对 `true` 画一个中性徽标
+  「会改对局结果」+ 一行解释 —— 业主口径是「标注清楚就算尽到，**不另设闸门**」。
+- `packcheck`：预检里 **blocker** 那几条（数组，可能为空）。非空时卡片直接摆出「可能装载失败」
+  的警示行，**下载之前**就看得见。空数组 ≠ 认证通过（读不到 `pack.json` 时也是空数组）。
+
 - ⚠️ **老记录一个都没回填**：87 条没有 `funcKind` 的记录**读出来就是「未分类」**，
   由维护者在审核详情页的「功能类目」下拉里**一条一条**归类（`POST /api/<ADMIN_PATH>/funkind`，
   一次一个 id、闭枚举、写 `revisions` + `audit`）。**系统不替任何人猜分类。**
@@ -778,7 +815,7 @@ cp -a /opt/sp-modsite.bak-<时间戳>/. /opt/sp-modsite/ && systemctl restart sp
 失败路径真的走分类函数。**在改前的文件上这一节必须红**（index 10 条 + mine 8 条），改后必须全绿；
 `site/selftest-admin.mjs` 的 DOM 桩也必须提供 `AbortController`（否则页面点上传会 ReferenceError）。
 
-### 改完必跑的**五个**自测（2026-10-13 起）
+### 改完必跑的**六个**自测（2026-10-14 起）
 
 ```bash
 cd /opt/sp-modsite
@@ -787,10 +824,10 @@ cd /opt/sp-modsite
 /opt/sp-modsite/runtime/node/bin/node selftest-compat.mjs      # ③ 兼容包整条链 + 反例
 /opt/sp-modsite/runtime/node/bin/node selftest-publisher.mjs   # ④ 发布者自助（三档删除 / 功能类目）+ 管理员确认 + 筛选 + 审计日志
 /opt/sp-modsite/runtime/node/bin/node selftest-feedback.mjs    # ⑤ mod 反馈：提交 / 单看与合并 / 图文 / 仅维护者可读
+/opt/sp-modsite/runtime/node/bin/node selftest-packcheck.mjs   # ⑥ 契约预检（纯函数，不占端口）
 ```
 
-**五个全绿才算改完**（`selftest-publisher.mjs` 与 `selftest-feedback.mjs` 是 2026-10-13 新增的那两个，
-各测一条链：发布者自助、mod 反馈）。
+**六个全绿才算改完**（⑥ 是 2026-10-14 新增的那一个：契约预检，见下面「契约预检」一节）。
 ⚠️ **③ 与 ④ 必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`，
 **同时跑会互相抢端口**（`EADDRINUSE`，或更糟 —— 一个连到另一个的实例上，结果不可信）；
 ① ② ⑤ 各用 8799/8801、8809、8811，与它们都不撞。

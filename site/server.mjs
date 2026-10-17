@@ -75,6 +75,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readZipEntries, readZipFile, looksLikeZip } from './zip.mjs';
 import { reviewName, reviewLabel, reviewEntries, hasBlocker, reviewContainer, reviewSelfDecl, reviewCompatPackJson, needsAcknowledge, ACK_CODES } from './review.mjs';
+import { checkPack } from './packcheck.mjs';
 import {
   FB_FIELDS, FB_KINDS, FB_SEVERITIES, FB_TEXT_MAX, FB_SHORT_MAX, FB_BODY_MAX,
   FB_IMG_MAX, FB_IMG_BYTES_MAX, FB_MODS_MAX, FB_PAGE_DEFAULT, FB_PAGE_MAX,
@@ -1068,7 +1069,17 @@ async function packAuthorOf(id) {
     // （指令㉑：引擎不允许同 id 并存，玩家一次只能装一条，这件事必须在卡片上直接点出来）。
     // 读不到 id 就是 null：**不猜、不编**，拿不到就不画那一行（见 pages/mods.html 的 sameIdPeers）。
     const pid = pack && typeof pack.id === 'string' ? pack.id.trim() : '';
-    value = { author: a || null, authorSource: a ? 'pack.json' : null, packId: pid || null };
+    // 2026-10-14：同一次读顺带跑一遍**契约预检**（site/packcheck.mjs）。它是纯函数、只读 `pack.json`
+    // 这一条，结论随记录如实展示给审核台与下载者 —— 契约（顶层键闭集 / `content` 名单 / `combat` 声明）
+    // 原本只有引擎在装载期才判，站上看得见才不会把"装了才知道装不上"推给玩家。
+    const cc = checkPack(pack);
+    value = {
+      author: a || null, authorSource: a ? 'pack.json' : null, packId: pid || null,
+      // 会改对局结果：true / false / null（没写）。公网卡片按它标「会改对局结果」。
+      combat: cc.combat,
+      // 预检结论（只带 blocker，公网/审核台要的就是"引擎会不会拒"这一行；info 不进公网载荷）。
+      packcheck: cc.codes.filter((c) => c.level === 'blocker'),
+    };
   } catch {
     value = null;                        // zip 坏了 / 条目加密 ⇒ 当作「读不到」，不是错误页
   }
@@ -1090,7 +1101,14 @@ async function signatureOf(s) {
     ? { author: s.author, authorSource: s.authorSource || null }
     : { author: (fromPack && fromPack.author) || null, authorSource: (fromPack && fromPack.authorSource) || null };
   // packId 一律取自包内 pack.json —— 它就是「同 id 不能并存」那条判据里的 id。
-  return { ...auth, packId: (fromPack && fromPack.packId) || null };
+  // 2026-10-14：`combat` 与契约预检结论也来自**同一次**读（packAuthorOf），所以必须在这里一并透出 ——
+  // 这一行是重建对象，漏一个字段就是"上游读到了、公网永远拿不到"（本次就先踩了这个坑）。
+  return {
+    ...auth,
+    packId: (fromPack && fromPack.packId) || null,
+    combat: fromPack ? fromPack.combat : null,
+    packcheck: (fromPack && Array.isArray(fromPack.packcheck)) ? fromPack.packcheck : [],
+  };
 }
 
 /**
@@ -1658,6 +1676,14 @@ const server = createServer(async (req, res) => {
         // 能看出「哪几条是同一个 id」——引擎不允许同 id 并存，玩家一次只能装一条。
         // 读不到就是 null，页面不画那一行（不猜）。
         packId: sig.packId ?? null,
+        // ⭐ 会改对局结果（业主口径：`combat: true` 的告知义务「标注清楚就算尽到，不另设闸门」）。
+        // 三态：true=声明了 / false=写死 false / null=没写。来源是包内 `pack.json`（见 signatureOf）。
+        combat: sig.combat === true ? true : (sig.combat === false ? false : null),
+        // ⭐ 契约预检的 blocker（site/packcheck.mjs）：引擎装载期会点名拒的那几条（未知顶层键 /
+        // `api` 类型 / `content` 名单 / 用了会改对局结果的通道却没写 `combat: true`）。
+        // 数组（可能空）——空数组 = 预检没发现 blocker。**读不到 pack.json 时也是空数组**，
+        // 那种情况由 `suspected`/`packKind` 那几条既有判据兜，这里不重复造一个「未知」态。
+        packcheck: Array.isArray(sig.packcheck) ? sig.packcheck : [],
         // 原作者：兼容包取记录里那一栏（发布时预填自包内 pack.json，或维护者手填）；
         // 普通投稿记录里从来没有这一栏 ⇒ 去**包内 pack.json** 读（同一个来源名 pack.json）。
         author: sig.author,
