@@ -1,0 +1,150 @@
+name: 门 — mod 入库闸门（PR 上传，通过才允许合并）
+
+# 用户口径（2026-10-20）：**默认 PR 上传**，只能上传到 mod 仓库，并**自动 CI 测试 mod**，
+# 测试通过才允许进 mod 文件夹（合并）。
+#
+# 这条工作流就是那个「自动 CI 测试」。它**一个字节都不写**：permissions: contents: read，
+# 没有 push / 没有 issue 步骤 —— 判定只体现在 check 上，配合分支保护的
+# "Require status checks to pass before merging" 才构成硬闸门。
+# ⚠ 硬闸门的另一半在仓库设置里（Settings → Branches → Require status checks），
+#   本文件无法自证那一半；缺它则整条链降级为「人工记得看 CI」。
+#
+# 安全红线（照 GitHub 官方 secure-use 口径）：
+#   · 用 `pull_request` 触发，**不用** `pull_request_target`（官方明令不得用它检出不可信 PR 代码）；
+#   · 不安装 PR 带来的任何依赖，只信本仓 package-lock；
+#   · 不执行 PR 里任何文件（不 `node <PR 文件>`、不开 trusted 脚本模式）；
+#   · zip 只做**静态校验**：读中央目录、重算 sha256、比对大小，不解包执行。
+#     引擎侧已有同口径：`server/plugins/install.js:7`「No file of the package is imported, spawned or otherwise run.」
+#
+# 一条都没跑到也算红 —— 防「什么都没跑却报绿」。
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mod-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: mod-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: 收集本 PR 改动到的 mod
+        id: mods
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          BASE="${{ github.event.pull_request.base.sha }}"
+          [ -n "$BASE" ] || BASE="$(git rev-parse HEAD~1)"
+          echo "base=$BASE"
+          # 只关心 mods/** 下的改动：新增/修改的 zip 与 index.json
+          git diff --name-only "$BASE" HEAD > /tmp/changed.txt || true
+          echo "--- 本 PR 改动文件 ---"; cat /tmp/changed.txt
+          # 收 mod.zip（新增或修改的）
+          grep -E '^mods/.*/mod\.zip$' /tmp/changed.txt > /tmp/zips.txt || true
+          # 也接受直接放在 mods/<id>/<version>/mod.zip 与 incoming/ 下的来件
+          grep -E '^(mods|incoming)/.*\.zip$' /tmp/changed.txt >> /tmp/zips.txt || true
+          sort -u /tmp/zips.txt -o /tmp/zips.txt
+          N=$(wc -l < /tmp/zips.txt)
+          echo "zip 数=$N"
+          echo "count=$N" >> "$GITHUB_OUTPUT"
+
+      - name: J1 类型认得出（sniffArchive 等价判据）
+        if: steps.mods.outputs.count != '0'
+        run: |
+          set -uo pipefail
+          FAIL=0; OK=0
+          while read -r z; do
+            [ -f "$z" ] || { echo "::error::$z 不在工作树里"; FAIL=$((FAIL+1)); continue; }
+            # 只读 zip 中央目录：出现 pack.json 或 plugin.json 即认出类型（与引擎 sniffArchive 同判据）
+            if unzip -Z1 "$z" | grep -qE '(^|/)(pack|plugin)\.json$'; then
+              echo "  ✓ $z"; OK=$((OK+1))
+            else
+              echo "::error::$z 既无 pack.json 也无 plugin.json —— 引擎会判 PLUGIN_INSTALL_ZIP"; FAIL=$((FAIL+1))
+            fi
+          done < /tmp/zips.txt
+          echo "J1: 通过 $OK / 失败 $FAIL"
+          [ "$OK" -eq 0 ] && { echo "::error::J1 一个 zip 都没验过（跑了 0 条不等于绿）"; exit 1; }
+          [ "$FAIL" -eq 0 ] || exit 1
+
+      - name: J4 大小不超过引擎上限（200 MiB）
+        if: steps.mods.outputs.count != '0'
+        run: |
+          set -uo pipefail
+          # PLUGIN_LIMITS.pluginBytes = 200 * 1024 * 1024（shared/plugins/manifest.js:76）
+          LIMIT=$((200 * 1024 * 1024))
+          FAIL=0; OK=0
+          while read -r z; do
+            [ -f "$z" ] || continue
+            S=$(stat -c%s "$z")
+            if [ "$S" -gt "$LIMIT" ]; then
+              echo "::error::$z 有 $S 字节，超过引擎 200 MiB 上限（PLUGIN_INSTALL_SIZE）"; FAIL=$((FAIL+1))
+            else
+              echo "  ✓ $z ($((S / 1048576)) MiB)"; OK=$((OK+1))
+            fi
+          done < /tmp/zips.txt
+          echo "J4: 通过 $OK / 失败 $FAIL"
+          [ "$FAIL" -eq 0 ] || exit 1
+
+      - name: J3 zip 自身完好（CRC 整档校验）
+        if: steps.mods.outputs.count != '0'
+        run: |
+          set -uo pipefail
+          FAIL=0
+          while read -r z; do
+            [ -f "$z" ] || continue
+            if unzip -t "$z" > /tmp/zt.log 2>&1; then
+              echo "  ✓ $(basename $(dirname $(dirname "$z"))) CRC OK（$(grep -c 'OK$' /tmp/zt.log) 条目）"
+            else
+              echo "::error::$z 整档 CRC 校验失败"; tail -5 /tmp/zt.log; FAIL=$((FAIL+1))
+            fi
+          done < /tmp/zips.txt
+          [ "$FAIL" -eq 0 ] || exit 1
+
+      - name: J5 索引与磁盘一致（改了 zip 就得改索引）
+        run: |
+          set -uo pipefail
+          if [ ! -f mods/index.json ]; then
+            echo "::error::mods/index.json 不存在 —— 索引真源缺失"; exit 1
+          fi
+          node -e '
+            const fs = require("fs");
+            const idx = JSON.parse(fs.readFileSync("mods/index.json", "utf8"));
+            const list = Array.isArray(idx) ? idx : (idx.mods || []);
+            console.log("index.json 条目:", list.length);
+            if (!list.length) { console.error("::error::index.json 是空的"); process.exit(1); }
+            let bad = 0;
+            for (const m of list) {
+              // 索引声明的路径必须在磁盘上存在
+              for (const p of [m.path, m.file, m.zip].filter(Boolean)) {
+                if (!fs.existsSync(p)) { console.error(`::error::索引指向的 ${p} 不存在`); bad++; }
+              }
+              if (!m.sha256 && !m.hash) {
+                console.error(`::error::条目 ${m.id || m.name || "(无名)"} 没有 sha256 —— 下载到的到底是不是站上那份无法自证`);
+                bad++;
+              }
+            }
+            if (bad) { console.error(`索引一致性失败 ${bad} 处`); process.exit(1); }
+            console.log("✓ 索引与磁盘一致，且每条都有校验值");
+          '
+
+      - name: 无 zip 改动时的兜底（只改文档也要有结论）
+        if: steps.mods.outputs.count == '0'
+        run: |
+          echo "本 PR 没有改动任何 mod zip —— 只跑索引一致性（上一步），zip 判据跳过"
