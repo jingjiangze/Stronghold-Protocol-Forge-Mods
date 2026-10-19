@@ -39,8 +39,8 @@ on:
   pull_request:
     branches: [master]
     paths:
-      - 'site/packcheck.mjs'
-      - '.github/workflows/mod-compat.yml'
+      - site/packcheck.mjs
+      - .github/workflows/mod-compat.yml
 
 permissions:
   contents: read
@@ -98,11 +98,16 @@ jobs:
           '
 
       - name: L2+L3 逐个下载并静态校验
-        env:
-          LIMIT: ${{ github.event.inputs.limit || '0' }}
-          FLAGGED: ${{ github.event.inputs.include_flagged }}
         run: |
           set -uo pipefail
+          # ⚠ `github.event.inputs.*` 在非 dispatch 触发（push / pull_request / schedule）时是**空串**，
+          #    不是默认值。空串会让 Number('') = 0 —— 恰好等于「全量」，于是 limit 看起来没生效。
+          #    显式判空：空 = 全量，非空才截。
+          LIMIT="${{ github.event.inputs.limit }}"
+          [ -z "$LIMIT" ] && LIMIT=0
+          FLAGGED="${{ github.event.inputs.include_flagged }}"
+          [ -z "$FLAGGED" ] && FLAGGED=true
+          export LIMIT FLAGGED
           mkdir -p /tmp/mods
           node -e '
             const fs = require("fs");
@@ -134,9 +139,11 @@ jobs:
             # L2 packcheck 静态预检（纯读 pack.json，不执行 mod 代码）
             # ⚠ 接口实况：checkPack(<已 JSON.parse 的 pack.json 对象>)，不是目录；
             #    返回 { codes:[{code,level,detail}], … }；用 blockersOf(codes) 取 blocker 级。
+            # ⚠ stderr **不许** `2>/dev/null`：那会把 node 的真实报错（模块找不到、接口不对）
+            #    吞成一句「静态预检有 blocker」，看起来像 mod 的问题其实是脚本的问题。
             mkdir -p "/tmp/x/$id" && unzip -qo "/tmp/mods/$id.zip" -d "/tmp/x/$id"
-            if node -e '
-              const fs = require("fs");
+            if node --input-type=module -e '
+              import fs from "node:fs";
               const { checkPack, blockersOf } = await import(process.argv[1]);
               let pack = null;
               try { pack = JSON.parse(fs.readFileSync(process.argv[2] + "/pack.json", "utf8")); } catch { pack = null; }
@@ -147,7 +154,7 @@ jobs:
                 process.exit(1);
               }
               process.exit(0);
-            ' "$(pwd)/site/packcheck.mjs" "/tmp/x/$id" 2>/dev/null; then
+            ' "$(pwd)/site/packcheck.mjs" "/tmp/x/$id"; then
               echo "✓ $id $nm"; PASS=$((PASS+1))
             else
               echo "✗ $id 静态预检有 blocker"; FAIL=$((FAIL+1))
