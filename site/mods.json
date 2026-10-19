@@ -1,0 +1,396 @@
+{
+ "generatedAt": "2026-10-19T17:22:20.632Z",
+ "mods": [
+  {
+   "id": "ave-mujica",
+   "name": "颂乐人偶",
+   "version": "1.1.0",
+   "category": "functional",
+   "note": [
+    "⚠️ **含素材**：167 个文件 / 18600571 B（{\"audio\":70,\"spine\":36,\"image\":61}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "sizeBytes": 18777089,
+   "fileCount": 179,
+   "sha256": "6a09a3cb39a2f0caacaaa055fdc1216473c234ef554ff067020c59e8e36fc06c",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ave-mujica/1.1.0/mod.zip"
+  },
+  {
+   "id": "boss-fixed-pool",
+   "name": "领袖固定血量（0.1.x 口径）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 8382,
+   "fileCount": 5,
+   "sha256": "29d56786d3c1d7ad048a6cd5fc8316228279adb04780e5ea7e7bda3dd7b6c28f",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/boss-fixed-pool/1.0.0/mod.zip"
+  },
+  {
+   "id": "capacity-panel",
+   "name": "房间容量看板（4/8/12/16/20 展示与预览）",
+   "version": "1.0.1",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 15627,
+   "fileCount": 10,
+   "sha256": "7444fca6204e7e4cc60f89667a3a273d9e135e992b0eb4cd9db194f695a89f15",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/capacity-panel/1.0.1/mod.zip"
+  },
+  {
+   "id": "cdn-source",
+   "name": "CDN 源选择（最快镜像）",
+   "version": "1.0.2",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 10276,
+   "fileCount": 6,
+   "sha256": "39574e4dd9fafa32a6148b350a530cf016c0ab6785a20ccdf959524108986d88",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/cdn-source/1.0.2/mod.zip"
+  },
+  {
+   "id": "chat-bubble",
+   "name": "局内文字聊天（房内气泡）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 7035,
+   "fileCount": 4,
+   "sha256": "3346f0a383963ca5799f48ed93fe7e2113a04f17477418c656d66cc8345e8e34",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/chat-bubble/1.0.0/mod.zip"
+  },
+  {
+   "id": "dmg-board",
+   "name": "伤害看板（结算页）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 33198,
+   "fileCount": 6,
+   "sha256": "d997e95a45160540f62e5482c90d602ce6431588ad6cf1e8c50721ac06699e2c",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/dmg-board/1.0.0/mod.zip"
+  },
+  {
+   "id": "duel-assets",
+   "name": "争锋频道 · 素材容器（客户端导出 · 非商业）",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": [
+    "单条目超过引擎默认 zip 读取上限（32 MB）⇒ **引擎自带的包导入路径会拒收**（站点侧读取器无此上限，两条路结论不同）：packs/duel-resources.spresources 45278897 B",
+    "⚠️ **含素材**：102 个文件 / 6028468 B（{}；容器 packs/duel-resources.spresources 内部 102 个）⇒ 须在页面上标注来源与授权。"
+   ],
+   "sizeBytes": 25226848,
+   "fileCount": 4,
+   "sha256": "7103a1ca56c8bd8c72a1f33ad41dc999c6939fde462a641436ff8c0741424928",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/duel-assets/0.1.0/mod.zip"
+  },
+  {
+   "id": "duel-copy",
+   "name": "争锋频道 · 文案与不兼容清单",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 7919,
+   "fileCount": 5,
+   "sha256": "b43ecdfac8ed7b6a51268f1bff030eb39ba54e1706163df2df9cc828bdcaafcd",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/duel-copy/0.1.0/mod.zip"
+  },
+  {
+   "id": "duel-data",
+   "name": "争锋频道 · 规则资料（只读）",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 19396,
+   "fileCount": 10,
+   "sha256": "58ea1c4e1fbfa2dbf47c63a57077e64a91f4f879cfa2f86543b5a7f1b36d39c9",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/duel-data/0.1.0/mod.zip"
+  },
+  {
+   "id": "duel-fighter",
+   "name": "争锋频道 · 参战单位表（只读）",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 29564,
+   "fileCount": 4,
+   "sha256": "6a5e416b5251e375bfe8635e6840ef22878aaa999f16c6806ecf411992240923",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/duel-fighter/0.1.0/mod.zip"
+  },
+  {
+   "id": "duel-mode",
+   "name": "争锋频道 · 玩法叠加层（服务端驱动）",
+   "version": "0.2.1",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 24633,
+   "fileCount": 8,
+   "sha256": "78580c4cb273b65c94dc24f4879e9a5197dc04bba30c846bc4906ad286bad9f0",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/duel-mode/0.2.1/mod.zip"
+  },
+  {
+   "id": "duel-panel",
+   "name": "争锋频道 · 接入状态面板（只读）",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 7872,
+   "fileCount": 5,
+   "sha256": "93fed50181455d1633f7067562f96baadf65f367933c7221e67d6933917c4de2",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/duel-panel/0.1.0/mod.zip"
+  },
+  {
+   "id": "fanpack-skillful-items",
+   "name": "灵巧盟约装备",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "⚠️ **含素材**：1 个文件 / 175087 B（{\"image\":1}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "sizeBytes": 183304,
+   "fileCount": 5,
+   "sha256": "70c903f3fa3336dfd0c9531b26ff4942de24330e31eb96bdf5a282f1663de24b",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/fanpack-skillful-items/1.0.0/mod.zip"
+  },
+  {
+   "id": "healthz-ext",
+   "name": "健康与构建只读接口（/healthz 扩展 + /client-build 字段契约）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 12738,
+   "fileCount": 8,
+   "sha256": "c5da20b17b186c6c5429f278262337165ec09f21e93bc2c57b6eeb10d3a0b20a",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/healthz-ext/1.0.0/mod.zip"
+  },
+  {
+   "id": "makoto-yuki",
+   "name": "结城理（Persona 3 Reload）",
+   "version": "1.0.1",
+   "category": "functional",
+   "note": [
+    "⚠️ **含素材**：25 个文件 / 8584477 B（{\"image\":17,\"spine\":8}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "sizeBytes": 8666623,
+   "fileCount": 30,
+   "sha256": "3873c55cf62f8ea4f573be5a7d4d2ebc809a6b3e1ba0e0e1e76224d6f565fbe1",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/makoto-yuki/1.0.1/mod.zip"
+  },
+  {
+   "id": "mod-xie",
+   "name": "促融共竞 · 协同共竞",
+   "version": "2.1.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 64478,
+   "fileCount": 14,
+   "sha256": "6613cd2e5a947a5370341fcd3a1b6a3f9069bc5c871078f27965561ac27e12ec",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/mod-xie/2.1.0/mod.zip"
+  },
+  {
+   "id": "morph-plus",
+   "name": "变形同构体加强mod",
+   "version": "1.1.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 4412,
+   "fileCount": 4,
+   "sha256": "f232b8435ec5635f69fe4b987186f67f451354c647d338945d97997dad7b1179",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/morph-plus/1.1.0/mod.zip"
+  },
+  {
+   "id": "name-guard",
+   "name": "代号审查（名字策略链）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 63524,
+   "fileCount": 8,
+   "sha256": "3c393674a56b51dbd221d59923ab5494a119ce4bdff609a33fe7d943cc4b1b47",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/name-guard/1.0.0/mod.zip"
+  },
+  {
+   "id": "net-panel",
+   "name": "连接与服务器状态",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 11965,
+   "fileCount": 5,
+   "sha256": "5eefe0afac5a421517cca89837170203c6af1fa8b8673de9d77e17c5ffd2762b",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/net-panel/1.0.0/mod.zip"
+  },
+  {
+   "id": "notice-board",
+   "name": "服务器公告板（notices）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 11348,
+   "fileCount": 6,
+   "sha256": "6a25ab1013e10924121a95a33b7c923fff282aa5dae4fc3a7e82efc35707c517",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/notice-board/1.0.0/mod.zip"
+  },
+  {
+   "id": "perf-lite",
+   "name": "低配优化（关动画与过渡）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 32234,
+   "fileCount": 5,
+   "sha256": "891ba0b6118d6af01b1f98b07af4df0659de4f1dcc806366ab20ef6874965c62",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/perf-lite/1.0.0/mod.zip"
+  },
+  {
+   "id": "prep-loadout",
+   "name": "休整期可更换技能和模组mod",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 4024,
+   "fileCount": 4,
+   "sha256": "1059bce6db2aa3b3e71ef67ef542b408ac7fb684673c489ef8c88d613a7600de",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/prep-loadout/1.0.0/mod.zip"
+  },
+  {
+   "id": "shop-bond-bias",
+   "name": "商店刷新盟约装备几率提升mod",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 4117,
+   "fileCount": 4,
+   "sha256": "689804b53a7867f82bc1528b4e3d239a6ff222344a30c40a5763e10ca93d2a85",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/shop-bond-bias/1.0.0/mod.zip"
+  },
+  {
+   "id": "skin-catalogue",
+   "name": "时装目录（皮肤数据）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "⚠️ **含素材**：4 个文件 / 6790298 B（{\"image\":4}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "sizeBytes": 6883192,
+   "fileCount": 10,
+   "sha256": "b13ebe2ee56ca36ff281011c888d163fdc5d33406f46c9c6ff722ff103de6970",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/skin-catalogue/1.0.0/mod.zip"
+  },
+  {
+   "id": "skin-picker",
+   "name": "皮肤选择器（换装）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 61503,
+   "fileCount": 6,
+   "sha256": "b1d39ea35a19d94b4992dc32a01f10b95e1dd9e77e488121220965610f757bdd",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/skin-picker/1.0.0/mod.zip"
+  },
+  {
+   "id": "srv-notice",
+   "name": "服务器公告",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 24663,
+   "fileCount": 5,
+   "sha256": "17fce005594b81e443cf6a64c3352219aa15347ebe82cac71a30699e751cbf81",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/srv-notice/1.0.0/mod.zip"
+  },
+  {
+   "id": "strawberry-ui",
+   "name": "草莓美化包（纯 CSS）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 24498,
+   "fileCount": 6,
+   "sha256": "e3fc66707c0b186630776bf9fdd2a84a7b969e3779fda7478554dd803dd6e46b",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/strawberry-ui/1.0.0/mod.zip"
+  },
+  {
+   "id": "theme-night",
+   "name": "夜间高对比主题",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 4155,
+   "fileCount": 2,
+   "sha256": "2af54e3a83c9144bfbcb01898689a768d720d9a87e2f7db47ae1c3a0911d9e43",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/theme-night/1.0.0/mod.zip"
+  },
+  {
+   "id": "unequip",
+   "name": "装备拆卸mod",
+   "version": "1.1.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 4184,
+   "fileCount": 4,
+   "sha256": "6e646b067cc23c43a5b695885299fc6e3bfc26ab45e7d68ca678d62257b6e8b6",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/unequip/1.1.0/mod.zip"
+  },
+  {
+   "id": "ws-compression-reference",
+   "name": "WS 压缩参考（协商参数 / 档位 / 实测）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "sizeBytes": 21774,
+   "fileCount": 6,
+   "sha256": "ba194faf0b4116834202eeec39c3cf9b79c27ddf2ad42c785e4b86afd2650a5b",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ws-compression-reference/1.0.0/mod.zip"
+  }
+ ]
+}
