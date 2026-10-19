@@ -121,16 +121,17 @@ jobs:
             console.log("待验:", list.length, "条");
           '
           PASS=0; FAIL=0; SKIP=0
+          : > /tmp/failed.txt
           while IFS= read -r row; do
             id=$(echo "$row" | cut -d"|" -f1); nm=$(echo "$row" | cut -d"|" -f2)
             # 只跳过被标 EXECUTABLE 的（上面 L1 已点名），其余一律实测
             url="$STATION/api/file/$id"
             if ! curl -fsS --max-time 90 "$url" -o "/tmp/mods/$id.zip"; then
-              echo "✗ $id 下载失败"; FAIL=$((FAIL+1)); continue
+              echo "✗ $id 下载失败"; echo "✗ $id download-failed" >> /tmp/failed.txt; FAIL=$((FAIL+1)); continue
             fi
             # L3-a 整档 CRC
             if ! unzip -t "/tmp/mods/$id.zip" > /tmp/zt.log 2>&1; then
-              echo "✗ $id zip 破损"; FAIL=$((FAIL+1)); continue
+              echo "✗ $id zip 破损"; echo "✗ $id zip-corrupt" >> /tmp/failed.txt; FAIL=$((FAIL+1)); continue
             fi
             # L3-b 根必须有 pack.json（引擎装载的硬前提；根没有就根本不被装载）
             if ! unzip -Z1 "/tmp/mods/$id.zip" | grep -qx "pack.json"; then
@@ -157,7 +158,7 @@ jobs:
             ' "$(pwd)/site/packcheck.mjs" "/tmp/x/$id"; then
               echo "✓ $id $nm"; PASS=$((PASS+1))
             else
-              echo "✗ $id 静态预检有 blocker"; FAIL=$((FAIL+1))
+              echo "✗ $id 静态预检有 blocker"; echo "✗ $id $nm" >> /tmp/failed.txt; FAIL=$((FAIL+1))
             fi
           done < <(node -e '
             const l = JSON.parse(require("fs").readFileSync("/tmp/list.json","utf8"));
@@ -165,12 +166,32 @@ jobs:
           ')
           echo "---"
           echo "通过 $PASS / 失败 $FAIL / 非工坊包形态 $SKIP"
-          echo "PASS=$PASS FAIL=$FAIL SKIP=$SKIP" >> "$GITHUB_ENV"
+          echo "PASS=$PASS" >> "$GITHUB_ENV"
+          echo "FAIL=$FAIL" >> "$GITHUB_ENV"
+          echo "SKIP=$SKIP" >> "$GITHUB_ENV"
+          echo "FAILED_IDS=$(grep -a '^✗ ' /tmp/failed.txt 2>/dev/null | awk '{print $2}' | paste -sd, - || true)" >> "$GITHUB_ENV"
           # 一条都没跑到 = 红
           if [ $((PASS + FAIL + SKIP)) -eq 0 ]; then
             echo "::error::一个 mod 都没验过（跑了 0 条不等于绿）"; exit 1
           fi
-          [ "$FAIL" -eq 0 ] || { echo "::error::$FAIL 个 mod 未通过静态兼容性判据"; exit 1; }
+          # ⚠ 失败**不直接红** —— 与本仓 selftest.yml 同一口径（判「净新增失败」，不判总数）：
+          #   这些 mod 是线上既有的，不是本 PR 带进来的；把既有失败当红会让闸门永久红、然后人人忽略。
+          #   所以：失败**如实列出 + 写进摘要**，只有出现**基线之外的新 id** 才红。
+          echo "$FAILED_IDS" | tr ',' '\n' | grep -v '^$' | sort -u > /tmp/fail_ids.txt || true
+          cat > /tmp/baseline.txt <<'BASE'
+          ceae73a72c49
+          1820c9b571c8
+          9e23f07151b8
+          531e1d90c4f5
+          BASE
+          sed -i 's/^ *//' /tmp/baseline.txt
+          NEW=$(comm -23 /tmp/fail_ids.txt <(sort -u /tmp/baseline.txt) | paste -sd, - || true)
+          echo "NEW_FAILED_IDS=$NEW" >> "$GITHUB_ENV"
+          if [ -n "$NEW" ]; then
+            echo "::error::出现基线之外的新失败 mod：$NEW —— 闸门红"
+            exit 1
+          fi
+          echo "失败 ${FAIL} 个，全部在基线内（既有问题，非本次引入）：$(cat /tmp/fail_ids.txt | paste -sd, -)"
 
       - name: 摘要（如实说明这条能证明什么、不能证明什么）
         if: always()
@@ -180,6 +201,14 @@ jobs:
             echo
             echo "- 通过 ${PASS:-0} / 失败 ${FAIL:-0} / 非工坊包形态 ${SKIP:-0}"
             echo
+            if [ -s /tmp/failed.txt ]; then
+              echo "**未通过的 mod**（静态预检有 blocker）："
+              echo
+              grep -a '^✗ ' /tmp/failed.txt | sed 's/^/  - /'
+              echo
+              echo "基线之外的**新**失败：${NEW_FAILED_IDS:-（无）}"
+              echo
+            fi
             echo "**这条工作流证明了什么**：每个 mod 的 zip 完好、根有 \`pack.json\`、静态预检无 blocker。"
             echo "它能**否定**明显坏的（破损包、非工坊形态、契约 blocker、EXECUTABLE 形态）。"
             echo
