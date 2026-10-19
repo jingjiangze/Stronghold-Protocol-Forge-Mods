@@ -1,0 +1,115 @@
+name: 生成 mod 站索引（静态，零 Cloudflare）
+
+# 把 mod 仓库的 `mods/index.json` 转成站点要读的 `mods.json`，并附上下载直链。
+#
+# 为什么生成而不是实时查（审计结论）：
+#   · 浏览器匿名 api.github.com 只有 **60 次/小时**，玩家一多就 403；
+#   · raw.githubusercontent 可达性按 URL/时刻波动（本机实测一批 5/5、另一批 0/4）；
+#   · 静态资源请求在 CF Pages 上「free and unlimited」，而 Pages Functions 请求计入 Workers 10 万/日。
+# ⇒ 所有 API 调用挪到 Actions 侧（GITHUB_TOKEN 1000/h），浏览器只读一个静态 JSON：省额度、且不抖。
+#
+# 下载直链：默认指向本仓库的 Git LFS / raw 路径；若配了 `MODSITE_RELEASE_REPO` 变量，
+# 则改为指向那个仓库的 Release assets（走 release-assets.githubusercontent.com，
+# **与 Cloudflare 完全无关，CF 额度恒为 0**，且总量官方不设限）。
+#
+# 触发：mods/ 有改动时 + 每 6 小时兜底 + 手动。
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'mods/**'
+      - 'tools/**'
+      - '.github/workflows/build-mods-json.yml'
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-mods-json
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 生成 mods.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: 合成 mods.json
+        env:
+          RELEASE_REPO: ${{ vars.MODSITE_RELEASE_REPO }}
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const src = JSON.parse(fs.readFileSync("mods/index.json", "utf8"));
+            const list = Array.isArray(src) ? src : (src.mods || []);
+            if (!list.length) { console.error("::error::mods/index.json 是空的"); process.exit(1); }
+            const repo = process.env.RELEASE_REPO || "";
+            const out = list.map((m) => {
+              const id = m.id || "";
+              const ver = m.version || "";
+              // 有 Release 仓就指向 Release asset；否则退回本仓 raw 路径
+              const download = repo && id && ver
+                ? `https://github.com/${repo}/releases/download/${id}-v${ver}/${id}-${ver}.zip`
+                : (m.path ? `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/master/${m.path}` : "");
+              return {
+                id,
+                name: m.name || id,
+                version: ver,
+                category: m.category || "unknown",
+                note: m.notes || m.note || "",
+                sizeBytes: m.sizeBytes || 0,
+                fileCount: m.fileCount || 0,
+                sha256: m.sha256 || "",
+                packId: m.packId || "",
+                download,
+              };
+            }).filter((m) => m.id);
+            fs.writeFileSync("site/mods.json", JSON.stringify({ generatedAt: new Date().toISOString(), mods: out }, null, 1) + "\n");
+            console.log("写出 site/mods.json：", out.length, "条");
+            const noSha = out.filter((m) => !m.sha256).length;
+            if (noSha) console.log(`::warning::${noSha} 条没有 sha256 —— 下载到的到底是不是站上那份无法自证`);
+          '
+
+      - name: 自检：生成的索引必须站得住
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("site/mods.json", "utf8"));
+            const a = j.mods || [];
+            if (!a.length) { console.error("::error::生成结果是空的"); process.exit(1); }
+            let bad = 0;
+            for (const m of a) {
+              if (!m.id) { console.error("::error::有条目没有 id"); bad++; }
+              if (!m.download) { console.error(`::error::${m.id} 没有下载直链`); bad++; }
+            }
+            if (bad) { console.error(`自检失败 ${bad} 处`); process.exit(1); }
+            console.log(`✓ 自检通过：${a.length} 条，全部有下载直链`);
+          '
+
+      - name: 提交（只在有变化时）
+        run: |
+          set -uo pipefail
+          git config user.name "modsite-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add site/mods.json
+          if git diff --cached --quiet; then
+            echo "mods.json 无变化 —— 不提交"
+          else
+            git commit -m "chore(modsite): 重新生成 mods.json（$(date -u +%Y-%m-%dT%H:%M:%SZ)）"
+            git push origin HEAD:refs/heads/master
+            echo "已提交"
+          fi
