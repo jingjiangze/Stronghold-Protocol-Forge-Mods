@@ -1301,6 +1301,31 @@
         "⚠️ **含官方素材**：全部从国服客户端用 UnityPy 解包，版权归鹰角网络 / Yostar，仅供非商业个人使用。",
         "另附 jibian_zhuiji（追忆）卡牌引擎修复：`_engine-fix-zhuiji/server/match/match/phases.js`，修「回到第 10 回合不出怪/卡死」。"
       ]
+    },
+    {
+      "id": "csp-allow",
+      "name": "跨域资源放行（CSP 声明）",
+      "version": "1.0.0",
+      "sha256": "f14d4b0de6c73644ffcaaf41d70cd696cfe89a79fde77ca6e832103ab44affdd",
+      "category": "functional",
+      "categoryWhy": "声明了 csp 白名单；需要基座支持 plugin.json 的 csp 字段",
+      "packId": "csp-allow",
+      "path": "mods/csp-allow/1.0.0/mod.zip",
+      "sizeBytes": 1362,
+      "fileCount": 3,
+      "unpackedBytes": 1854,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。",
+        "只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。",
+        "装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。"
+      ]
     }
   ],
   "rejected": [],
