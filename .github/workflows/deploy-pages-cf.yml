@@ -1,0 +1,90 @@
+name: deploy-pages
+
+# 把 site/ 发布到 Cloudflare Pages，并挂 mod.jiangjiangze.icu。
+#
+# 为什么走 Actions 直传而不是 CF 原生 git 集成：
+#   · CF 原生 git 集成会把**整个仓库 checkout** 当输出目录（tools/、.github/、mods/、incoming/ 全上网）；
+#   · 实测坑（同域 dl 站 2026-10-07）：Pages 项目被摘掉 git 集成后，dynamic/pages/pages-build-deployment
+#     仍会跑成功但**不改生产**，于是「谁最后直传谁说了算」，旧构建能被反复盖回来。
+#     ⇒ 上线必须是 push 的函数，本工作流就是那个函数。
+#
+# 额度（审计 2026-10-19）：
+#   · CF Pages 免费档 **500 builds/月**；本工作流只在 `site/**` 变时才跑（paths 过滤），
+#     而 site/ 里只有 index.html 与 mods.json 会动，索引一天生成一次 ⇒ 月耗 ~30 次，远低于 500。
+#   · 静态资产请求 **free and unlimited**（Pages Functions 才计入 Workers 10 万/日）—— 本页是纯静态，
+#     没有任何 Functions，所以 CF 侧**请求额度恒 0**。
+#   · 不产生 CF DNS 费用：自定义域走一条 CNAME，保持**灰云（DNS only）**，不走 CF 代理就没有额外计费面。
+#
+# 需要两个仓库 secret（缺就故意失败，不静默跳过）：
+#   CLOUDFLARE_API_TOKEN  —— Pages:Edit
+#   CLOUDFLARE_ACCOUNT_ID —— 账号 id
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/deploy-pages-cf.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-pages-cf
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: 发布 site/ 到 Cloudflare Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检查 secret（缺就红，不静默跳过）
+        env:
+          TOK: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          [ -n "$TOK" ] || { echo "::error::缺 secret CLOUDFLARE_API_TOKEN"; exit 1; }
+          [ -n "$AID" ] || { echo "::error::缺 secret CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          echo "两个 secret 都在"
+
+      - name: 组装产物（只含 site/）
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp -r site/. _site/
+          if [ ! -s _site/mods.json ]; then
+            echo "::error::_site/mods.json 缺失或为空 —— 页面会渲染不出列表"; exit 1
+          fi
+          grep -q 'github.com/jingjiangze/Stronghold-Protocol-Forge-Mods' _site/index.html \
+            || { echo "::error::index.html 里没有开源地址"; exit 1; }
+          echo "产物文件数: $(find _site -type f | wc -l)"
+
+      - name: wrangler 直传
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npm i -g wrangler@3 || npm i -g wrangler@latest
+          wrangler --version
+          wrangler pages deploy _site \
+            --project-name=stronghold-mods \
+            --branch=main \
+            --commit-dirty=true
+
+      - name: 确认自定义域已挂（没挂就报，但不阻断部署）
+        env:
+          TOK: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -uo pipefail
+          # 项目不存在时这条会 404 —— 那是首次部署，域名要等第一次 deploy 后才能加
+          curl -fsS --max-time 25 \
+            -H "authorization: Bearer $TOK" \
+            "https://api.cloudflare.com/client/v4/accounts/$AID/pages/projects/stronghold-mods/domains" \
+            | sed 's/.*/响应已收到/' || echo "::warning::域名接口还没响应（可能首次部署，域名需在控制台加）"
