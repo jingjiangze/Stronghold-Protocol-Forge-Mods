@@ -1752,6 +1752,26 @@ const server = createServer(async (req, res) => {
         mods: pickedQ.filter((x) => !x.s.suspected).map((x) => x.o),
         flagged: pickedQ.filter((x) => x.s.suspected).map((x) => x.o),
       };
+      // ⭐ 公网字段白名单（2026-10-20 安全审计补）。
+      //   上面 shape() 已经只构造公开字段，但那是**被动**防护（靠"不存"）。
+      //   将来若有人在记录里加了敏感字段（投稿者 IP / receipt / pendingClaim / 内部路径…），
+      //   会被 shape() 顺手带出来。这里在出口再 pick 一次：白名单外的一律剥掉。
+      //   ⚠ 这是**只挡不建**：不改 shape()（它被 /mods 页面、mod 站、
+      //      collect-station.mjs、build-index.mjs 多方消费，改了有碰坏下游的风险）。
+      const PUBLIC_MOD_FIELDS = [
+        'id', 'name', 'note', 'uploadedAt', 'size', 'homepage',
+        'suspected', 'suspectedReasons', 'kind', 'packKind', 'funcKind', 'funcKindTitle',
+        'packId', 'author', 'authorSource', 'compatAuthor', 'compatAuthorSource',
+        'compatOf', 'compatNote', 'combat', 'packcheck',
+        'download', 'archiveDownload',
+      ];
+      const pick = (o) => {
+        const out = {};
+        for (const k of PUBLIC_MOD_FIELDS) if (o[k] !== undefined) out[k] = o[k];
+        return out;
+      };
+      body.mods = body.mods.map(pick);
+      body.flagged = body.flagged.map(pick);
       // ⭐ 每类计数（需求 ③：「分区标题旁显示每类计数」）。
       // **只在不筛的时候给**：筛过之后「functional 有 3 条」这种数会因为筛选而变小，
       // 反而误导（用户以为站上只有 3 条功能包）。所以筛过时不给 `counts` 字段，
