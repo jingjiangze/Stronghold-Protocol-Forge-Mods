@@ -60,8 +60,8 @@ jobs:
           if [ ! -s _modsite/mods.json ]; then
             echo "::error::_modsite/mods.json 缺失或为空 —— 页面会渲染不出列表"; exit 1
           fi
-          grep -q 'github.com/jingjiangze/Stronghold-Protocol-Forge-Mods' _modsite/index.html \
-            || { echo "::error::index.html 里没有开源地址"; exit 1; }
+          grep -q 'jingjiangze/Stronghold-Protocol-Forge-Mods' _modsite/index.html \
+            || { echo "::error::页面里没有开源地址（仓库路径不在源文件里）"; exit 1; }
           echo "产物文件数: $(find _site -type f | wc -l)"
 
       - name: wrangler 直传
