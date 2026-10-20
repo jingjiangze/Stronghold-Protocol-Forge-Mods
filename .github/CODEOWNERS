@@ -1,0 +1,31 @@
+# CODEOWNERS —— 谁能改哪些路径。
+#
+# 存在的理由（2026-10-20 发现的闸门自指缺陷）：
+#   master 的 required_status_checks 是 `mod-gate`，而这个 check 名**声明在 mod-gate.yml 里**；
+#   `pull_request` 事件跑的又是 **merge 结果里的 workflow 文件** ⇒ 一个只改 mod-gate.yml 的 PR
+#   可以让这个 check 改名 / 消失 / 永远 exit 0，从而**自己解除闸门**。
+#
+#   配上 `require_code_owner_reviews=true` 之后，改这些路径的 PR 必须由 owner 本人批准，
+#   作者无法自审自过（GitHub 禁止自批）。
+#
+# 语法：<pattern> <owner...>。@jingjiangze 是仓库 owner，也是唯一 reviewer。
+
+# 全部路径默认归 owner —— 兜底：任何改动都要 owner 批
+*                                   @jingjiangze
+
+# 闸门与部署链：最敏感，显式列出（与上面重复但更清楚，且防止将来有人放宽 * 规则）
+/.github/workflows/                 @jingjiangze
+/.github/CODEOWNERS                 @jingjiangze
+/.github/overlay.json               @jingjiangze
+
+# 站点与索引生成：影响线上展示与下载链
+/modsite/                           @jingjiangze
+
+# 入库口径的权威实现（四道硬闸门在这里）
+/tools/build-index.mjs              @jingjiangze
+/mods/index.json                    @jingjiangze
+
+# 上传规范与闸门说明
+/UPLOAD.md                          @jingjiangze
+/PUBLISH-PR.md                      @jingjiangze
+/AUTHOR-PR.md                       @jingjiangze
