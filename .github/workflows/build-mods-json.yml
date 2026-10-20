@@ -108,8 +108,16 @@ jobs:
           git add modsite/mods.json
           if git diff --cached --quiet; then
             echo "mods.json 无变化 —— 不提交"
-          else
-            git commit -m "chore(modsite): 重新生成 mods.json（$(date -u +%Y-%m-%dT%H:%M:%SZ)）"
-            git push origin HEAD:refs/heads/master
-            echo "已提交"
+            exit 0
           fi
+          git commit -m "chore(modsite): 重新生成 mods.json（$(date -u +%Y-%m-%dT%H:%M:%SZ)）"
+          # checkout 的 HEAD 可能落后于别人（维护者手工提交、另一条 CI）的提交 —— 直接 push 会被拒。
+          # 先 fetch 到最新，再把我们的提交 rebase 上去；rebase 失败就不推（不 force，不覆盖别人的工作）。
+          git fetch origin master
+          git rebase origin/master || {
+            echo "::error::rebase 到 origin/master 失败 —— 本地有新冲突，不推"
+            git rebase --abort 2>/dev/null || true
+            exit 1
+          }
+          git push origin HEAD:refs/heads/master
+          echo "已提交"
