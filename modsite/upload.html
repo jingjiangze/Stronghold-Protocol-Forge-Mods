@@ -102,11 +102,17 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);color:v
     <ol>
       <li>打开 <a id="stationLink2" href="#">上传站</a>，填「mod 名 + 备注」，选 zip，点上传。</li>
       <li>会给你一个 <b>认领码</b>（只显示一次，请存好）——用它可以在「我的投稿」里改包、撤回。</li>
-      <li>维护者审核通过后，由维护者代你提 PR 并合并。上线前是待审状态，不公开。</li>
+      <li>维护者审核通过后，用服务端的「过审 → 代提 PR」把这条推进仓库的 PR，
+          <code>mod-gate</code> 再校验一遍、人合并。上线前是待审状态，不公开。</li>
     </ol>
     <p class="dim" style="margin:10px 0 0;font-size:12px">
       包大小 ÷ 上行速度要小于 15 分钟。100 MB 需要上行 ≥ 114 KB/s；网慢请压缩或分包。
     </p>
+    <div class="warn">
+      <b>为什么代提 PR 由服务端做、不在这页做：</b>提 PR 需要 GitHub 写入凭证。
+      本站是纯静态页，凭证一旦放进页面就等于公开分发（任何人打开 DevTools 都能拿到），
+      而且能拿到它的凭证会覆盖账号下所有仓库。所以凭证只存在服务器上，页面不碰。
+    </div>
   </div>
 
   <div class="panel">
