@@ -141,31 +141,31 @@ jobs:
             console.log(`✓ 自检通过：${a.length} 条，全部有下载直链，无说明包`);
           '
 
-      - name: 提 PR（master 只准 PR 合入）
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 推分支 + 给出一键开 PR 链接
         run: |
           set -uo pipefail
           git config user.name "modsite-bot"
           git config user.email "actions@users.noreply.github.com"
           git add modsite/mods.json
           if git diff --cached --quiet; then
-            echo "mods.json 无变化 —— 不开 PR"
+            echo "mods.json 无变化 —— 不推分支"
             exit 0
           fi
           git commit -m "chore(modsite): 重新生成 mods.json（$(date -u +%Y-%m-%dT%H:%M:%SZ)）"
           # master 开了分支保护（必须走 PR + mod-gate 必过），所以这里**不能**直推 master ——
           # 实测直推会被 GH006 挡下（"Changes must be made through a pull request"）。
-          # 改为推一个分支 + 开 PR：mod-gate 会在 PR 上跑，过了才合，闸门一条没少。
+          # 而 GITHUB_TOKEN **也不能开 PR**（实测：GraphQL "GitHub Actions is not permitted to
+          # create or approve pull requests" —— GitHub 的既定限制，防 CI 自审）。
+          # ⇒ 中间态：CI 只推分支，PR 由人点一下开。合并仍要人确认，闸门一条没少。
           BR="chore/mods-json-$(date -u +%Y%m%d-%H%M%S)"
           git checkout -b "$BR"
           git push origin "HEAD:refs/heads/$BR"
-          if gh pr list --repo "$GITHUB_REPOSITORY" --head "$BR" --state open --json number --jq '.[].number' | grep -q .; then
-            echo "PR 已存在"
-          else
-            gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$BR" \
-              --title "chore(modsite): 重新生成 mods.json" \
-              --body "Actions 从 \`mods/index.json\` + 各 \`PROVENANCE.md\` 重新生成的站点索引。
-
-          \`mod-gate\` 会在本 PR 上跑（类型 / CRC / 大小 / 索引一致性），过了才合。"
-          fi
+          {
+            echo "### mods.json 已更新，待开 PR"
+            echo
+            echo "分支 \`$BR\` 已推上去。GITHUB_TOKEN 无权开 PR（GitHub 既定限制），请点下面链接开："
+            echo
+            echo "**https://github.com/$GITHUB_REPOSITORY/compare/$BR?expand=1**"
+            echo
+            echo "开好后 \`mod-gate\` 会在 PR 上跑（类型 / CRC / 大小 / 索引一致性），过了才合。"
+          } >> "$GITHUB_STEP_SUMMARY"
