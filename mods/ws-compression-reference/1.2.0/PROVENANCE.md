@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | 包 id | `ws-compression-reference` |
-| 版本 | `1.1.0` |
+| 版本 | `1.2.0` |
 | 名称 | WS 压缩参考（协商参数 / 档位 / 实测） |
 | 目录名 = 包 id | 是 |
 | 顶层目录 | `ws-compression-reference/` |
