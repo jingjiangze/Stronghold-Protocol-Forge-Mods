@@ -1,0 +1,56 @@
+{
+  "id": "engine-ai",
+  "name": "引擎 AI 组件（战斗 AI + 自动布阵规划器）",
+  "version": "0.2.5",
+  "kind": "reference",
+  "source": {
+    "repo": "jingjiangze/stronghold-server",
+    "version": "0.2.5"
+  },
+  "note": "server/sim/ai.js（战斗 AI）与 server/match/bot.js（自动布阵规划器）的源码快照。\n\n澄清两个常见误读：\n· ai.js 不是机器学习 —— 固定规则决策，确定性，同样输入永远同样输出。\n· bot.js 不是训练模型 —— 它给布局打分的方式是真打一场 Battle（rehearsal），靠战斗结果反推好坏；没有权重、没有梯度、没有训练集。",
+  "compatibility": {
+    "verdict": "engine-layer-incompatible",
+    "standalone": false,
+    "reason": "传递依赖闭包分别是 14 / 118 个文件；脱离完整引擎树无法运行。"
+  },
+  "closure": {
+    "sim/ai.js": {
+      "files": 14,
+      "lines": 4839,
+      "kb": 266.7
+    },
+    "match/bot.js": {
+      "files": 118,
+      "lines": 35855,
+      "kb": 1916.2
+    }
+  },
+  "author": "jingjiangze",
+  "license": "GPL-3.0-or-later",
+  "download": "extras/engine-ai/engine-ai-snapshot.zip",
+  "zip": {
+    "name": "engine-ai-snapshot.zip",
+    "bytes": 174080,
+    "sha256": "b0b04385df45250f7d096024cb025d8be7ae94968c91a217be632733064d3265"
+  },
+  "files": [
+    {
+      "path": "sim/ai.js",
+      "bytes": 57773,
+      "lines": 980,
+      "sha256": "310856b2c7d3a453339674b412f33af79af63e428a086b4f6ceb6798e9d22dbd"
+    },
+    {
+      "path": "match/bot.js",
+      "bytes": 104293,
+      "lines": 1985,
+      "sha256": "58c880069ad0188f7213a707ff5a86a9ae1a52c4f716cda70f70cbb1fdeebfb0"
+    },
+    {
+      "path": "match/botEmotes.js",
+      "bytes": 3450,
+      "lines": 70,
+      "sha256": "d617b26a4db1606cbd6c9d478f5f8c7c53026526b6f13dc7c8d808a735457bf7"
+    }
+  ]
+}

@@ -149,12 +149,84 @@ jobs:
             console.log(`✓ 自检通过：${a.length} 条，全部有下载直链，无说明包`);
           '
 
+      - name: 生成 extras.json（不兼容 / 参考件，不经闸门）
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const ROOT = "extras";
+            const items = [];
+            if (!fs.existsSync(ROOT)) {
+              console.log("没有 extras/ 目录 —— 跳过");
+            } else {
+              for (const d of fs.readdirSync(ROOT, { withFileTypes: true })) {
+                if (!d.isDirectory()) continue;
+                const mf = path.join(ROOT, d.name, "manifest.json");
+                if (!fs.existsSync(mf)) { console.log("  · 跳过 " + d.name + "（缺 manifest.json）"); continue; }
+                const m = JSON.parse(fs.readFileSync(mf, "utf8"));
+                // 必填字段自检：站点渲染依赖它们，缺一个就红（不要静默产出半截数据）
+                const need = ["id", "name", "note", "author", "license", "download", "compatibility", "zip"];
+                const miss = need.filter((k) => m[k] === undefined);
+                if (miss.length) { console.error("::error::extras/" + d.name + " 缺字段: " + miss.join(", ")); process.exit(1); }
+                const vp = m.compatibility && m.compatibility.verdict;
+                if (!vp) { console.error("::error::extras/" + d.name + " 缺 compatibility.verdict"); process.exit(1); }
+                items.push({
+                  id: m.id,
+                  name: m.name,
+                  version: m.version || "",
+                  kind: m.kind || "reference",
+                  note: m.note || "",
+                  author: m.author || "",
+                  license: m.license || "",
+                  compatibility: m.compatibility,
+                  closure: m.closure || null,
+                  download: m.download,
+                  zip: m.zip || null,
+                  files: m.files || [],
+                });
+                console.log("  + " + m.id + "  [" + vp + "]");
+              }
+            }
+            // 按 id 排序，保证生成的 JSON 稳定（同样的输入 ⇒ 同样的字节）
+            items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+            fs.writeFileSync("modsite/extras.json", JSON.stringify({ generatedAt: new Date().toISOString(), items: items }, null, 1) + "\n");
+            console.log("写出 modsite/extras.json：" + items.length + " 条");
+          '
+
+      - name: 自检：extras.json 必须站得住
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const p = "modsite/extras.json";
+            if (!fs.existsSync(p)) { console.error("::error::extras.json 没生成"); process.exit(1); }
+            const j = JSON.parse(fs.readFileSync(p, "utf8"));
+            const a = j.items || [];
+            if (!a.length) { console.error("::error::extras.json 是空的"); process.exit(1); }
+            let bad = 0;
+            for (const m of a) {
+              if (!m.id) { console.error("::error::有条目没有 id"); bad++; }
+              if (!m.download) { console.error("::error::" + m.id + " 没有 download"); bad++; }
+              // 下载直链必须真有其物，否则站点给出死链
+              if (m.download && !fs.existsSync(m.download)) {
+                console.error("::error::" + m.id + " 的 download 指向的文件不存在: " + m.download); bad++;
+              }
+              // 不兼容的件必须真的标了不兼容 —— 否则会被当成能装的 mod
+              if (m.compatibility && m.compatibility.verdict === undefined) {
+                console.error("::error::" + m.id + " 没有 verdict"); bad++;
+              }
+            }
+            if (bad) { console.error("extras 自检失败 " + bad + " 处"); process.exit(1); }
+            console.log("✓ extras 自检通过：" + a.length + " 条，download 均指向存在的文件");
+          '
+
       - name: 推分支 + 给出一键开 PR 链接
         run: |
           set -uo pipefail
           git config user.name "modsite-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add modsite/mods.json
+          git add modsite/mods.json modsite/extras.json
           if git diff --cached --quiet; then
             echo "mods.json 无变化 —— 不推分支"
             exit 0
