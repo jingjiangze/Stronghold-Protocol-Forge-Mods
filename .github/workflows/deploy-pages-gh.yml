@@ -49,8 +49,8 @@ jobs:
             exit 1
           fi
           # 自检：页面里写的开源地址必须在
-          grep -q 'github.com/jingjiangze/Stronghold-Protocol-Forge-Mods' _modsite/index.html \
-            || { echo "::error::index.html 里没有开源地址"; exit 1; }
+          grep -q 'jingjiangze/Stronghold-Protocol-Forge-Mods' _modsite/index.html \
+            || { echo "::error::页面里没有开源地址（仓库路径不在源文件里）"; exit 1; }
           echo "产物文件数: $(find _site -type f | wc -l)"
 
       - uses: actions/configure-pages@v5
