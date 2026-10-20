@@ -27,6 +27,8 @@ on:
 
 permissions:
   contents: write
+  # 开 PR 需要。缺了会在 gh pr create 时报 403（而不是一个清楚的错误）。
+  pull-requests: write
 
 concurrency:
   group: build-mods-json
@@ -139,24 +141,31 @@ jobs:
             console.log(`✓ 自检通过：${a.length} 条，全部有下载直链，无说明包`);
           '
 
-      - name: 提交（只在有变化时）
+      - name: 提 PR（master 只准 PR 合入）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           git config user.name "modsite-bot"
           git config user.email "actions@users.noreply.github.com"
           git add modsite/mods.json
           if git diff --cached --quiet; then
-            echo "mods.json 无变化 —— 不提交"
+            echo "mods.json 无变化 —— 不开 PR"
             exit 0
           fi
           git commit -m "chore(modsite): 重新生成 mods.json（$(date -u +%Y-%m-%dT%H:%M:%SZ)）"
-          # checkout 的 HEAD 可能落后于别人（维护者手工提交、另一条 CI）的提交 —— 直接 push 会被拒。
-          # 先 fetch 到最新，再把我们的提交 rebase 上去；rebase 失败就不推（不 force，不覆盖别人的工作）。
-          git fetch origin master
-          git rebase origin/master || {
-            echo "::error::rebase 到 origin/master 失败 —— 本地有新冲突，不推"
-            git rebase --abort 2>/dev/null || true
-            exit 1
-          }
-          git push origin HEAD:refs/heads/master
-          echo "已提交"
+          # master 开了分支保护（必须走 PR + mod-gate 必过），所以这里**不能**直推 master ——
+          # 实测直推会被 GH006 挡下（"Changes must be made through a pull request"）。
+          # 改为推一个分支 + 开 PR：mod-gate 会在 PR 上跑，过了才合，闸门一条没少。
+          BR="chore/mods-json-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BR"
+          git push origin "HEAD:refs/heads/$BR"
+          if gh pr list --repo "$GITHUB_REPOSITORY" --head "$BR" --state open --json number --jq '.[].number' | grep -q .; then
+            echo "PR 已存在"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$BR" \
+              --title "chore(modsite): 重新生成 mods.json" \
+              --body "Actions 从 \`mods/index.json\` + 各 \`PROVENANCE.md\` 重新生成的站点索引。
+
+          \`mod-gate\` 会在本 PR 上跑（类型 / CRC / 大小 / 索引一致性），过了才合。"
+          fi
