@@ -65,13 +65,6 @@ code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-ra
 .mgr:hover .mgr__go{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
 
 /* ---- 工具条 ---- */
-/* 次要入口条：比 .mgr 轻，不抢主下载按钮的视觉 */
-.snap{display:flex;align-items:center;gap:14px;margin:0 0 18px;padding:12px 16px;
-  border:1px dashed var(--line-2);border-radius:var(--radius);background:transparent}
-.snap:hover{border-color:var(--mint-700);background:var(--bg-1)}
-.snap__t{font:600 13px var(--font-cjk);color:var(--text-md);margin:0}
-.snap__s{font-size:11.5px;color:var(--text-dim);margin:2px 0 0;line-height:1.6}
-.snap__go{margin-left:auto;flex:0 0 auto;font-size:12px;color:var(--mint-400);white-space:nowrap}
 .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
 .search{flex:1;min-width:200px;position:relative}
 .search input{
@@ -213,17 +206,6 @@ footer{margin:44px 0 0;padding-top:20px;border-top:1px solid var(--line);display
       <p class="mgr__s" id="mgrVer">服务端 + <code>/mod</code> 页面 + CLI · 不含游戏素材</p>
     </div>
     <span class="mgr__go">下载 →</span>
-  </a>
-
-  <a class="snap" href="manager#ai-snapshot">
-    <div>
-      <p class="snap__t">引擎 AI 组件快照</p>
-      <p class="snap__s">
-        <code>sim/ai.js</code> 战斗 AI + <code>match/bot.js</code> 布阵规划器的源码（不是训练模型）·
-        <b>引擎层不兼容</b>，需放回完整引擎树
-      </p>
-    </div>
-    <span class="snap__go">查看 →</span>
   </a>
 
   <div class="tools">
@@ -374,7 +356,9 @@ function render() {
     return [m.id, m.name, m.note, m.notes, m.packId, m.author, m.compatAuthor, m.license]
       .filter(Boolean).join(' ').toLowerCase().includes(q);
   });
-  if (sort === 'name') hit = hit.slice().sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'zh'));
+  // 默认排序：新发布的优先（addedAt 降序；没有时间的老条目落到末尾，保持原顺序）
+  if (sort === '') hit = hit.slice().sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  else if (sort === 'name') hit = hit.slice().sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'zh'));
   else if (sort === 'size-desc') hit = hit.slice().sort((a, b) => (b.sizeBytes || 0) - (a.sizeBytes || 0));
   else if (sort === 'new') hit = hit.slice().sort((a, b) => String(b.version || '').localeCompare(String(a.version || ''), 'zh', { numeric: true }));
 
