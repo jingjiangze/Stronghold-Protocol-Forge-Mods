@@ -4,63 +4,113 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MOD 管理器下载 · 卫戍协议</title>
-<meta name="description" content="卫戍协议 MOD 管理器下载：服务端 + /mod 页面 + CLI，不含游戏素材。">
+<meta name="description" content="卫戍协议 MOD 管理器下载：服务端 + /mod 页面 + CLI，不含游戏素材。自动选最快的镜像。">
 <style>
 :root{
   color-scheme:dark;
-  --mint-500:#4ed8af; --mint-400:#59f4ca; --mint-600:#35d8b4;
-  --bg-0:#0c0f0e; --bg-1:#141816; --bg-2:#1e2421;
-  --line:#2f3a35; --line-2:#3e4b45;
+  --bg-0:#0c0f0e; --bg-1:#141816; --bg-2:#1e2421; --bg-3:#252c29;
+  --bg-glass:rgba(16,20,18,.82);
+  --line:#2f3a35; --line-2:#3e4b45; --line-3:#58675f;
+  --mint-500:#4ed8af; --mint-400:#59f4ca; --mint-600:#35d8b4; --mint-700:#2a9e7f;
+  --mint-a10:rgba(78,216,175,.10); --mint-a20:rgba(78,216,175,.20);
+  --gold:#ffc600; --amber:#f6a329; --red:#e73118; --ice:#9fd4ff; --ice-a20:rgba(159,212,255,.2);
   --text-hi:#f2f2f2; --text-md:#c3cbc7; --text-lo:#8a948f; --text-dim:#5d6863;
-  --text-on-mint:#06110d; --gold:#ffc600; --red:#e73118; --ice:#9fd4ff;
+  --text-on-mint:#06110d;
   --font-cjk:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --font-label:"Bahnschrift","DIN Alternate","Roboto Condensed",var(--font-cjk);
   --font-mono:"Cascadia Mono",ui-monospace,Consolas,monospace;
   --radius:4px;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg-0);color:var(--text-md);font:14px/1.6 var(--font-cjk)}
-main{max-width:820px;margin:0 auto;padding:32px 20px 64px}
-h1{font-size:22px;margin:0 0 6px;color:var(--text-hi)}
-p.sub{margin:0 0 26px;color:var(--text-lo);font-size:13px}
-a{color:var(--mint-400)}
-.panel{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:0 0 16px}
-.panel h2{font-size:13px;margin:0 0 12px;color:var(--mint-400);letter-spacing:.05em}
-.hero{text-align:center;padding:26px 20px}
-.hero .ver{font:13px var(--font-mono);color:var(--text-lo);margin:0 0 4px}
-.hero .meta{font-size:12.5px;color:var(--text-dim);margin:0 0 18px}
-.btn{
-  display:inline-block;padding:12px 34px;border-radius:var(--radius);font-size:15px;
-  border:1px solid var(--mint-600);background:#173a31;color:var(--mint-400);
-  text-decoration:none;cursor:pointer}
-.btn:hover{background:var(--mint-600);color:var(--text-on-mint)}
-.btn[aria-disabled=true]{opacity:.5;pointer-events:none}
-.alt{display:inline-block;margin-left:12px;font-size:12.5px;color:var(--text-lo)}
+body{margin:0;background:var(--bg-0);color:var(--text-md);font:14px/1.7 var(--font-cjk);
+  -webkit-font-smoothing:antialiased}
+a{color:var(--mint-400);text-decoration:none}
+a:hover{color:var(--mint-500)}
+code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-radius:3px;color:var(--ice)}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px 80px}
+
+.top{position:sticky;top:0;z-index:20;background:var(--bg-glass);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.top__in{max-width:820px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:baseline;gap:10px;color:var(--text-hi)}
+.brand b{font:600 15px var(--font-label);letter-spacing:.06em}
+.brand span{font-size:11.5px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase}
+.top__nav{margin-left:auto;display:flex;gap:6px}
+.navlink{padding:7px 13px;border-radius:var(--radius);border:1px solid transparent;
+  color:var(--text-md);font-size:13px}
+.navlink:hover{background:var(--bg-2);color:var(--text-hi)}
+.navlink.cta{border-color:var(--mint-700);color:var(--mint-400);background:var(--mint-a10)}
+.navlink.cta:hover{background:var(--mint-600);color:var(--text-on-mint)}
+
+.hero{padding:32px 0 8px;text-align:center}
+.hero h1{margin:0 0 8px;font:600 24px/1.3 var(--font-cjk);color:var(--text-hi)}
+.hero p{margin:0 auto;max-width:520px;color:var(--text-lo);font-size:13px}
+
+/* 主下载区 */
+.dlbox{margin:22px 0 0;padding:24px 20px;text-align:center;
+  background:linear-gradient(160deg,var(--mint-a10),transparent 55%),var(--bg-1);
+  border:1px solid var(--mint-700);border-radius:var(--radius)}
+.dlbox .ver{font:13px var(--font-mono);color:var(--mint-400);margin:0 0 4px}
+.dlbox .meta{font-size:12.5px;color:var(--text-dim);margin:0 0 18px}
+.bigbtn{display:inline-block;padding:14px 42px;border-radius:var(--radius);font:600 15px var(--font-cjk);
+  border:1px solid var(--mint-600);background:var(--mint-600);color:var(--text-on-mint);
+  min-width:240px}
+.bigbtn:hover{background:var(--mint-400);border-color:var(--mint-400);color:var(--text-on-mint)}
+.bigbtn[aria-disabled="true"]{background:var(--bg-3);border-color:var(--line-2);
+  color:var(--text-dim);pointer-events:none}
+.dlbox .altline{margin:14px 0 0;font-size:12px;color:var(--text-dim)}
+.pick{margin:12px 0 0;font-size:12px;color:var(--text-lo);min-height:18px}
+
+.panel{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 18px;margin:18px 0 0}
+.panel h2{font:600 12.5px var(--font-label);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-lo);margin:0 0 12px}
+
 table{width:100%;border-collapse:collapse;font-size:12.5px}
-th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #242c38}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid #242c38;vertical-align:top}
 th{color:var(--text-lo);font-weight:500}
 td.n{font-family:var(--font-mono);color:var(--text-md)}
 .fast{color:var(--mint-400)}
-code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-radius:3px;color:var(--ice)}
+.slow{color:var(--amber)}
+.dead{color:var(--text-dim)}
+.best{font-size:11px;color:var(--mint-400);border:1px solid var(--mint-700);
+  border-radius:20px;padding:0 7px;background:var(--mint-a10);white-space:nowrap}
+
 pre{white-space:pre-wrap;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);
-  padding:12px 14px;font:12px/1.7 var(--font-mono);color:var(--text-md);overflow:auto}
-ul{margin:6px 0 0;padding-left:20px;font-size:13px}
-li{margin:4px 0}
+  padding:12px 14px;font:12px/1.75 var(--font-mono);color:var(--text-md);overflow:auto;margin:0}
+ul{margin:10px 0 0;padding-left:20px;font-size:12.5px}
+li{margin:6px 0}
 .dim{color:var(--text-dim)}
-footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);color:var(--text-dim);font-size:12px;line-height:1.9}
-.sha{font:11.5px var(--font-mono);word-break:break-all;color:var(--ice)}
+.sha{font:11.5px var(--font-mono);color:var(--ice);word-break:break-all;margin:0}
+
+footer{margin:36px 0 0;padding-top:18px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--text-dim);line-height:1.9}
 </style>
 </head>
 <body>
-<main>
-  <h1>MOD 管理器</h1>
-  <p class="sub">卫戍协议的服务端 + <code>/mod</code> 管理页面 + 命令行。<b>不含游戏素材</b>（首次启动按清单自取）。</p>
 
-  <div class="panel hero">
+<header class="top">
+  <div class="top__in">
+    <a class="brand" href="./"><b>MOD 站</b><span>卫戍协议</span></a>
+    <nav class="top__nav">
+      <a class="navlink" href="./">mod 列表</a>
+      <a class="navlink cta" href="upload">上传 mod</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>MOD 管理器</h1>
+    <p>卫戍协议的服务端 + <code>/mod</code> 管理页面 + 命令行。<b>不含游戏素材</b>（首次启动按清单自取）。</p>
+  </div>
+
+  <div class="dlbox">
     <p class="ver" id="ver">正在取版本…</p>
     <p class="meta" id="meta"></p>
-    <a class="btn" id="primary" aria-disabled="true" href="#">正在测速…</a>
-    <a class="alt" id="ghlink" href="#" target="_blank" rel="noopener">GitHub 原始页面</a>
-    <p class="meta" id="pickNote" style="margin-top:14px;margin-bottom:0"></p>
+    <a class="bigbtn" id="primary" aria-disabled="true" href="#">正在测速…</a>
+    <p class="pick" id="pick"></p>
+    <p class="altline">或到 <a id="ghlink" href="#" target="_blank" rel="noopener">GitHub 原始页面</a> 自行选择</p>
   </div>
 
   <div class="panel">
@@ -69,28 +119,26 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);color:v
       <thead><tr><th>镜像</th><th>延迟</th><th>Range</th><th></th></tr></thead>
       <tbody id="mirrors"><tr><td colspan="4" class="dim">测速中…</td></tr></tbody>
     </table>
-    <p class="dim" style="margin:10px 0 0;font-size:12px">
-      每个镜像只取 256 KiB 做 Range 探测；浏览器禁止跨域的镜像测不到真实速度，按清单元数据排序。
+    <p class="dim" style="margin:10px 0 0;font-size:11.5px;line-height:1.7">
+      每个镜像只取 256 KB 做一次 Range 探测，最快的那条成为上面的主按钮。
+      浏览器因跨域限制测不到真实速度的镜像，按清单里的历史测量值排序。
     </p>
   </div>
 
   <div class="panel">
     <h2>怎么装</h2>
-    <pre id="howto">unzip Stronghold-Protocol-Forge-modmgr-0.3.1-lite.zip
-cd Stronghold-Protocol
-npm start            # http://localhost:3000
-                     # 管理器页面：http://localhost:3000/mod</pre>
+    <pre id="howto">正在取…</pre>
     <ul>
       <li>需要 Node.js <b>22</b> 或 <b>24</b>。</li>
       <li>游戏素材不在包里：首次启动 <code>npm run setup</code> 会按 <code>data/assets.json</code> 缺什么下什么，可断点续传。</li>
-      <li>素材默认走 <a id="cdn" href="#">speedcdn</a>（也可用官方 CDN 整合包，把素材地址指到 CDN）。</li>
+      <li>素材默认走 <a id="cdn" href="#">speedcdn</a>，也可用官方 CDN 整合包把素材地址指到 CDN。</li>
       <li>管理器 <code>/mod</code> 只在本机 / 局域网可访问；写入需要 <code>plugins/.studio-key</code> 这把业主钥匙。</li>
     </ul>
   </div>
 
   <div class="panel">
     <h2>校验</h2>
-    <p class="dim" style="margin:0 0 8px;font-size:12.5px">下载后核对 SHA256（<span id="shaName">…</span>）：</p>
+    <p class="dim" style="margin:0 0 8px;font-size:12px">下载后核对 SHA256（<span id="shaName">…</span>）：</p>
     <p class="sha" id="sha">正在取…</p>
   </div>
 
@@ -100,32 +148,33 @@ npm start            # http://localhost:3000
     <br>
     开源：<a id="srcRepo" href="#">Stronghold-Protocol-Forge</a>
     · 管理器规格与闸门：<a id="mgrRepo" href="#">stronghold-mod-manager</a>
-    · <a href="./">返回 MOD 站</a>
+    · <a href="./">返回 mod 列表</a>
   </footer>
-</main>
+</div>
 
 <script>
 'use strict';
-// 这个页面只读两个静态文件：GitHub Releases API（经镜像读不到 JSON，所以直接用 api.github.com）
-// 与同目录 mirrors.json。不做任何写操作。
-
+// 只读两个外部资源：GitHub Releases API（镜像不代理 JSON，必须直连）与同目录 mirrors.json。
+// 不做任何写操作。
 const REPO = 'jingjiangze/Stronghold-Protocol-Forge';
 const MGR_REPO = 'jingjiangze/stronghold-mod-manager';
-// 页面只认资产名里的这个前缀：改了发布命名就要同步改这里，避免把别的东西当管理器发出去。
+// 只认资产名里的这个前缀：发布命名变了要同步改，避免把别的东西当管理器发出去。
 const ASSET_PREFIX = 'Stronghold-Protocol-Forge-modmgr-';
-const LIMIT = 256 * 1024;      // 测速只取 256 KiB
-const PROBE_TIMEOUT = 8000;
+const LIMIT = 256 * 1024;      // 测速只取 256 KB
+const PROBE_TIMEOUT = 15000;   // gh-proxy 首字节可能慢；8s 会把可用镜像误杀
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-const mb = (n) => (Number(n) / 1048576).toFixed(1) + ' MiB';
+const mb = (n) => (Number(n) / 1048576).toFixed(1) + ' MB';
 
 $('ghlink').href = 'https://github.com/' + REPO + '/releases/latest';
 $('srcRepo').href = 'https://github.com/' + REPO;
+$('srcRepo').textContent = REPO;
 $('mgrRepo').href = 'https://github.com/' + MGR_REPO;
 $('mgrRepo').textContent = MGR_REPO;
+$('cdn').href = 'https://speedcdn.jiangjiangze.icu/';
 
-/** 拿最新 release。优先直连 api.github.com（镜像不代理 JSON）。 */
+/** 拿最新 release。直连 api.github.com（镜像不代理 JSON）。 */
 async function fetchLatest() {
   const r = await fetch('https://api.github.com/repos/' + REPO + '/releases/latest', {
     headers: { accept: 'application/vnd.github+json' },
@@ -143,29 +192,28 @@ function pickAssets(rel) {
   return { zip, sha };
 }
 
-/** 对一个镜像做 Range 探测，返回毫秒；失败返回 null。 */
-function probe(url, timeoutMs) {
+/** 对一个镜像做 Range 探测。返回 { ms } 或 { err }，失败原因分开记，便于如实显示。 */
+function probe(url) {
   return new Promise((resolve) => {
     const ctrl = new AbortController();
-    const t = setTimeout(() => { ctrl.abort(); resolve(null); }, timeoutMs);
+    let timedOut = false;
+    const t = setTimeout(() => { timedOut = true; ctrl.abort(); resolve({ err: 'timeout' }); }, PROBE_TIMEOUT);
     const t0 = performance.now();
     fetch(url, { headers: { Range: 'bytes=0-' + (LIMIT - 1) }, signal: ctrl.signal, cache: 'no-store' })
-      .then((r) => {
-        // 读掉 body 才算真实耗时；有些加速器头很快、体很慢。
-        return r.arrayBuffer().then(() => {
-          clearTimeout(t);
-          resolve(r.ok || r.status === 206 ? Math.round(performance.now() - t0) : null);
-        });
-      })
-      .catch(() => { clearTimeout(t); resolve(null); });
+      .then((r) => r.arrayBuffer().then(() => {
+        if (timedOut) return;
+        clearTimeout(t);
+        if (!(r.ok || r.status === 206)) { resolve({ err: 'http', status: r.status }); return; }
+        resolve({ ms: Math.round(performance.now() - t0) });
+      }))
+      .catch((e) => { if (timedOut) return; clearTimeout(t); resolve({ err: 'net', detail: String(e && e.message || e).slice(0, 40) }); });
   });
 }
 
 (async () => {
   let mirrors = [];
   try {
-    const mr = await fetch('mirrors.json', { cache: 'no-store' });
-    mirrors = (await mr.json()).mirrors || [];
+    mirrors = ((await (await fetch('mirrors.json', { cache: 'no-store' })).json()).mirrors) || [];
   } catch { /* 清单读不到就只剩直连 */ }
 
   let rel, zip, shaAsset;
@@ -191,7 +239,7 @@ function probe(url, timeoutMs) {
     '                     # 管理器页面：http://localhost:3000/mod',
   ].join('\n');
 
-  // SHA256 摘要文件是小文本，直接从 GitHub 原址取（镜像不一定代理它）
+  // SHA256 摘要文件是小文本，从 GitHub 原址取（镜像不一定代理它）
   if (shaAsset) {
     try {
       const t = await (await fetch(shaAsset.browser_download_url, { cache: 'no-store' })).text();
@@ -202,35 +250,56 @@ function probe(url, timeoutMs) {
   }
 
   // 逐镜像测速
-  const rows = mirrors.map((m) => ({ ...m, url: m.prefix + zip.browser_download_url, ms: null }));
+  const rows = mirrors.map((m) => Object.assign({}, m, { url: m.prefix + zip.browser_download_url, ms: null }));
   $('mirrors').innerHTML = rows.map((m) =>
-    `<tr id="m-${esc(m.id)}"><td>${esc(m.name)}</td><td class="n">测速中…</td><td>${m.range ? '支持' : '不支持'}</td><td></td></tr>`
+    '<tr id="m-' + esc(m.id) + '"><td>' + esc(m.name) + '</td>'
+    + '<td class="n">测速中…</td><td>' + (m.range ? '支持' : '不支持') + '</td><td></td></tr>'
   ).join('') || '<tr><td colspan="4" class="dim">清单里没有镜像</td></tr>';
 
+  // 只对 cors=true 的镜像做浏览器探测：跨域 Range 请求要求对方回 Access-Control-Allow-Origin，
+  // 没回的一律探测失败 —— 那会把**可用**的镜像误报成「不可用」。所以：
+  //   cors=true  → 真探测（拿到的是你这台机器的真实延迟）
+  //   cors=false → 用清单里的实测值（measuredMs），并标注「未实测」
   await Promise.all(rows.map(async (m) => {
-    m.ms = await probe(m.url, PROBE_TIMEOUT);
     const cell = document.getElementById('m-' + m.id);
-    if (cell) {
-      cell.children[1].textContent = m.ms == null ? '不可用' : m.ms + ' ms';
-      cell.children[1].className = 'n' + (m.ms != null && m.ms < 3000 ? ' fast' : '');
+    const td = cell ? cell.children[1] : null;
+    if (m.cors === true) {
+      const r = await probe(m.url);
+      m.measured = true;
+      if (r.ms != null) { m.ms = r.ms; m.err = null; }
+      else {
+        m.err = r.err;
+        // 探测失败时退回清单值：宁可显示历史测量值，也不要把可用镜像标成「不可用」。
+        m.ms = typeof m.measuredMs === 'number' ? m.measuredMs : null;
+        m.measured = false;
+      }
+    } else {
+      m.ms = typeof m.measuredMs === 'number' ? m.measuredMs : null;
+      m.measured = false;
+    }
+    if (!td) return;
+    if (m.ms == null) { td.textContent = '不可用'; td.className = 'n dead'; }
+    else {
+      td.textContent = m.ms + ' ms' + (m.measured ? '' : (m.err ? '（探测' + (m.err === 'timeout' ? '超时' : m.err === 'http' ? '返回非 2xx' : '网络错误') + '，用清单值）' : '（清单值）'));
+      td.className = 'n' + (m.ms < 3000 ? ' fast' : ' slow');
     }
   }));
 
   // 选最快；全挂就退回 GitHub 原址
-  const ok = rows.filter((m) => m.ms != null).sort((a, b) => a.ms - b.ms);
-  const best = ok[0];
+  const okRows = rows.filter((m) => m.ms != null).sort((a, b) => a.ms - b.ms);
+  const best = okRows[0];
   if (best) {
     $('primary').href = best.url;
-    $('primary').textContent = '下载 ' + mb(zip.size) + '（' + best.name + '）';
+    $('primary').textContent = '下载 ' + mb(zip.size);
     $('primary').setAttribute('aria-disabled', 'false');
-    $('pickNote').textContent = '已选最快的镜像：' + best.name + '，' + best.ms + ' ms';
+    $('pick').textContent = '已选最快镜像：' + best.name + '（' + best.ms + ' ms）';
     const cell = document.getElementById('m-' + best.id);
-    if (cell) cell.lastElementChild.innerHTML = '<span class="fast">主按钮</span>';
+    if (cell) cell.lastElementChild.innerHTML = '<span class="best">主按钮</span>';
   } else {
     $('primary').href = zip.browser_download_url;
     $('primary').textContent = '下载 ' + mb(zip.size) + '（GitHub 直连）';
     $('primary').setAttribute('aria-disabled', 'false');
-    $('pickNote').textContent = '所有镜像都探测失败，已退回 GitHub 原址。';
+    $('pick').textContent = '所有镜像都探测失败，已退回 GitHub 原址。';
   }
 })();
 </script>
