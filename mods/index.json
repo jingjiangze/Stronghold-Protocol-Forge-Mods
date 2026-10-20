@@ -1375,6 +1375,30 @@
         "⚠️ 原件的服务端（`server/lobbyMusic.js` + `server/http/routes.js` 的 `/lobby-music/` 分支）**无法通过插件机制装载**，已放在包内 `manual-server/` 供手工安装 —— 不装它时搜索/在线解析会 404，本地文件播放仍可用。",
         "⚠️ 与 `stronghold-ui` 都覆盖 `js/ui/lobbyMusic.js`；插件按 id 字典序覆盖，`stronghold-ui` 在后会盖掉本包，两者**二选一**。"
       ]
+    },
+    {
+      "id": "vanilla-plus",
+      "name": "原版增强（vanilla-plus）",
+      "version": "0.1.19",
+      "sha256": "b3cb6e3c35fea580e501794d7c1d3f478e73cb4c94d5e6c0d0f147f35bbab0a9",
+      "category": "functional",
+      "categoryWhy": "content 类插件（数据补丁 + 新记录）",
+      "packId": "vanilla-plus",
+      "path": "mods/vanilla-plus/0.1.19/mod.zip",
+      "sizeBytes": 299093,
+      "fileCount": 8,
+      "unpackedBytes": 0,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件 `原版增强安装.zip` 里带了两个 content 插件，本包是其中的 `vanilla-plus`（另一个 `feihuo-liuxing` 因 Spine 模型是压缩格式、pack 解析不了，单独走未兼容）。",
+        "content 类插件不需要 owner pin。"
+      ]
     }
   ],
   "rejected": [],
