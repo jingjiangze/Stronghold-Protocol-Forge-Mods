@@ -1,6 +1,6 @@
 {
  "updated": "2026-10-20",
- "note": "MOD 管理器下载页的加速器清单。prefix 模式：把 GitHub asset 完整 URL 接在 prefix 后面。页面会对每个镜像做一次 Range 探测（只取 256 KiB），把最快的那个做成主按钮。清单里没有的 host 一律不信任——页面每次拼完 URL 都按本文件复核一遍。gh.llkk.cc 于 2026-10-20 实测 21s 超时，先不列。",
+ "note": "MOD 管理器下载页的加速器清单。prefix 模式：把 GitHub asset 完整 URL 接在 prefix 后面。页面只对 cors=true 的镜像做浏览器 Range 探测（跨域探测要求 ACAO），其余按本文件的历史测量值排序——浏览器测不到就报「不可用」会误伤可用镜像。",
  "repo": "jingjiangze/Stronghold-Protocol-Forge",
  "assetHint": "Stronghold-Protocol-Forge-modmgr-*-lite.zip",
  "mirrors": [
