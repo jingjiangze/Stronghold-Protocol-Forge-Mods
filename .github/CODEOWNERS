@@ -29,3 +29,19 @@
 /UPLOAD.md                          @jingjiangze
 /PUBLISH-PR.md                      @jingjiangze
 /AUTHOR-PR.md                       @jingjiangze
+
+# 会被 CI 执行的文件（2026-10-20 安全审计补充）。
+# `mod-compat.yml` 里有 `await import('site/packcheck.mjs')` —— 那是在**执行仓库里的文件**。
+# 虽然该 workflow 已去掉 pull_request 触发（改为仅 workflow_dispatch + schedule），
+# 但只要有朝一日有人为了「改 packcheck 时自动复验」把 pull_request 加回来，
+# 这个文件就必须仍然归 owner —— 否则又是「PR 改它 = 任意代码执行」的口子。
+# 宁可多列一行，不依赖「记得别再改回去」。
+/site/packcheck.mjs                 @jingjiangze
+
+# 上传站服务端源码：含 ADMIN_TOKEN 校验、限流、落盘逻辑。改它等于改审核台本身。
+/site/server.mjs                    @jingjiangze
+/site/review.mjs                    @jingjiangze
+/site/zip.mjs                       @jingjiangze
+
+# 部署脚本：决定服务端怎么装、以什么身份跑
+/site/deploy.sh                     @jingjiangze
