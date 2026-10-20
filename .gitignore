@@ -10,6 +10,11 @@ desktop.ini
 !packs/**/*.zip
 # `mods/` 是 mod 仓库本体（站上已通过、非说明文档的那些；含官方素材的也收，如实标注），它的 zip 要进版本库
 !mods/**/*.zip
+# `incoming/` 是**收件区**：陌生作者把原件/包放这里等维护者处理。
+# 没有这条放行时，`*.zip` 会把它们的 mod.zip **静默丢掉**（git add 不报错、push 也不报错，
+# 文件就是凭空消失）—— 2026-10-20 实测证实：git add -n 里看不到 incoming/testmod/mod.zip。
+# 这正是「方式 B：git push 上传」整条路径失效的原因，所以必须与 mods/、packs/ 同等放行。
+!incoming/**/*.zip
 
 # 上传站的运行数据（投稿、决定）—— 绝不能进版本库
 site/data/
