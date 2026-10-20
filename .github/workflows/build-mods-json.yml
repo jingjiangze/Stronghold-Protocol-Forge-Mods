@@ -77,8 +77,8 @@ jobs:
                 download,
               };
             }).filter((m) => m.id);
-            fs.writeFileSync("site/mods.json", JSON.stringify({ generatedAt: new Date().toISOString(), mods: out }, null, 1) + "\n");
-            console.log("写出 site/mods.json：", out.length, "条");
+            fs.writeFileSync("modsite/mods.json", JSON.stringify({ generatedAt: new Date().toISOString(), mods: out }, null, 1) + "\n");
+            console.log("写出 modsite/mods.json：", out.length, "条");
             const noSha = out.filter((m) => !m.sha256).length;
             if (noSha) console.log(`::warning::${noSha} 条没有 sha256 —— 下载到的到底是不是站上那份无法自证`);
           '
@@ -88,7 +88,7 @@ jobs:
           set -uo pipefail
           node -e '
             const fs = require("fs");
-            const j = JSON.parse(fs.readFileSync("site/mods.json", "utf8"));
+            const j = JSON.parse(fs.readFileSync("modsite/mods.json", "utf8"));
             const a = j.mods || [];
             if (!a.length) { console.error("::error::生成结果是空的"); process.exit(1); }
             let bad = 0;
@@ -105,7 +105,7 @@ jobs:
           set -uo pipefail
           git config user.name "modsite-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add site/mods.json
+          git add modsite/mods.json
           if git diff --cached --quiet; then
             echo "mods.json 无变化 —— 不提交"
           else
