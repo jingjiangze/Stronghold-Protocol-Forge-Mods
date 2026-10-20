@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-20T16:46:32.119Z",
+ "generatedAt": "2026-10-20T17:08:07.877Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -558,6 +558,24 @@
    "packId": "stronghold-ui",
    "addedAt": 1792514166000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/stronghold-ui/0.3.1/mod.zip"
+  },
+  {
+   "id": "offline-solo",
+   "name": "离线独立模拟（纯浏览器）",
+   "version": "0.3.1",
+   "category": "unknown",
+   "note": "⚠️ **引擎层不兼容**：官方 0.3.1 原版没有 `/match/` 静态挂载、`/data.js` 缺 `getConfig` / `getMode`、`public/js/main.js` 无离线入口 ⇒ 单独安装不生效，需引擎侧改动（引擎仓 PR #3）。\n插件包（`plugin.json`，不是 `pack.json`）：需要支持 `code.client` 客户端覆盖的基座；装好后在 `plugins/config.json` 的 `trusted` 里钉 `plugin.lock.json` 的 sha256。\n即使引擎已带离线支持，本包也只是一份副本——离线能力本身在基座树里，默认配置（不启用任何插件）即可离线开局。",
+   "author": "jingjiangze（引擎仓 PR #3 的 `plugins/offline-solo/`）",
+   "license": "GPL-3.0-or-later（与引擎仓 `LICENSE` 一致）",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "<https://github.com/jingjiangze/Stronghold-Protocol-Server-Deploy/pull/3> 的 `plugins/offline-solo/`（与基座 `public/js/offline/` 同一批文件）",
+   "sizeBytes": 17510,
+   "fileCount": 8,
+   "sha256": "e102c61a893f5157f68ef77aa5c9875ea5ad52b7cb62c745949161e67a7027b6",
+   "packId": "offline-solo",
+   "addedAt": 1792516043000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/offline-solo/0.3.1/mod.zip"
   }
  ]
 }
