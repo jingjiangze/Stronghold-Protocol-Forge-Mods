@@ -57,26 +57,63 @@ jobs:
             const list = Array.isArray(src) ? src : (src.mods || []);
             if (!list.length) { console.error("::error::mods/index.json 是空的"); process.exit(1); }
             const repo = process.env.RELEASE_REPO || "";
-            const out = list.map((m) => {
-              const id = m.id || "";
-              const ver = m.version || "";
-              // 有 Release 仓就指向 Release asset；否则退回本仓 raw 路径
-              const download = repo && id && ver
-                ? `https://github.com/${repo}/releases/download/${id}-v${ver}/${id}-${ver}.zip`
-                : (m.path ? `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/master/${m.path}` : "");
-              return {
-                id,
-                name: m.name || id,
-                version: ver,
-                category: m.category || "unknown",
-                note: m.notes || m.note || "",
-                sizeBytes: m.sizeBytes || 0,
-                fileCount: m.fileCount || 0,
-                sha256: m.sha256 || "",
-                packId: m.packId || "",
-                download,
-              };
-            }).filter((m) => m.id);
+            // 署名从 PROVENANCE.md 读。那是 tools/build-index.mjs 机械生成的权威源，
+            // index.json 里没有 author 字段（实测 30 条字段并集：id name version sha256 packHash
+            // category categoryWhy stationId path sizeBytes fileCount unpackedBytes assets notes
+            // engineLoad —— 一个署名都没有）。解析失败就留空，页面负责「没有就不画」。
+            const prov = (id, ver) => {
+              try {
+                const t = fs.readFileSync(`mods/${id}/${ver}/PROVENANCE.md`, "utf8");
+                const cell = (label) => {
+                  const m = new RegExp("\\|\\s*" + label + "\\s*\\|\\s*([^|]+?)\\s*\\|").exec(t);
+                  return m ? m[1].trim() : "";
+                };
+                // 兼容改写者一栏「未声明」也算没有：页面要区分「未填」与「不是兼容包」
+                const isCompat = /\|\s*④\s*兼容改写者\s*\|/.test(t) && !/④\s*兼容改写者\s*\|\s*\*\*未声明\*\*/.test(t);
+                return {
+                  author: cell("② 原作者") || "",
+                  license: cell("③ 原件许可") || "",
+                  compatAuthor: cell("④ 兼容改写者") || "",
+                  isCompat,
+                  from: cell("⑤ 来源") || "",
+                };
+              } catch { return null; }
+            };
+            const flat = (x) => Array.isArray(x) ? x.join("\n") : (x == null ? "" : String(x));
+            const out = list
+              // 说明包不进站点（业主口径「去掉说明包」）。上游 build-index.mjs 的四道闸门第 3 条
+              // 本来就不收 documentation（mods/README.md:56），这里是**第二道**：万一有人手改
+              // index.json 绕过闸门，站点也不展示。数据仍留在 index.json 里，不丢。
+              .filter((m) => (m.category || "unknown") !== "documentation")
+              .map((m) => {
+                const id = m.id || "";
+                const ver = m.version || "";
+                // 有 Release 仓就指向 Release asset；否则退回本仓 raw 路径
+                const download = repo && id && ver
+                  ? `https://github.com/${repo}/releases/download/${id}-v${ver}/${id}-${ver}.zip`
+                  : (m.path ? `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/master/${m.path}` : "");
+                const p = prov(id, ver);
+                return {
+                  id,
+                  name: m.name || id,
+                  version: ver,
+                  category: m.category || "unknown",
+                  // 备注：保留，默认在页面上折叠。notes 是数组，join 成字符串（不靠隐式 String()）。
+                  note: flat(m.notes || m.note),
+                  author: p ? p.author : "",
+                  license: p ? p.license : "",
+                  compatAuthor: p ? p.compatAuthor : "",
+                  isCompat: p ? p.isCompat : false,
+                  from: p ? p.from : "",
+                  sizeBytes: m.sizeBytes || 0,
+                  fileCount: m.fileCount || 0,
+                  sha256: m.sha256 || "",
+                  packId: m.packId || "",
+                  download,
+                };
+              }).filter((m) => m.id);
+            const dropped = list.length - out.length;
+            if (dropped > 0) console.log(`过滤掉说明包 ${dropped} 条（category === documentation，站点不展示；index.json 里仍在）`);
             fs.writeFileSync("modsite/mods.json", JSON.stringify({ generatedAt: new Date().toISOString(), mods: out }, null, 1) + "\n");
             console.log("写出 modsite/mods.json：", out.length, "条");
             const noSha = out.filter((m) => !m.sha256).length;
@@ -96,8 +133,10 @@ jobs:
               if (!m.id) { console.error("::error::有条目没有 id"); bad++; }
               if (!m.download) { console.error(`::error::${m.id} 没有下载直链`); bad++; }
             }
+            const docs = a.filter((m) => m.category === "documentation").length;
+            if (docs) { console.error(`::error::mods.json 里还有 ${docs} 条说明包 —— 站点不该展示它们`); bad += docs; }
             if (bad) { console.error(`自检失败 ${bad} 处`); process.exit(1); }
-            console.log(`✓ 自检通过：${a.length} 条，全部有下载直链`);
+            console.log(`✓ 自检通过：${a.length} 条，全部有下载直链，无说明包`);
           '
 
       - name: 提交（只在有变化时）
