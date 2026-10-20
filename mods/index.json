@@ -1,1041 +1,1169 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-10-13T10:55:20.783Z",
-  "source": {
-    "stage": "E:\\destop\\harness_1\\_up\\stage-new2\\modrepo-stage",
-    "host": null,
-    "dataDir": "/var/lib/sp-modsite",
-    "readAt": null,
-    "manifestGeneratedAt": "2026-10-13T10:54:50.753Z",
-    "selection": "state=approved 且 packKind=functional",
-    "excludedSamePackId": [
-      {
-        "id": "d19511bd5485",
-        "packId": "duel-assets",
-        "version": "0.1.0",
-        "uploadedAt": "2026-10-12T02:45:14.393Z",
-        "decisionAt": "2026-10-12T04:39:29.928Z",
-        "reason": "同 pack id 只能一条（引擎不允许并存）",
-        "keptId": "05c6dd5c5844",
-        "keptDecisionAt": "2026-10-12T04:39:29.920Z",
-        "keptUploadedAt": "2026-10-12T02:46:16.446Z"
-      },
-      {
-        "id": "9709a3406f16",
-        "packId": "mod-xie",
-        "version": "2.0.0",
-        "uploadedAt": "2026-10-11T08:44:06.823Z",
-        "decisionAt": "2026-10-11T09:24:26.829Z",
-        "reason": "同 pack id 只能一条（引擎不允许并存）",
-        "keptId": "d77099d4a54a",
-        "keptDecisionAt": "2026-10-13T10:48:10.057Z",
-        "keptUploadedAt": "2026-10-13T10:38:37.417Z"
-      }
-    ]
+ "schemaVersion": 1,
+ "generatedAt": "2026-10-20T05:20:06.177Z",
+ "source": {
+  "stage": "E:\\destop\\harness_1\\_up\\stage-new2\\modrepo-stage",
+  "host": null,
+  "dataDir": "/var/lib/sp-modsite",
+  "readAt": null,
+  "manifestGeneratedAt": "2026-10-13T10:54:50.753Z",
+  "selection": "state=approved 且 packKind=functional",
+  "excludedSamePackId": [
+   {
+    "id": "d19511bd5485",
+    "packId": "duel-assets",
+    "version": "0.1.0",
+    "uploadedAt": "2026-10-12T02:45:14.393Z",
+    "decisionAt": "2026-10-12T04:39:29.928Z",
+    "reason": "同 pack id 只能一条（引擎不允许并存）",
+    "keptId": "05c6dd5c5844",
+    "keptDecisionAt": "2026-10-12T04:39:29.920Z",
+    "keptUploadedAt": "2026-10-12T02:46:16.446Z"
+   },
+   {
+    "id": "9709a3406f16",
+    "packId": "mod-xie",
+    "version": "2.0.0",
+    "uploadedAt": "2026-10-11T08:44:06.823Z",
+    "decisionAt": "2026-10-11T09:24:26.829Z",
+    "reason": "同 pack id 只能一条（引擎不允许并存）",
+    "keptId": "d77099d4a54a",
+    "keptDecisionAt": "2026-10-13T10:48:10.057Z",
+    "keptUploadedAt": "2026-10-13T10:38:37.417Z"
+   }
+  ]
+ },
+ "engine": {
+  "path": "E:\\destop\\harness_1\\Stronghold-Protocol",
+  "appVersion": "0.18.3",
+  "modApiVersion": 1
+ },
+ "note": "本索引是 mod 仓库的唯一真相；每条字段都实测（sha256 重算、装载调用引擎那一份）。`fileCount` 是 ZIP 条目数，不等于包内实际文件数（`.spresources` 容器内部另有若干文件）。",
+ "mods": [
+  {
+   "id": "ave-mujica",
+   "name": "颂乐人偶",
+   "version": "1.1.0",
+   "sha256": "6a09a3cb39a2f0caacaaa055fdc1216473c234ef554ff067020c59e8e36fc06c",
+   "packHash": "7ea8882a81438b701ca5caf123b60e420b344bb9b5345a01f42febd2f4b4a198",
+   "category": "functional",
+   "categoryWhy": "声明了 content / overrides",
+   "stationId": "5a05ef99d82e",
+   "path": "mods/ave-mujica/1.1.0/mod.zip",
+   "sizeBytes": 18777089,
+   "fileCount": 179,
+   "unpackedBytes": 18746613,
+   "assets": {
+    "assetFree": false,
+    "count": 167,
+    "bytes": 18600571,
+    "byKind": {
+     "audio": 70,
+     "spine": 36,
+     "image": 61
+    },
+    "containers": []
+   },
+   "notes": [
+    "⚠️ **含素材**：167 个文件 / 18600571 B（{\"audio\":70,\"spine\":36,\"image\":61}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "ave-mujica"
+    ],
+    "errors": [],
+    "layer": "B",
+    "combat": true
+   }
   },
-  "engine": {
-    "path": "E:\\destop\\harness_1\\Stronghold-Protocol",
-    "appVersion": "0.18.3",
-    "modApiVersion": 1
+  {
+   "id": "boss-fixed-pool",
+   "name": "领袖固定血量（0.1.x 口径）",
+   "version": "1.0.0",
+   "sha256": "29d56786d3c1d7ad048a6cd5fc8316228279adb04780e5ea7e7bda3dd7b6c28f",
+   "packHash": "5143473592bad1640f44429b331a13c8fb744f49d99e9a51ec7548c8ccafcadc",
+   "category": "functional",
+   "categoryWhy": "声明了 content / overrides",
+   "stationId": "215c9aa33afc",
+   "path": "mods/boss-fixed-pool/1.0.0/mod.zip",
+   "sizeBytes": 8382,
+   "fileCount": 5,
+   "unpackedBytes": 13580,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "boss-fixed-pool"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": true
+   }
   },
-  "note": "本索引是 mod 仓库的唯一真相；每条字段都实测（sha256 重算、装载调用引擎那一份）。`fileCount` 是 ZIP 条目数，不等于包内实际文件数（`.spresources` 容器内部另有若干文件）。",
-  "mods": [
-    {
-      "id": "ave-mujica",
-      "name": "颂乐人偶",
-      "version": "1.1.0",
-      "sha256": "6a09a3cb39a2f0caacaaa055fdc1216473c234ef554ff067020c59e8e36fc06c",
-      "packHash": "7ea8882a81438b701ca5caf123b60e420b344bb9b5345a01f42febd2f4b4a198",
-      "category": "functional",
-      "categoryWhy": "声明了 content / overrides",
-      "stationId": "5a05ef99d82e",
-      "path": "mods/ave-mujica/1.1.0/mod.zip",
-      "sizeBytes": 18777089,
-      "fileCount": 179,
-      "unpackedBytes": 18746613,
-      "assets": {
-        "assetFree": false,
-        "count": 167,
-        "bytes": 18600571,
-        "byKind": {
-          "audio": 70,
-          "spine": 36,
-          "image": 61
-        },
-        "containers": []
-      },
-      "notes": [
-        "⚠️ **含素材**：167 个文件 / 18600571 B（{\"audio\":70,\"spine\":36,\"image\":61}）⇒ 须在页面上标注来源与授权。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "ave-mujica"
-        ],
-        "errors": [],
-        "layer": "B",
-        "combat": true
+  {
+   "id": "capacity-panel",
+   "name": "房间容量看板（4/8/12/16/20 展示与预览）",
+   "version": "1.0.1",
+   "sha256": "7444fca6204e7e4cc60f89667a3a273d9e135e992b0eb4cd9db194f695a89f15",
+   "packHash": "b2cbb1f6699a2f4001818f3039e6db6ed96cd31522ac5e2705521efe195d48fa",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "5f3bfb0272b9",
+   "path": "mods/capacity-panel/1.0.1/mod.zip",
+   "sizeBytes": 15627,
+   "fileCount": 10,
+   "unpackedBytes": 30294,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "capacity-panel"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "cdn-source",
+   "name": "CDN 源选择（最快镜像）",
+   "version": "1.0.2",
+   "sha256": "39574e4dd9fafa32a6148b350a530cf016c0ab6785a20ccdf959524108986d88",
+   "packHash": "56ce40defefe3c61677e980c52e0d81312e7486aeba0a5f05a73ff2b5a21dad0",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "e9de2c45e249",
+   "path": "mods/cdn-source/1.0.2/mod.zip",
+   "sizeBytes": 10276,
+   "fileCount": 6,
+   "unpackedBytes": 16110,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "cdn-source"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "chat-bubble",
+   "name": "局内文字聊天（房内气泡）",
+   "version": "1.0.0",
+   "sha256": "3346f0a383963ca5799f48ed93fe7e2113a04f17477418c656d66cc8345e8e34",
+   "packHash": "215d942778d3ba161148e62cf289e85fb110634727c09f7062fb9f48b7c01ea7",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "84ab02864356",
+   "path": "mods/chat-bubble/1.0.0/mod.zip",
+   "sizeBytes": 7035,
+   "fileCount": 4,
+   "unpackedBytes": 11837,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "chat-bubble"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "dmg-board",
+   "name": "伤害看板（结算页）",
+   "version": "1.0.0",
+   "sha256": "d997e95a45160540f62e5482c90d602ce6431588ad6cf1e8c50721ac06699e2c",
+   "packHash": "f7bc8493d3c214abd0ef4fa1735b65eb29ca6827c1ac0902855f3583778f3b7a",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "8d7af46dce00",
+   "path": "mods/dmg-board/1.0.0/mod.zip",
+   "sizeBytes": 33198,
+   "fileCount": 6,
+   "unpackedBytes": 32558,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "dmg-board"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "duel-assets",
+   "name": "争锋频道 · 素材容器（客户端导出 · 非商业）",
+   "version": "0.1.0",
+   "sha256": "7103a1ca56c8bd8c72a1f33ad41dc999c6939fde462a641436ff8c0741424928",
+   "packHash": "0c4c7b3f2833e4e8d5ac1ca2805696d9922e16d33eddc8149d8315d98704b7b5",
+   "category": "functional",
+   "categoryWhy": "声明了 assets",
+   "stationId": "05c6dd5c5844",
+   "path": "mods/duel-assets/0.1.0/mod.zip",
+   "sizeBytes": 25226848,
+   "fileCount": 4,
+   "unpackedBytes": 45310114,
+   "assets": {
+    "assetFree": false,
+    "count": 102,
+    "bytes": 6028468,
+    "byKind": {},
+    "containers": [
+     {
+      "name": "packs/duel-resources.spresources",
+      "ok": true,
+      "fileCount": 218,
+      "byKind": {
+       "audio": 21,
+       "image": 81
       }
-    },
-    {
-      "id": "boss-fixed-pool",
-      "name": "领袖固定血量（0.1.x 口径）",
-      "version": "1.0.0",
-      "sha256": "29d56786d3c1d7ad048a6cd5fc8316228279adb04780e5ea7e7bda3dd7b6c28f",
-      "packHash": "5143473592bad1640f44429b331a13c8fb744f49d99e9a51ec7548c8ccafcadc",
-      "category": "functional",
-      "categoryWhy": "声明了 content / overrides",
-      "stationId": "215c9aa33afc",
-      "path": "mods/boss-fixed-pool/1.0.0/mod.zip",
-      "sizeBytes": 8382,
-      "fileCount": 5,
-      "unpackedBytes": 13580,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "boss-fixed-pool"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": true
-      }
-    },
-    {
-      "id": "capacity-panel",
-      "name": "房间容量看板（4/8/12/16/20 展示与预览）",
-      "version": "1.0.1",
-      "sha256": "7444fca6204e7e4cc60f89667a3a273d9e135e992b0eb4cd9db194f695a89f15",
-      "packHash": "b2cbb1f6699a2f4001818f3039e6db6ed96cd31522ac5e2705521efe195d48fa",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "5f3bfb0272b9",
-      "path": "mods/capacity-panel/1.0.1/mod.zip",
-      "sizeBytes": 15627,
-      "fileCount": 10,
-      "unpackedBytes": 30294,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "capacity-panel"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "cdn-source",
-      "name": "CDN 源选择（最快镜像）",
-      "version": "1.0.2",
-      "sha256": "39574e4dd9fafa32a6148b350a530cf016c0ab6785a20ccdf959524108986d88",
-      "packHash": "56ce40defefe3c61677e980c52e0d81312e7486aeba0a5f05a73ff2b5a21dad0",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "e9de2c45e249",
-      "path": "mods/cdn-source/1.0.2/mod.zip",
-      "sizeBytes": 10276,
-      "fileCount": 6,
-      "unpackedBytes": 16110,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "cdn-source"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "chat-bubble",
-      "name": "局内文字聊天（房内气泡）",
-      "version": "1.0.0",
-      "sha256": "3346f0a383963ca5799f48ed93fe7e2113a04f17477418c656d66cc8345e8e34",
-      "packHash": "215d942778d3ba161148e62cf289e85fb110634727c09f7062fb9f48b7c01ea7",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "84ab02864356",
-      "path": "mods/chat-bubble/1.0.0/mod.zip",
-      "sizeBytes": 7035,
-      "fileCount": 4,
-      "unpackedBytes": 11837,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "chat-bubble"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "dmg-board",
-      "name": "伤害看板（结算页）",
-      "version": "1.0.0",
-      "sha256": "d997e95a45160540f62e5482c90d602ce6431588ad6cf1e8c50721ac06699e2c",
-      "packHash": "f7bc8493d3c214abd0ef4fa1735b65eb29ca6827c1ac0902855f3583778f3b7a",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "8d7af46dce00",
-      "path": "mods/dmg-board/1.0.0/mod.zip",
-      "sizeBytes": 33198,
-      "fileCount": 6,
-      "unpackedBytes": 32558,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "dmg-board"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "duel-assets",
-      "name": "争锋频道 · 素材容器（客户端导出 · 非商业）",
-      "version": "0.1.0",
-      "sha256": "7103a1ca56c8bd8c72a1f33ad41dc999c6939fde462a641436ff8c0741424928",
-      "packHash": "0c4c7b3f2833e4e8d5ac1ca2805696d9922e16d33eddc8149d8315d98704b7b5",
-      "category": "functional",
-      "categoryWhy": "声明了 assets",
-      "stationId": "05c6dd5c5844",
-      "path": "mods/duel-assets/0.1.0/mod.zip",
-      "sizeBytes": 25226848,
-      "fileCount": 4,
-      "unpackedBytes": 45310114,
-      "assets": {
-        "assetFree": false,
-        "count": 102,
-        "bytes": 6028468,
-        "byKind": {},
-        "containers": [
-          {
-            "name": "packs/duel-resources.spresources",
-            "ok": true,
-            "fileCount": 218,
-            "byKind": {
-              "audio": 21,
-              "image": 81
-            }
-          }
-        ]
-      },
-      "notes": [
-        "单条目超过引擎默认 zip 读取上限（32 MB）⇒ **引擎自带的包导入路径会拒收**（站点侧读取器无此上限，两条路结论不同）：packs/duel-resources.spresources 45278897 B",
-        "⚠️ **含素材**：102 个文件 / 6028468 B（{}；容器 packs/duel-resources.spresources 内部 102 个）⇒ 须在页面上标注来源与授权。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "duel-assets"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "duel-copy",
-      "name": "争锋频道 · 文案与不兼容清单",
-      "version": "0.1.0",
-      "sha256": "b43ecdfac8ed7b6a51268f1bff030eb39ba54e1706163df2df9cc828bdcaafcd",
-      "packHash": "a46ece9507f0644ea84bbc0d93eb3baec5f1f4321db5c91c621d2b4625529dec",
-      "category": "functional",
-      "categoryWhy": "声明了 notices",
-      "stationId": "c80e44a35f81",
-      "path": "mods/duel-copy/0.1.0/mod.zip",
-      "sizeBytes": 7919,
-      "fileCount": 5,
-      "unpackedBytes": 12736,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "duel-copy"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "duel-data",
-      "name": "争锋频道 · 规则资料（只读）",
-      "version": "0.1.0",
-      "sha256": "58ea1c4e1fbfa2dbf47c63a57077e64a91f4f879cfa2f86543b5a7f1b36d39c9",
-      "packHash": "b44da9503238f0a1ded7b5093010c369ceb297d7c3207bd3edd2ce59db7042a9",
-      "category": "functional",
-      "categoryWhy": "声明了 routes",
-      "stationId": "f26038c63243",
-      "path": "mods/duel-data/0.1.0/mod.zip",
-      "sizeBytes": 19396,
-      "fileCount": 10,
-      "unpackedBytes": 205845,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "duel-data"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "duel-fighter",
-      "name": "争锋频道 · 参战单位表（只读）",
-      "version": "0.1.0",
-      "sha256": "6a5e416b5251e375bfe8635e6840ef22878aaa999f16c6806ecf411992240923",
-      "packHash": "fece0bc7862374f8202ba62bd90c441af907b1c7803d2096068374757106161e",
-      "category": "functional",
-      "categoryWhy": "声明了 routes",
-      "stationId": "8554e0a9ec9f",
-      "path": "mods/duel-fighter/0.1.0/mod.zip",
-      "sizeBytes": 29564,
-      "fileCount": 4,
-      "unpackedBytes": 150468,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "duel-fighter"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "duel-mode",
-      "name": "争锋频道 · 玩法叠加层（服务端驱动）",
-      "version": "0.2.1",
-      "sha256": "78580c4cb273b65c94dc24f4879e9a5197dc04bba30c846bc4906ad286bad9f0",
-      "packHash": "f725f4849eeb5b22454dfba6555669d6ccc859400b449ee3f768f0ef47dc4239",
-      "category": "functional",
-      "categoryWhy": "声明了 client / server",
-      "stationId": "b6a3f39ae9ad",
-      "path": "mods/duel-mode/0.2.1/mod.zip",
-      "sizeBytes": 24633,
-      "fileCount": 8,
-      "unpackedBytes": 56581,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "duel-mode"
-        ],
-        "errors": [],
-        "layer": "B",
-        "combat": true
-      }
-    },
-    {
-      "id": "duel-panel",
-      "name": "争锋频道 · 接入状态面板（只读）",
-      "version": "0.1.0",
-      "sha256": "93fed50181455d1633f7067562f96baadf65f367933c7221e67d6933917c4de2",
-      "packHash": "199d5b0692eb7439f3786e3588475eb1d85206528bf6db728f9aa679671df969",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "5acde4edf2b2",
-      "path": "mods/duel-panel/0.1.0/mod.zip",
-      "sizeBytes": 7872,
-      "fileCount": 5,
-      "unpackedBytes": 12834,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "duel-panel"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "fanpack-skillful-items",
-      "name": "灵巧盟约装备",
-      "version": "1.0.0",
-      "sha256": "70c903f3fa3336dfd0c9531b26ff4942de24330e31eb96bdf5a282f1663de24b",
-      "packHash": "6c894a9275268f3f7eee4448eb9a2346bcd76c86e379a64906baad77115558fc",
-      "category": "functional",
-      "categoryWhy": "声明了 content",
-      "stationId": "d708048043d2",
-      "path": "mods/fanpack-skillful-items/1.0.0/mod.zip",
-      "sizeBytes": 183304,
-      "fileCount": 5,
-      "unpackedBytes": 190524,
-      "assets": {
-        "assetFree": false,
-        "count": 1,
-        "bytes": 175087,
-        "byKind": {
-          "image": 1
-        },
-        "containers": []
-      },
-      "notes": [
-        "⚠️ **含素材**：1 个文件 / 175087 B（{\"image\":1}）⇒ 须在页面上标注来源与授权。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "fanpack-skillful-items"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": true
-      }
-    },
-    {
-      "id": "healthz-ext",
-      "name": "健康与构建只读接口（/healthz 扩展 + /client-build 字段契约）",
-      "version": "1.0.0",
-      "sha256": "c5da20b17b186c6c5429f278262337165ec09f21e93bc2c57b6eeb10d3a0b20a",
-      "packHash": "f859c5bd4856ce37f38f3d5df2ae9abbcd24ff579633a932099361ea2ff16809",
-      "category": "functional",
-      "categoryWhy": "声明了 client / routes",
-      "stationId": "256e45e4e588",
-      "path": "mods/healthz-ext/1.0.0/mod.zip",
-      "sizeBytes": 12738,
-      "fileCount": 8,
-      "unpackedBytes": 23289,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "healthz-ext"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "makoto-yuki",
-      "name": "结城理（Persona 3 Reload）",
-      "version": "1.0.1",
-      "sha256": "3873c55cf62f8ea4f573be5a7d4d2ebc809a6b3e1ba0e0e1e76224d6f565fbe1",
-      "packHash": "3faefcf2e5a57e977ad7ca39b6ec0f116f9333deb446c71ca0e1712da1e5e6c5",
-      "category": "functional",
-      "categoryWhy": "声明了 content",
-      "stationId": "49e807b1b5b0",
-      "path": "mods/makoto-yuki/1.0.1/mod.zip",
-      "sizeBytes": 8666623,
-      "fileCount": 30,
-      "unpackedBytes": 8661403,
-      "assets": {
-        "assetFree": false,
-        "count": 25,
-        "bytes": 8584477,
-        "byKind": {
-          "image": 17,
-          "spine": 8
-        },
-        "containers": []
-      },
-      "notes": [
-        "⚠️ **含素材**：25 个文件 / 8584477 B（{\"image\":17,\"spine\":8}）⇒ 须在页面上标注来源与授权。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "makoto-yuki"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "mod-xie",
-      "name": "促融共竞 · 协同共竞",
-      "version": "2.1.0",
-      "sha256": "6613cd2e5a947a5370341fcd3a1b6a3f9069bc5c871078f27965561ac27e12ec",
-      "packHash": "e52222a45367ac4357fab10ae556a6b8c7403f2c18947e118d75890d4e12ed5a",
-      "category": "functional",
-      "categoryWhy": "声明了 client / server",
-      "stationId": "d77099d4a54a",
-      "path": "mods/mod-xie/2.1.0/mod.zip",
-      "sizeBytes": 64478,
-      "fileCount": 14,
-      "unpackedBytes": 191300,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "mod-xie"
-        ],
-        "errors": [],
-        "layer": "B",
-        "combat": true
-      }
-    },
-    {
-      "id": "morph-plus",
-      "name": "变形同构体加强mod",
-      "version": "1.1.0",
-      "sha256": "f232b8435ec5635f69fe4b987186f67f451354c647d338945d97997dad7b1179",
-      "packHash": "ae24b7052625d4e8126b09f86d2d13d18eb788bf515ed2baf7b464e2d54fde37",
-      "category": "functional",
-      "categoryWhy": "声明了 behaviour / notices",
-      "stationId": "cc00536ec10d",
-      "path": "mods/morph-plus/1.1.0/mod.zip",
-      "sizeBytes": 4412,
-      "fileCount": 4,
-      "unpackedBytes": 6452,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "morph-plus"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": true
-      }
-    },
-    {
-      "id": "name-guard",
-      "name": "代号审查（名字策略链）",
-      "version": "1.0.0",
-      "sha256": "3c393674a56b51dbd221d59923ab5494a119ce4bdff609a33fe7d943cc4b1b47",
-      "packHash": "f38834abcd2d7a2e4dae381f65f01e76873eef4d5c197de4f71ecf54c926a388",
-      "category": "functional",
-      "categoryWhy": "声明了 server",
-      "stationId": "a84e3a916517",
-      "path": "mods/name-guard/1.0.0/mod.zip",
-      "sizeBytes": 63524,
-      "fileCount": 8,
-      "unpackedBytes": 233182,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "name-guard"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "net-panel",
-      "name": "连接与服务器状态",
-      "version": "1.0.0",
-      "sha256": "5eefe0afac5a421517cca89837170203c6af1fa8b8673de9d77e17c5ffd2762b",
-      "packHash": "06b94cec2870d20b13a7a28bf5569c59a3f3b26e8c5c460b49151436de8c2123",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "0ead812ea6b0",
-      "path": "mods/net-panel/1.0.0/mod.zip",
-      "sizeBytes": 11965,
-      "fileCount": 5,
-      "unpackedBytes": 24511,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "net-panel"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "notice-board",
-      "name": "服务器公告板（notices）",
-      "version": "1.0.0",
-      "sha256": "6a25ab1013e10924121a95a33b7c923fff282aa5dae4fc3a7e82efc35707c517",
-      "packHash": "ac1e934fda5204d2710c8c245c6eadae9403daaeff9c747d7c8b7ed5c85d37ea",
-      "category": "functional",
-      "categoryWhy": "声明了 notices",
-      "stationId": "bf47b43506d2",
-      "path": "mods/notice-board/1.0.0/mod.zip",
-      "sizeBytes": 11348,
-      "fileCount": 6,
-      "unpackedBytes": 19176,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "notice-board"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "perf-lite",
-      "name": "低配优化（关动画与过渡）",
-      "version": "1.0.0",
-      "sha256": "891ba0b6118d6af01b1f98b07af4df0659de4f1dcc806366ab20ef6874965c62",
-      "packHash": "9e5b9a08185d7f11d2c2a369b3bdef5f1c05f9e22e186c0f790dd02e8632c172",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "46caf66a76ad",
-      "path": "mods/perf-lite/1.0.0/mod.zip",
-      "sizeBytes": 32234,
-      "fileCount": 5,
-      "unpackedBytes": 31694,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "perf-lite"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "prep-loadout",
-      "name": "休整期可更换技能和模组mod",
-      "version": "1.0.0",
-      "sha256": "1059bce6db2aa3b3e71ef67ef542b408ac7fb684673c489ef8c88d613a7600de",
-      "packHash": "177e8d373d69f0546b7a600449960b931d198f86995ced8c44e0fdd41ab4a7f1",
-      "category": "functional",
-      "categoryWhy": "声明了 behaviour / notices",
-      "stationId": "b0d02cf32105",
-      "path": "mods/prep-loadout/1.0.0/mod.zip",
-      "sizeBytes": 4024,
-      "fileCount": 4,
-      "unpackedBytes": 5525,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "prep-loadout"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": true
-      }
-    },
-    {
-      "id": "shop-bond-bias",
-      "name": "商店刷新盟约装备几率提升mod",
-      "version": "1.0.0",
-      "sha256": "689804b53a7867f82bc1528b4e3d239a6ff222344a30c40a5763e10ca93d2a85",
-      "packHash": "9895357c4fccc7c95a9baaaacc6813b1805f5faabf1eb5bfdc2f95b5d8af370e",
-      "category": "functional",
-      "categoryWhy": "声明了 behaviour / notices",
-      "stationId": "41146b5df93d",
-      "path": "mods/shop-bond-bias/1.0.0/mod.zip",
-      "sizeBytes": 4117,
-      "fileCount": 4,
-      "unpackedBytes": 5819,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "shop-bond-bias"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": true
-      }
-    },
-    {
-      "id": "skin-catalogue",
-      "name": "时装目录（皮肤数据）",
-      "version": "1.0.0",
-      "sha256": "b13ebe2ee56ca36ff281011c888d163fdc5d33406f46c9c6ff722ff103de6970",
-      "packHash": "90ae041e5296f6a5b4598fdb3ef855ff2f8dff0c10dfac2211a6555ed0276552",
-      "category": "functional",
-      "categoryWhy": "声明了 content",
-      "stationId": "b14d1ec72576",
-      "path": "mods/skin-catalogue/1.0.0/mod.zip",
-      "sizeBytes": 6883192,
-      "fileCount": 10,
-      "unpackedBytes": 6881874,
-      "assets": {
-        "assetFree": false,
-        "count": 4,
-        "bytes": 6790298,
-        "byKind": {
-          "image": 4
-        },
-        "containers": []
-      },
-      "notes": [
-        "⚠️ **含素材**：4 个文件 / 6790298 B（{\"image\":4}）⇒ 须在页面上标注来源与授权。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "skin-catalogue"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "skin-picker",
-      "name": "皮肤选择器（换装）",
-      "version": "1.0.0",
-      "sha256": "b1d39ea35a19d94b4992dc32a01f10b95e1dd9e77e488121220965610f757bdd",
-      "packHash": "67a87ce37899104d9723cf9d69283855e54ff65f39dd9314b33d5e1681359478",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "0a1067ac9945",
-      "path": "mods/skin-picker/1.0.0/mod.zip",
-      "sizeBytes": 61503,
-      "fileCount": 6,
-      "unpackedBytes": 60857,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "skin-picker"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "srv-notice",
-      "name": "服务器公告",
-      "version": "1.0.0",
-      "sha256": "17fce005594b81e443cf6a64c3352219aa15347ebe82cac71a30699e751cbf81",
-      "packHash": "dc503c3f1b0ec97c7ff8183902e3fc4b6a4c60508aacc9ef6e16d7f6c53b62e4",
-      "category": "functional",
-      "categoryWhy": "声明了 notices",
-      "stationId": "bd666c344a5a",
-      "path": "mods/srv-notice/1.0.0/mod.zip",
-      "sizeBytes": 24663,
-      "fileCount": 5,
-      "unpackedBytes": 24115,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "srv-notice"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": false
-      }
-    },
-    {
-      "id": "strawberry-ui",
-      "name": "草莓美化包（纯 CSS）",
-      "version": "1.0.0",
-      "sha256": "e3fc66707c0b186630776bf9fdd2a84a7b969e3779fda7478554dd803dd6e46b",
-      "packHash": "67bfdc31d77b692215ab4d24d0c3b4073e29449259f816e5a4c77742a46c6355",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "979a39c35fd0",
-      "path": "mods/strawberry-ui/1.0.0/mod.zip",
-      "sizeBytes": 24498,
-      "fileCount": 6,
-      "unpackedBytes": 59924,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "strawberry-ui"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "theme-night",
-      "name": "夜间高对比主题",
-      "version": "1.0.0",
-      "sha256": "2af54e3a83c9144bfbcb01898689a768d720d9a87e2f7db47ae1c3a0911d9e43",
-      "packHash": "f0c2882650df4c0a953fb0eeab8983bf73cb890b9bff1ba14fe9c8f453f47c57",
-      "category": "functional",
-      "categoryWhy": "声明了 client",
-      "stationId": "dd8fde630831",
-      "path": "mods/theme-night/1.0.0/mod.zip",
-      "sizeBytes": 4155,
-      "fileCount": 2,
-      "unpackedBytes": 3937,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "theme-night"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    },
-    {
-      "id": "unequip",
-      "name": "装备拆卸mod",
-      "version": "1.1.0",
-      "sha256": "6e646b067cc23c43a5b695885299fc6e3bfc26ab45e7d68ca678d62257b6e8b6",
-      "packHash": "a4cc1252e746f6d2fb9e862c156c0805c80767bae55273656681e1b2daeee41e",
-      "category": "functional",
-      "categoryWhy": "声明了 behaviour / notices",
-      "stationId": "be394494ebb7",
-      "path": "mods/unequip/1.1.0/mod.zip",
-      "sizeBytes": 4184,
-      "fileCount": 4,
-      "unpackedBytes": 5705,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "unequip"
-        ],
-        "errors": [],
-        "layer": "A",
-        "combat": true
-      }
-    },
-    {
-      "id": "ws-compression-reference",
-      "name": "WS 压缩参考（协商参数 / 档位 / 实测）",
-      "version": "1.0.0",
-      "sha256": "ba194faf0b4116834202eeec39c3cf9b79c27ddf2ad42c785e4b86afd2650a5b",
-      "packHash": "5a132579e953021c4ee3055893c482f5e25410ec49c56e2d37a2e315a4f2e505",
-      "category": "functional",
-      "categoryWhy": "声明了 content / client / routes",
-      "stationId": "f3711c357e20",
-      "path": "mods/ws-compression-reference/1.0.0/mod.zip",
-      "sizeBytes": 21774,
-      "fileCount": 6,
-      "unpackedBytes": 21088,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
-      ],
-      "engineLoad": {
-        "packsLoaded": [
-          "ws-compression-reference"
-        ],
-        "errors": [],
-        "layer": "C",
-        "combat": false
-      }
-    }
-  ],
-  "rejected": [],
-  "prune": {
-    "enabled": false,
-    "candidates": 30,
-    "live": 29,
-    "wouldDelete": [],
-    "deleted": [],
-    "held": [
-      {
-        "path": "mods/mod-xie/2.0.0/",
-        "stationId": "9709a3406f16",
-        "basis": "站侧 9709a3406f16 状态是 approved ⇒ 既不在入选集、也不在已不接受集，交人判，不删"
-      }
+     }
     ]
+   },
+   "notes": [
+    "单条目超过引擎默认 zip 读取上限（32 MB）⇒ **引擎自带的包导入路径会拒收**（站点侧读取器无此上限，两条路结论不同）：packs/duel-resources.spresources 45278897 B",
+    "⚠️ **含素材**：102 个文件 / 6028468 B（{}；容器 packs/duel-resources.spresources 内部 102 个）⇒ 须在页面上标注来源与授权。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "duel-assets"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "duel-copy",
+   "name": "争锋频道 · 文案与不兼容清单",
+   "version": "0.1.0",
+   "sha256": "b43ecdfac8ed7b6a51268f1bff030eb39ba54e1706163df2df9cc828bdcaafcd",
+   "packHash": "a46ece9507f0644ea84bbc0d93eb3baec5f1f4321db5c91c621d2b4625529dec",
+   "category": "functional",
+   "categoryWhy": "声明了 notices",
+   "stationId": "c80e44a35f81",
+   "path": "mods/duel-copy/0.1.0/mod.zip",
+   "sizeBytes": 7919,
+   "fileCount": 5,
+   "unpackedBytes": 12736,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "duel-copy"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "duel-data",
+   "name": "争锋频道 · 规则资料（只读）",
+   "version": "0.1.0",
+   "sha256": "58ea1c4e1fbfa2dbf47c63a57077e64a91f4f879cfa2f86543b5a7f1b36d39c9",
+   "packHash": "b44da9503238f0a1ded7b5093010c369ceb297d7c3207bd3edd2ce59db7042a9",
+   "category": "functional",
+   "categoryWhy": "声明了 routes",
+   "stationId": "f26038c63243",
+   "path": "mods/duel-data/0.1.0/mod.zip",
+   "sizeBytes": 19396,
+   "fileCount": 10,
+   "unpackedBytes": 205845,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "duel-data"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "duel-fighter",
+   "name": "争锋频道 · 参战单位表（只读）",
+   "version": "0.1.0",
+   "sha256": "6a5e416b5251e375bfe8635e6840ef22878aaa999f16c6806ecf411992240923",
+   "packHash": "fece0bc7862374f8202ba62bd90c441af907b1c7803d2096068374757106161e",
+   "category": "functional",
+   "categoryWhy": "声明了 routes",
+   "stationId": "8554e0a9ec9f",
+   "path": "mods/duel-fighter/0.1.0/mod.zip",
+   "sizeBytes": 29564,
+   "fileCount": 4,
+   "unpackedBytes": 150468,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "duel-fighter"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "duel-mode",
+   "name": "争锋频道 · 玩法叠加层（服务端驱动）",
+   "version": "0.2.1",
+   "sha256": "78580c4cb273b65c94dc24f4879e9a5197dc04bba30c846bc4906ad286bad9f0",
+   "packHash": "f725f4849eeb5b22454dfba6555669d6ccc859400b449ee3f768f0ef47dc4239",
+   "category": "functional",
+   "categoryWhy": "声明了 client / server",
+   "stationId": "b6a3f39ae9ad",
+   "path": "mods/duel-mode/0.2.1/mod.zip",
+   "sizeBytes": 24633,
+   "fileCount": 8,
+   "unpackedBytes": 56581,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "duel-mode"
+    ],
+    "errors": [],
+    "layer": "B",
+    "combat": true
+   }
+  },
+  {
+   "id": "duel-panel",
+   "name": "争锋频道 · 接入状态面板（只读）",
+   "version": "0.1.0",
+   "sha256": "93fed50181455d1633f7067562f96baadf65f367933c7221e67d6933917c4de2",
+   "packHash": "199d5b0692eb7439f3786e3588475eb1d85206528bf6db728f9aa679671df969",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "5acde4edf2b2",
+   "path": "mods/duel-panel/0.1.0/mod.zip",
+   "sizeBytes": 7872,
+   "fileCount": 5,
+   "unpackedBytes": 12834,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "duel-panel"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "fanpack-skillful-items",
+   "name": "灵巧盟约装备",
+   "version": "1.0.0",
+   "sha256": "70c903f3fa3336dfd0c9531b26ff4942de24330e31eb96bdf5a282f1663de24b",
+   "packHash": "6c894a9275268f3f7eee4448eb9a2346bcd76c86e379a64906baad77115558fc",
+   "category": "functional",
+   "categoryWhy": "声明了 content",
+   "stationId": "d708048043d2",
+   "path": "mods/fanpack-skillful-items/1.0.0/mod.zip",
+   "sizeBytes": 183304,
+   "fileCount": 5,
+   "unpackedBytes": 190524,
+   "assets": {
+    "assetFree": false,
+    "count": 1,
+    "bytes": 175087,
+    "byKind": {
+     "image": 1
+    },
+    "containers": []
+   },
+   "notes": [
+    "⚠️ **含素材**：1 个文件 / 175087 B（{\"image\":1}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "fanpack-skillful-items"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": true
+   }
+  },
+  {
+   "id": "healthz-ext",
+   "name": "健康与构建只读接口（/healthz 扩展 + /client-build 字段契约）",
+   "version": "1.0.0",
+   "sha256": "c5da20b17b186c6c5429f278262337165ec09f21e93bc2c57b6eeb10d3a0b20a",
+   "packHash": "f859c5bd4856ce37f38f3d5df2ae9abbcd24ff579633a932099361ea2ff16809",
+   "category": "functional",
+   "categoryWhy": "声明了 client / routes",
+   "stationId": "256e45e4e588",
+   "path": "mods/healthz-ext/1.0.0/mod.zip",
+   "sizeBytes": 12738,
+   "fileCount": 8,
+   "unpackedBytes": 23289,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "healthz-ext"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "makoto-yuki",
+   "name": "结城理（Persona 3 Reload）",
+   "version": "1.0.1",
+   "sha256": "3873c55cf62f8ea4f573be5a7d4d2ebc809a6b3e1ba0e0e1e76224d6f565fbe1",
+   "packHash": "3faefcf2e5a57e977ad7ca39b6ec0f116f9333deb446c71ca0e1712da1e5e6c5",
+   "category": "functional",
+   "categoryWhy": "声明了 content",
+   "stationId": "49e807b1b5b0",
+   "path": "mods/makoto-yuki/1.0.1/mod.zip",
+   "sizeBytes": 8666623,
+   "fileCount": 30,
+   "unpackedBytes": 8661403,
+   "assets": {
+    "assetFree": false,
+    "count": 25,
+    "bytes": 8584477,
+    "byKind": {
+     "image": 17,
+     "spine": 8
+    },
+    "containers": []
+   },
+   "notes": [
+    "⚠️ **含素材**：25 个文件 / 8584477 B（{\"image\":17,\"spine\":8}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "makoto-yuki"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "mod-xie",
+   "name": "促融共竞 · 协同共竞",
+   "version": "2.1.0",
+   "sha256": "6613cd2e5a947a5370341fcd3a1b6a3f9069bc5c871078f27965561ac27e12ec",
+   "packHash": "e52222a45367ac4357fab10ae556a6b8c7403f2c18947e118d75890d4e12ed5a",
+   "category": "functional",
+   "categoryWhy": "声明了 client / server",
+   "stationId": "d77099d4a54a",
+   "path": "mods/mod-xie/2.1.0/mod.zip",
+   "sizeBytes": 64478,
+   "fileCount": 14,
+   "unpackedBytes": 191300,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "mod-xie"
+    ],
+    "errors": [],
+    "layer": "B",
+    "combat": true
+   }
+  },
+  {
+   "id": "morph-plus",
+   "name": "变形同构体加强mod",
+   "version": "1.1.0",
+   "sha256": "f232b8435ec5635f69fe4b987186f67f451354c647d338945d97997dad7b1179",
+   "packHash": "ae24b7052625d4e8126b09f86d2d13d18eb788bf515ed2baf7b464e2d54fde37",
+   "category": "functional",
+   "categoryWhy": "声明了 behaviour / notices",
+   "stationId": "cc00536ec10d",
+   "path": "mods/morph-plus/1.1.0/mod.zip",
+   "sizeBytes": 4412,
+   "fileCount": 4,
+   "unpackedBytes": 6452,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "morph-plus"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": true
+   }
+  },
+  {
+   "id": "name-guard",
+   "name": "代号审查（名字策略链）",
+   "version": "1.0.0",
+   "sha256": "3c393674a56b51dbd221d59923ab5494a119ce4bdff609a33fe7d943cc4b1b47",
+   "packHash": "f38834abcd2d7a2e4dae381f65f01e76873eef4d5c197de4f71ecf54c926a388",
+   "category": "functional",
+   "categoryWhy": "声明了 server",
+   "stationId": "a84e3a916517",
+   "path": "mods/name-guard/1.0.0/mod.zip",
+   "sizeBytes": 63524,
+   "fileCount": 8,
+   "unpackedBytes": 233182,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "name-guard"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "net-panel",
+   "name": "连接与服务器状态",
+   "version": "1.0.0",
+   "sha256": "5eefe0afac5a421517cca89837170203c6af1fa8b8673de9d77e17c5ffd2762b",
+   "packHash": "06b94cec2870d20b13a7a28bf5569c59a3f3b26e8c5c460b49151436de8c2123",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "0ead812ea6b0",
+   "path": "mods/net-panel/1.0.0/mod.zip",
+   "sizeBytes": 11965,
+   "fileCount": 5,
+   "unpackedBytes": 24511,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "net-panel"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "notice-board",
+   "name": "服务器公告板（notices）",
+   "version": "1.0.0",
+   "sha256": "6a25ab1013e10924121a95a33b7c923fff282aa5dae4fc3a7e82efc35707c517",
+   "packHash": "ac1e934fda5204d2710c8c245c6eadae9403daaeff9c747d7c8b7ed5c85d37ea",
+   "category": "functional",
+   "categoryWhy": "声明了 notices",
+   "stationId": "bf47b43506d2",
+   "path": "mods/notice-board/1.0.0/mod.zip",
+   "sizeBytes": 11348,
+   "fileCount": 6,
+   "unpackedBytes": 19176,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "notice-board"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "perf-lite",
+   "name": "低配优化（关动画与过渡）",
+   "version": "1.0.0",
+   "sha256": "891ba0b6118d6af01b1f98b07af4df0659de4f1dcc806366ab20ef6874965c62",
+   "packHash": "9e5b9a08185d7f11d2c2a369b3bdef5f1c05f9e22e186c0f790dd02e8632c172",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "46caf66a76ad",
+   "path": "mods/perf-lite/1.0.0/mod.zip",
+   "sizeBytes": 32234,
+   "fileCount": 5,
+   "unpackedBytes": 31694,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "perf-lite"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "prep-loadout",
+   "name": "休整期可更换技能和模组mod",
+   "version": "1.0.0",
+   "sha256": "1059bce6db2aa3b3e71ef67ef542b408ac7fb684673c489ef8c88d613a7600de",
+   "packHash": "177e8d373d69f0546b7a600449960b931d198f86995ced8c44e0fdd41ab4a7f1",
+   "category": "functional",
+   "categoryWhy": "声明了 behaviour / notices",
+   "stationId": "b0d02cf32105",
+   "path": "mods/prep-loadout/1.0.0/mod.zip",
+   "sizeBytes": 4024,
+   "fileCount": 4,
+   "unpackedBytes": 5525,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "prep-loadout"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": true
+   }
+  },
+  {
+   "id": "shop-bond-bias",
+   "name": "商店刷新盟约装备几率提升mod",
+   "version": "1.0.0",
+   "sha256": "689804b53a7867f82bc1528b4e3d239a6ff222344a30c40a5763e10ca93d2a85",
+   "packHash": "9895357c4fccc7c95a9baaaacc6813b1805f5faabf1eb5bfdc2f95b5d8af370e",
+   "category": "functional",
+   "categoryWhy": "声明了 behaviour / notices",
+   "stationId": "41146b5df93d",
+   "path": "mods/shop-bond-bias/1.0.0/mod.zip",
+   "sizeBytes": 4117,
+   "fileCount": 4,
+   "unpackedBytes": 5819,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "shop-bond-bias"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": true
+   }
+  },
+  {
+   "id": "skin-catalogue",
+   "name": "时装目录（皮肤数据）",
+   "version": "1.0.0",
+   "sha256": "b13ebe2ee56ca36ff281011c888d163fdc5d33406f46c9c6ff722ff103de6970",
+   "packHash": "90ae041e5296f6a5b4598fdb3ef855ff2f8dff0c10dfac2211a6555ed0276552",
+   "category": "functional",
+   "categoryWhy": "声明了 content",
+   "stationId": "b14d1ec72576",
+   "path": "mods/skin-catalogue/1.0.0/mod.zip",
+   "sizeBytes": 6883192,
+   "fileCount": 10,
+   "unpackedBytes": 6881874,
+   "assets": {
+    "assetFree": false,
+    "count": 4,
+    "bytes": 6790298,
+    "byKind": {
+     "image": 4
+    },
+    "containers": []
+   },
+   "notes": [
+    "⚠️ **含素材**：4 个文件 / 6790298 B（{\"image\":4}）⇒ 须在页面上标注来源与授权。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "skin-catalogue"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "skin-picker",
+   "name": "皮肤选择器（换装）",
+   "version": "1.0.0",
+   "sha256": "b1d39ea35a19d94b4992dc32a01f10b95e1dd9e77e488121220965610f757bdd",
+   "packHash": "67a87ce37899104d9723cf9d69283855e54ff65f39dd9314b33d5e1681359478",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "0a1067ac9945",
+   "path": "mods/skin-picker/1.0.0/mod.zip",
+   "sizeBytes": 61503,
+   "fileCount": 6,
+   "unpackedBytes": 60857,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "skin-picker"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "srv-notice",
+   "name": "服务器公告",
+   "version": "1.0.0",
+   "sha256": "17fce005594b81e443cf6a64c3352219aa15347ebe82cac71a30699e751cbf81",
+   "packHash": "dc503c3f1b0ec97c7ff8183902e3fc4b6a4c60508aacc9ef6e16d7f6c53b62e4",
+   "category": "functional",
+   "categoryWhy": "声明了 notices",
+   "stationId": "bd666c344a5a",
+   "path": "mods/srv-notice/1.0.0/mod.zip",
+   "sizeBytes": 24663,
+   "fileCount": 5,
+   "unpackedBytes": 24115,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "srv-notice"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": false
+   }
+  },
+  {
+   "id": "strawberry-ui",
+   "name": "草莓美化包（纯 CSS）",
+   "version": "1.0.0",
+   "sha256": "e3fc66707c0b186630776bf9fdd2a84a7b969e3779fda7478554dd803dd6e46b",
+   "packHash": "67bfdc31d77b692215ab4d24d0c3b4073e29449259f816e5a4c77742a46c6355",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "979a39c35fd0",
+   "path": "mods/strawberry-ui/1.0.0/mod.zip",
+   "sizeBytes": 24498,
+   "fileCount": 6,
+   "unpackedBytes": 59924,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "strawberry-ui"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "theme-night",
+   "name": "夜间高对比主题",
+   "version": "1.0.0",
+   "sha256": "2af54e3a83c9144bfbcb01898689a768d720d9a87e2f7db47ae1c3a0911d9e43",
+   "packHash": "f0c2882650df4c0a953fb0eeab8983bf73cb890b9bff1ba14fe9c8f453f47c57",
+   "category": "functional",
+   "categoryWhy": "声明了 client",
+   "stationId": "dd8fde630831",
+   "path": "mods/theme-night/1.0.0/mod.zip",
+   "sizeBytes": 4155,
+   "fileCount": 2,
+   "unpackedBytes": 3937,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "theme-night"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "unequip",
+   "name": "装备拆卸mod",
+   "version": "1.1.0",
+   "sha256": "6e646b067cc23c43a5b695885299fc6e3bfc26ab45e7d68ca678d62257b6e8b6",
+   "packHash": "a4cc1252e746f6d2fb9e862c156c0805c80767bae55273656681e1b2daeee41e",
+   "category": "functional",
+   "categoryWhy": "声明了 behaviour / notices",
+   "stationId": "be394494ebb7",
+   "path": "mods/unequip/1.1.0/mod.zip",
+   "sizeBytes": 4184,
+   "fileCount": 4,
+   "unpackedBytes": 5705,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "unequip"
+    ],
+    "errors": [],
+    "layer": "A",
+    "combat": true
+   }
+  },
+  {
+   "id": "ws-compression-reference",
+   "name": "WS 压缩参考（协商参数 / 档位 / 实测）",
+   "version": "1.0.0",
+   "sha256": "ba194faf0b4116834202eeec39c3cf9b79c27ddf2ad42c785e4b86afd2650a5b",
+   "packHash": "5a132579e953021c4ee3055893c482f5e25410ec49c56e2d37a2e315a4f2e505",
+   "category": "functional",
+   "categoryWhy": "声明了 content / client / routes",
+   "stationId": "f3711c357e20",
+   "path": "mods/ws-compression-reference/1.0.0/mod.zip",
+   "sizeBytes": 21774,
+   "fileCount": 6,
+   "unpackedBytes": 21088,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "ws-compression-reference"
+    ],
+    "errors": [],
+    "layer": "C",
+    "combat": false
+   }
+  },
+  {
+   "id": "vanilla-plus",
+   "name": "原版增强",
+   "version": "0.1.19",
+   "sha256": "15f777606971f60eb444bdfcb7a1ca92c42258079e1e84100cfaf0a3042fe799",
+   "packHash": "",
+   "category": "functional",
+   "categoryWhy": "manifest class=content，声明 data/assets/permissions，引擎装载预期 errors=0（含 rules.unequip 卸下）",
+   "stationId": "809999a378ec",
+   "path": "mods/vanilla-plus/0.1.19/mod.zip",
+   "sizeBytes": 299169,
+   "fileCount": 8,
+   "unpackedBytes": 323583,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "CC0-1.0，作者未署名（来源：用户提供的原版增强安装.zip）。声明 rules.unequip=allow：依赖引擎已有 rules.unequip 开关（两树 shared/plugins/rules.js:40-43 一致），装上即获休整期卸下装备能力。app >=0.3.0 <0.4.0。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "vanilla-plus"
+    ],
+    "errors": [],
+    "layer": "B",
+    "combat": true
+   }
+  },
+  {
+   "id": "feihuo-liuxing",
+   "name": "飞火流星",
+   "version": "0.3.4",
+   "sha256": "92d206e2829fd9b0cac89cc67e120b2b8c2b3bce715bafc2aa29db533d641165",
+   "packHash": "",
+   "category": "functional",
+   "categoryWhy": "manifest class=content，声明 data/assets/operators，引擎装载预期 errors=0",
+   "stationId": "fdd5a95c5c63",
+   "path": "mods/feihuo-liuxing/0.3.4/mod.zip",
+   "sizeBytes": 1094008,
+   "fileCount": 19,
+   "unpackedBytes": 1937268,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "CC0-1.0，作者未署名。原创干员「飞火流星」数据/美术/Spine/干员记录。⚠ 限制：干员技能脚本走引擎 kits 注册表（kits/index.js 硬编码，非插件 part），mod 管理器引擎暂无 kits part 与动态 kit 发现，故 kit 文件不会被加载——装上可得数据/美术但技能行为暂未生效，需引擎补 kits part。app >=0.3.0 <0.4.0。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [
+     "feihuo-liuxing"
+    ],
+    "errors": [],
+    "layer": "B",
+    "combat": true
+   }
+  },
+  {
+   "id": "trade",
+   "name": "玩家间交易（前向兼容参考）",
+   "version": "0.1.0",
+   "sha256": "41b3e26c46761022c9dbc56267c3b04a81d027909ddda2144a1956a71c8c570d",
+   "packHash": "",
+   "category": "documentation",
+   "categoryWhy": "参考包：引擎缺 C2S 白名单/PlayerState 挂点/客户端面板挂点，装上不生效",
+   "stationId": "8743d41785e0",
+   "path": "mods/trade/0.1.0/mod.zip",
+   "sizeBytes": 120036,
+   "fileCount": 14,
+   "unpackedBytes": 346642,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "CC0-1.0，作者未署名。⚠ 当前为参考包：mod 管理器引擎缺 g.trade 等三键、PlayerState 注入点、客户端交易面板挂点，装上不会生效。源码片段在 src/，引擎补面后改 category 为 functional 即启用。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [],
+    "errors": [
+     "NOT_LOADED_REFERENCE"
+    ],
+    "layer": "B",
+    "combat": false
+   }
+  },
+  {
+   "id": "manual-item-merge",
+   "name": "手动合成与拖拽堆叠（前向兼容参考）",
+   "version": "0.1.0",
+   "sha256": "1209e24d6618d58ebacffcb6ed2432c03f1616d0ca05818d6b66e498283d5fe6",
+   "packHash": "",
+   "category": "documentation",
+   "categoryWhy": "参考包：引擎缺 manualItemMerge getter/g.itemStack/stackItem/客户端拖拽合成挂点，装上不生效",
+   "stationId": "5d360c956a40",
+   "path": "mods/manual-item-merge/0.1.0/mod.zip",
+   "sizeBytes": 166001,
+   "fileCount": 12,
+   "unpackedBytes": 475084,
+   "assets": {
+    "assetFree": true,
+    "count": 0,
+    "bytes": 0,
+    "byKind": {},
+    "containers": []
+   },
+   "notes": [
+    "CC0-1.0，作者未署名。卸下装备已由引擎 rules.unequip 支持（vanilla-plus 已用）；但手动合成/拖拽堆叠所需 manualItemMerge getter、g.itemStack、stackItem()、客户端拖拽合成 UI 挂点缺失，装上不生效。源码片段在 src/，引擎补面后改 functional 即启用。"
+   ],
+   "engineLoad": {
+    "packsLoaded": [],
+    "errors": [
+     "NOT_LOADED_REFERENCE"
+    ],
+    "layer": "B",
+    "combat": false
+   }
   }
+ ],
+ "rejected": [],
+ "prune": {
+  "enabled": false,
+  "candidates": 30,
+  "live": 29,
+  "wouldDelete": [],
+  "deleted": [],
+  "held": [
+   {
+    "path": "mods/mod-xie/2.0.0/",
+    "stationId": "9709a3406f16",
+    "basis": "站侧 9709a3406f16 状态是 approved ⇒ 既不在入选集、也不在已不接受集，交人判，不删"
+   }
+  ]
+ }
 }
