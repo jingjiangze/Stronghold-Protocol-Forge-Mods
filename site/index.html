@@ -68,8 +68,14 @@ summary{cursor:pointer;color:var(--text-lo);font-size:12px}
 summary:hover{color:var(--mint-400)}
 .empty{color:var(--text-dim);font-size:13px;padding:20px 0;text-align:center}
 footer{margin-top:32px;padding-top:14px;border-top:1px solid var(--line);
-  color:var(--text-dim);font-size:12px}
+  color:var(--text-dim);font-size:12px;display:flex;flex-direction:column;gap:12px}
 footer a{color:var(--text-lo)}
+footer a:hover{color:var(--mint-400)}
+footer .src{border:1px solid var(--line);border-radius:var(--radius);padding:11px 13px;background:var(--bg-1)}
+footer .src b{display:block;color:var(--mint-400);font-size:12px;letter-spacing:.04em;margin-bottom:6px}
+footer .srcline{line-height:1.9}
+footer .note{line-height:1.7}
+footer .dim{color:var(--text-dim)}
 @media(max-width:640px){.card{grid-template-columns:1fr}.right{align-items:flex-start;text-align:left}}
 </style>
 </head>
@@ -88,13 +94,24 @@ footer a{color:var(--text-lo)}
     </select>
     <span class="count" id="count"></span>
   </div>
-
   <div id="list"><div class="empty">载入中…</div></div>
 
   <footer>
-    索引由 GitHub Actions 预生成（<code>mods.json</code>），本页是静态的：不查接口、不跑脚本、不碰 Cloudflare。
-    下载直链由 <span id="store"></span> 提供。
-    · 投稿请到 <a id="repo" href="#">mod 仓库</a> 提 PR，CI 通过后才合并。
+    <div class="src">
+      <b>开源地址 · Source</b>
+      <div class="srcline">
+        本页与索引生成器源码：
+        <a id="repo" href="#">mod 仓库</a>
+        <span class="dim">（GPL-3.0，欢迎自建、提 PR）</span><br>
+        客户端 / MOD 管理器：
+        <a id="mgr" href="#">stronghold-mod-manager</a>
+        <span class="dim">（管理器规格、来源镜像与一致性闸门）</span>
+      </div>
+    </div>
+    <div class="note">
+      索引由 GitHub Actions 预生成（<code>mods.json</code>），本页是静态的：不查接口、不跑脚本、不碰 Cloudflare。
+      下载直链由 <span id="store"></span> 提供。投稿请到上面的 mod 仓库提 PR，CI 通过后才合并。
+    </div>
   </footer>
 </main>
 
@@ -102,10 +119,25 @@ footer a{color:var(--text-lo)}
 // 纯静态：只读一个预生成的 mods.json，不做运行时 API 调用。
 // 理由（审计结论）：浏览器的匿名 api.github.com 只有 60 次/小时，且 raw 可达性按 URL 波动；
 // 把 API 调用挪到 Actions 侧（GITHUB_TOKEN 1000/h），浏览器只读静态文件 —— 省额度也稳。
-const CFG = window.MODSITE || {};
-const STORE = CFG.store || 'GitHub Releases';
-document.getElementById('store').textContent = STORE;
-if (CFG.repo) { const a = document.getElementById('repo'); a.href = 'https://github.com/' + CFG.repo; a.textContent = CFG.repo; }
+// 站点配置。刻意写死而不是读外部配置：多一次请求就多一个失败点，而这里两个值几乎不会变。
+const CFG = {
+  store: 'GitHub Releases',
+  repo: 'jingjiangze/Stronghold-Protocol-Forge-Mods',   // 本页 + 索引生成器源码（GPL-3.0）
+  managerRepo: 'jingjiangze/stronghold-mod-manager',     // 客户端 / MOD 管理器
+};
+document.getElementById('store').textContent = CFG.store;
+{
+  const a = document.getElementById('repo');
+  a.href = 'https://github.com/' + CFG.repo;
+  a.textContent = CFG.repo;
+  // 开源地址要写在页面上（用户口径 2026-10-20）：标题里也带一份，收藏/分享时看得见。
+  document.title = 'MOD 站 · 卫戍协议 · ' + CFG.repo;
+}
+{
+  const a = document.getElementById('mgr');
+  a.href = 'https://github.com/' + CFG.managerRepo;
+  a.textContent = CFG.managerRepo;
+}
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const mb = (n) => (Number(n) / 1048576).toFixed(1) + ' MiB';
@@ -162,7 +194,7 @@ function render() {
     const j = await r.json();
     ALL = Array.isArray(j) ? j : (j.mods || []);
     document.getElementById('sub').textContent =
-      `${ALL.length} 个工坊包 · 索引由 Actions 预生成 · 下载走 ${STORE}`;
+      `${ALL.length} 个工坊包 · 索引由 Actions 预生成 · 下载走 ${CFG.store}`;
     render();
   } catch (e) {
     document.getElementById('list').innerHTML =
