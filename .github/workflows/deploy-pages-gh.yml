@@ -1,0 +1,66 @@
+name: deploy-pages
+
+# 把 **site/ 一个目录**发布成 GitHub Pages（不是整个仓库根）。
+#
+# 为什么要单独一条：`Pages → Build and deployment → Source = Deploy from a branch` 会把**整个仓库根**
+# 当输出目录，于是 tools/、.github/、mods/ 全部变成公网可读。这个仓库里有 `site/`（对外页面）、
+# `incoming/`（来件）、`mods/`（成品）—— 后两者不该裸曝。
+#
+# 官方口径：用**自定义 GitHub Actions workflow** 发布时，「10 builds per hour」这个 soft limit **不适用**
+# （docs.github.com/en/pages/.../github-pages-limits.md），所以 push 频率不受构建次数约束。
+#
+# 与 CF Pages 的关系：这是**双部署的第二条腿**。主线是 CF Pages（mod.jiangjiangze.icu），
+# 这条是零 CF 额度的兜底镜像。两条腿读同一个 site/，谁先更新谁先生效，内容永远一致。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/deploy-pages-gh.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-pages-gh
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: 发布 site/ 到 GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # 只把 site/ 拷进产物目录：仓库其他部分一个字节都不上网。
+      - name: 组装产物（只含 site/）
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp -r site/. _site/
+          # mods.json 必须就位：页面 fetch 它，缺了就只剩骨架
+          if [ ! -s _site/mods.json ]; then
+            echo "::error::_site/mods.json 缺失或为空 —— 页面会渲染不出列表"
+            exit 1
+          fi
+          # 自检：页面里写的开源地址必须在
+          grep -q 'github.com/jingjiangze/Stronghold-Protocol-Forge-Mods' _site/index.html \
+            || { echo "::error::index.html 里没有开源地址"; exit 1; }
+          echo "产物文件数: $(find _site -type f | wc -l)"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: dep
+        uses: actions/deploy-pages@v4
+
+      - name: 回显地址
+        run: echo "GitHub Pages -> ${{ steps.dep.outputs.page_url }}"
