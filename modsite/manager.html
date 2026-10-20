@@ -160,8 +160,8 @@ const REPO = 'jingjiangze/Stronghold-Protocol-Forge';
 const MGR_REPO = 'jingjiangze/stronghold-mod-manager';
 // 只认资产名里的这个前缀：发布命名变了要同步改，避免把别的东西当管理器发出去。
 const ASSET_PREFIX = 'Stronghold-Protocol-Forge-modmgr-';
-const LIMIT = 256 * 1024;      // 测速只取 256 KB
-const PROBE_TIMEOUT = 15000;   // gh-proxy 首字节可能慢；8s 会把可用镜像误杀
+const LIMIT = 24 * 1024;       // 探测量：24 KB。测延迟只需首字节+T TF B 的时间，24 KB 足够稳定且下载量降到 1/10
+const PROBE_TIMEOUT = 6000;    // 超过 6s 的镜像用户也不会等；失败立刻退回清单值，不阻塞主按钮
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -190,6 +190,26 @@ function pickAssets(rel) {
   if (!zip) throw new Error('这个 release 里没有管理器包（找 ' + ASSET_PREFIX + '*-lite.zip）');
   const sha = list.find((a) => a.name === zip.name + '.sha256');
   return { zip, sha };
+}
+
+/**
+ * 测速结果缓存。键里带上资产名与探测量 —— 换了版本 / 换了 LIMIT 就该重测，
+ * 不能拿旧版本的延迟给新版本用。存 sessionStorage（关标签页即清），
+ * 不用 localStorage：跨会话长期缓存会在用户换网络后继续显示过期值，反而误导。
+ */
+const CACHE_KEY = 'sp-mgr-probe:' + btoa(ASSET_PREFIX + '|' + LIMIT).replace(/=+$/, '');
+function readCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const j = JSON.parse(raw);
+    // 半小时内的才用；过了就重测
+    if (!j || typeof j.at !== 'number' || Date.now() - j.at > 30 * 60e3) return null;
+    return j.ms && typeof j.ms === 'object' ? j.ms : null;
+  } catch { return null; }
+}
+function writeCache(ms) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), ms: ms })); } catch { /* 隐私模式下会抛，忽略 */ }
 }
 
 /** 对一个镜像做 Range 探测。返回 { ms } 或 { err }，失败原因分开记，便于如实显示。 */
@@ -256,43 +276,81 @@ function probe(url) {
     + '<td class="n">测速中…</td><td>' + (m.range ? '支持' : '不支持') + '</td><td></td></tr>'
   ).join('') || '<tr><td colspan="4" class="dim">清单里没有镜像</td></tr>';
 
-  // 只对 cors=true 的镜像做浏览器探测：跨域 Range 请求要求对方回 Access-Control-Allow-Origin，
-  // 没回的一律探测失败 —— 那会把**可用**的镜像误报成「不可用」。所以：
-  //   cors=true  → 真探测（拿到的是你这台机器的真实延迟）
-  //   cors=false → 用清单里的实测值（measuredMs），并标注「未实测」
-  await Promise.all(rows.map(async (m) => {
-    const cell = document.getElementById('m-' + m.id);
-    const td = cell ? cell.children[1] : null;
-    if (m.cors === true) {
+  // paint()：按当前 rows 里的 ms 渲染一次（表格 + 主按钮 + 选中说明），返回最快那个。
+  const paint = () => {
+    const ok = rows.filter((m) => m.ms != null).sort((a, b) => a.ms - b.ms);
+    const best = ok[0];
+    if (best) {
+      $('primary').href = best.url;
+      $('primary').textContent = '下载 ' + mb(zip.size);
+      $('primary').setAttribute('aria-disabled', 'false');
+      $('pick').textContent = best.cached
+        ? '已选最快镜像：' + best.name + '（' + best.ms + ' ms · 缓存值）'
+        : '已选最快镜像：' + best.name + '（' + best.ms + ' ms）';
+      const cell = document.getElementById('m-' + best.id);
+      if (cell) cell.lastElementChild.innerHTML = '<span class="best">主按钮</span>';
+    }
+    for (const m of rows) {
+      const cell = document.getElementById('m-' + m.id);
+      const td = cell ? cell.children[1] : null;
+      if (!td) continue;
+      if (m.ms == null) { td.textContent = '不可用'; td.className = 'n dead'; continue; }
+      // 后缀说明这个数怎么来的：真探测 / 缓存 / 清单历史值 / 探测失败退回清单值
+      let suffix = '';
+      if (m.cached) suffix = '（缓存）';
+      else if (m.measured) suffix = '';
+      else if (m.err) suffix = '（探测' + (m.err === 'timeout' ? '超时' : m.err === 'http' ? '返回非 2xx' : '网络错误') + '，用清单值）';
+      else suffix = '（清单值）';
+      td.textContent = m.ms + ' ms' + suffix;
+      td.className = 'n' + (m.ms < 3000 ? ' fast' : ' slow');
+    }
+    return best;
+  };
+
+  // 每个镜像先填上清单里的历史值；cors=false 的一直就用它
+  // （浏览器跨域 Range 探测要求对方回 Access-Control-Allow-Origin，没回的必然失败，
+  //   报成「不可用」会误伤可用镜像，所以那些不探测）。
+  for (const m of rows) {
+    m.ms = typeof m.measuredMs === 'number' ? m.measuredMs : null;
+    m.measured = false;
+    m.cached = false;
+  }
+
+  // ① 先用缓存 / 清单值把主按钮渲染出来 —— 用户几乎不用等就能点下载。
+  const cache = readCache();
+  if (cache) {
+    for (const m of rows) {
+      if (m.cors === true && typeof cache[m.id] === 'number') { m.ms = cache[m.id]; m.cached = true; }
+    }
+  }
+  paint();
+
+  // ② 再真探测 cors=true 且缓存没有的。**串行**：并发打多个镜像会互相抢带宽，
+  //    测出来的延迟偏高也不公平。每测完一个就刷新一次，用户能看到数字在动。
+  const toProbe = rows.filter((m) => m.cors === true && !m.cached);
+  if (toProbe.length) {
+    for (const m of toProbe) {
       const r = await probe(m.url);
       m.measured = true;
       if (r.ms != null) { m.ms = r.ms; m.err = null; }
       else {
         m.err = r.err;
-        // 探测失败时退回清单值：宁可显示历史测量值，也不要把可用镜像标成「不可用」。
+        // 失败退回清单值：宁可显示历史测量值，也不要把可用镜像标成「不可用」
         m.ms = typeof m.measuredMs === 'number' ? m.measuredMs : null;
         m.measured = false;
       }
-    } else {
-      m.ms = typeof m.measuredMs === 'number' ? m.measuredMs : null;
-      m.measured = false;
+      paint();
     }
-    if (!td) return;
-    if (m.ms == null) { td.textContent = '不可用'; td.className = 'n dead'; }
-    else {
-      td.textContent = m.ms + ' ms' + (m.measured ? '' : (m.err ? '（探测' + (m.err === 'timeout' ? '超时' : m.err === 'http' ? '返回非 2xx' : '网络错误') + '，用清单值）' : '（清单值）'));
-      td.className = 'n' + (m.ms < 3000 ? ' fast' : ' slow');
-    }
-  }));
+    const outMs = {};
+    for (const m of rows) if (typeof m.ms === 'number') outMs[m.id] = m.ms;
+    writeCache(outMs);
+  }
 
   // 选最快；全挂就退回 GitHub 原址
   const okRows = rows.filter((m) => m.ms != null).sort((a, b) => a.ms - b.ms);
   const best = okRows[0];
   if (best) {
-    $('primary').href = best.url;
-    $('primary').textContent = '下载 ' + mb(zip.size);
-    $('primary').setAttribute('aria-disabled', 'false');
-    $('pick').textContent = '已选最快镜像：' + best.name + '（' + best.ms + ' ms）';
+    // 已在 paint() 里渲染过，这里只补一句「哪个在主按钮上」
     const cell = document.getElementById('m-' + best.id);
     if (cell) cell.lastElementChild.innerHTML = '<span class="best">主按钮</span>';
   } else {
