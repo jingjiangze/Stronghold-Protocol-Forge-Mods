@@ -1,0 +1,35 @@
+{
+ "updated": "2026-10-20",
+ "note": "MOD 管理器下载页的加速器清单。prefix 模式：把 GitHub asset 完整 URL 接在 prefix 后面。页面会对每个镜像做一次 Range 探测（只取 256 KiB），把最快的那个做成主按钮。清单里没有的 host 一律不信任——页面每次拼完 URL 都按本文件复核一遍。gh.llkk.cc 于 2026-10-20 实测 21s 超时，先不列。",
+ "repo": "jingjiangze/Stronghold-Protocol-Forge",
+ "assetHint": "Stronghold-Protocol-Forge-modmgr-*-lite.zip",
+ "mirrors": [
+  {
+   "id": "ghproxy",
+   "name": "gh-proxy.com",
+   "mode": "prefix",
+   "prefix": "https://gh-proxy.com/",
+   "cors": true,
+   "range": true,
+   "measuredMs": 982
+  },
+  {
+   "id": "ghproxynet",
+   "name": "ghproxy.net",
+   "mode": "prefix",
+   "prefix": "https://ghproxy.net/",
+   "cors": false,
+   "range": true,
+   "measuredMs": 1558
+  },
+  {
+   "id": "ghfast",
+   "name": "ghfast.top",
+   "mode": "prefix",
+   "prefix": "https://ghfast.top/",
+   "cors": false,
+   "range": true,
+   "measuredMs": 2016
+  }
+ ]
+}
