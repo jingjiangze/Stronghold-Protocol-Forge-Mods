@@ -53,6 +53,16 @@ section > h2{font-size:13px;color:var(--mint-400);margin:0 0 10px;letter-spacing
 .noteWrap{margin-top:6px}
 .byline{display:flex;gap:14px;flex-wrap:wrap;margin:5px 0 0;font-size:12.5px;color:var(--text-md)}
 .byline .who b{color:var(--text-lo);font-weight:500;margin-right:4px;font-size:12px}
+/* MOD 管理器入口：首页第一块，比卡片更醒目（业主口径「放在第一个」） */
+.hero{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  background:linear-gradient(180deg,#173a31,#141a21);border-color:var(--mint-600);margin:0 0 18px}
+.hero:hover{background:linear-gradient(180deg,#1c4a3e,#161d24)}
+.hero .heroT{font-size:15px;color:var(--mint-400);font-weight:600;letter-spacing:.02em}
+.hero .heroS{font-size:12.5px;color:var(--text-lo);margin-top:3px}
+.hero .heroR{flex:0 0 auto}
+.hero .heroBtn{display:inline-block;padding:8px 18px;border-radius:var(--radius);
+  border:1px solid var(--mint-600);color:var(--mint-400);font-size:13px;white-space:nowrap}
+.hero:hover .heroBtn{background:var(--mint-600);color:var(--text-on-mint)}
 .right{text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .size{font:12px var(--font-mono);color:var(--text-lo)}
 a.dl{
@@ -87,8 +97,17 @@ footer .dim{color:var(--text-dim)}
   <h1>MOD 站 · 卫戍协议</h1>
   <p class="sub" id="sub">正在载入索引…</p>
 
+  <!-- MOD 管理器放在第一位（业主口径 2026-10-20）：先给入口，再给 mod 列表。 -->
+  <a class="panel hero" href="manager.html" style="display:block;text-decoration:none;color:inherit">
+    <div class="heroL">
+      <div class="heroT">MOD 管理器</div>
+      <div class="heroS" id="mgrVer">服务端 + <code>/mod</code> 页面 + CLI · 不含游戏素材</div>
+    </div>
+    <div class="heroR"><span class="heroBtn">下载 →</span></div>
+  </a>
+
   <div class="controls">
-    <input type="search" id="q" placeholder="搜名称 / id / 说明…" autocomplete="off">
+    <input type="search" id="q" placeholder="搜名称 / id / 作者…" autocomplete="off">
     <select id="cat">
       <option value="">全部分类</option>
       <option value="functional">真功能</option>
@@ -102,9 +121,8 @@ footer .dim{color:var(--text-dim)}
     <div class="src">
       <b>上传投稿 · Submit</b>
       <div class="srcline">
-        <a id="upload" href="#">上传站</a>
-        <span class="dim">（网页填「mod 名 + 备注」再选 zip；≤100 MiB，收件后维护者审过才上线）</span><br>
-        <span class="dim">另一种：把</span><a id="repo2" href="#">mod 仓库</a><span class="dim">fork 后提 PR（适合已在 GitHub 上的包；网页上传单文件 ≤25 MiB）</span>
+        <a id="upload" href="upload.html">上传 mod</a>
+        <span class="dim">（两条通道 + 上传规范：≤25 MiB 直接提 PR，25–100 MiB 用上传站）</span>
       </div>
     </div>
     <div class="src">
@@ -153,13 +171,24 @@ const link = (id, href, text) => {
   if (text) el.textContent = text;
 };
 link('repo', 'https://github.com/' + CFG.repo);
-link('repo2', 'https://github.com/' + CFG.repo + '/upload/master/incoming/');
-link('upload', CFG.uploadSite);
+// upload 是静态链接到本站的 upload.html（不在这里改，改了会指回外部上传站）
 link('rel', 'https://github.com/' + CFG.engineRepo + '/releases/latest');
 link('cdn', CFG.cdn);
 document.getElementById('store').textContent = CFG.store;
 // 开源地址要写在页面上（用户口径 2026-10-20）：标题里也带一份，收藏/分享时看得见。
 document.title = 'MOD 站 · 卫戍协议 · ' + CFG.repo;
+
+// 首页管理器入口显示当前版本（拿不到就保持静态文案，不报错）。
+fetch('https://api.github.com/repos/' + CFG.engineRepo + '/releases/latest', {
+  headers: { accept: 'application/vnd.github+json' },
+}).then((r) => (r.ok ? r.json() : null)).then((rel) => {
+  if (!rel || !rel.tag_name) return;
+  const zip = (rel.assets || []).find((a) => a.name.endsWith('-lite.zip'));
+  const el = document.getElementById('mgrVer');
+  if (!el) return;
+  el.textContent = rel.tag_name + (zip ? ' · ' + (zip.size / 1048576).toFixed(1) + ' MiB' : '') +
+    ' · 服务端 + /mod 页面 + CLI · 不含游戏素材';
+}).catch(() => { /* 离线也不影响列表 */ });
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const mb = (n) => (Number(n) / 1048576).toFixed(1) + ' MiB';
