@@ -143,14 +143,14 @@
     {
       "id": "cdn-source",
       "name": "CDN 源选择（最快镜像）",
-      "version": "1.0.2",
-      "sha256": "39574e4dd9fafa32a6148b350a530cf016c0ab6785a20ccdf959524108986d88",
+      "version": "1.0.3",
+      "sha256": "81e0a64f3b4b4979d0f48ffbfb88d772a8f0cb393bc2edec99def591cce184d0",
       "packHash": "56ce40defefe3c61677e980c52e0d81312e7486aeba0a5f05a73ff2b5a21dad0",
       "category": "functional",
       "categoryWhy": "声明了 client",
       "stationId": "e9de2c45e249",
-      "path": "mods/cdn-source/1.0.2/mod.zip",
-      "sizeBytes": 10276,
+      "path": "mods/cdn-source/1.0.3/mod.zip",
+      "sizeBytes": 10952,
       "fileCount": 6,
       "unpackedBytes": 16110,
       "assets": {
@@ -161,7 +161,7 @@
         "containers": []
       },
       "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+        "1.0.3：源清单从「只读 speedcdn 的 rank」（6 条）扩成 rank + downcdn mirrors（11 条）两份合并；rank 在前带延迟，mirrors 独有的追加在后并标「仅清单」；现场测速按各自清单里的探针路径。"
       ],
       "engineLoad": {
         "packsLoaded": [
@@ -1020,14 +1020,14 @@
     {
       "id": "ws-compression-reference",
       "name": "WS 压缩参考（协商参数 / 档位 / 实测）",
-      "version": "1.0.0",
-      "sha256": "ba194faf0b4116834202eeec39c3cf9b79c27ddf2ad42c785e4b86afd2650a5b",
+      "version": "1.2.0",
+      "sha256": "759eba0b6f6c69e35411461cdd17f127854b99b18cab2ecdcf35b1e6230ec580",
       "packHash": "5a132579e953021c4ee3055893c482f5e25410ec49c56e2d37a2e315a4f2e505",
       "category": "functional",
       "categoryWhy": "声明了 content / client / routes",
       "stationId": "f3711c357e20",
-      "path": "mods/ws-compression-reference/1.0.0/mod.zip",
-      "sizeBytes": 21774,
+      "path": "mods/ws-compression-reference/1.2.0/mod.zip",
+      "sizeBytes": 13811,
       "fileCount": 6,
       "unpackedBytes": 21088,
       "assets": {
@@ -1038,7 +1038,7 @@
         "containers": []
       },
       "notes": [
-        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+        "1.2.0：参数按 jingjiangze/stronghold-server 的 packages/ws-compression/（上游 commit f16a6e78，MIT）重写 —— level 6 / memLevel 5 / 64 B 阈值 / zlib 并发 8 / 服务端保持上下文 / 客户端不保持 / 6 类可压 + b.start / 入站 64 KiB / 两个只读路由契约。"
       ],
       "engineLoad": {
         "packsLoaded": [
