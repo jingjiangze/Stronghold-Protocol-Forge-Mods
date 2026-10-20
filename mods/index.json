@@ -1021,6 +1021,33 @@
         "layer": "C",
         "combat": false
       }
+    },
+    {
+      "id": "stronghold-ui",
+      "name": "盟约界面增强（大厅音乐）",
+      "version": "0.3.1",
+      "sha256": "5c2ef28eab7d95d3446ac04ce089cff84bb1040b2d736879433299f344492574",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.client 客户端覆盖与 trusted.server",
+      "stationId": "d11dbaf5a6c4",
+      "packId": "stronghold-ui",
+      "path": "mods/stronghold-ui/0.3.1/mod.zip",
+      "sizeBytes": 323634,
+      "fileCount": 37,
+      "unpackedBytes": 1133997,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json，不是 pack.json）：需要支持 code.client 客户端覆盖的基座；装好后在 plugins/config.json 的 trusted 里钉 plugin.lock.json 的 sha256。",
+        "官方 0.3.1 原版不支持 code.client，装上不生效。",
+        "大厅音乐的搜索/解析依赖第三方接口（ffapi.cn 优先、Meting 回退）。"
+      ]
     }
   ],
   "rejected": [],
