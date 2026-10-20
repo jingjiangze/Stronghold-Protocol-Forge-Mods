@@ -17,6 +17,7 @@ on:
     branches: [master]
     paths:
       - 'modsite/**'
+      - 'extras/**'
       - '.github/workflows/deploy-pages-gh.yml'
   workflow_dispatch: {}
 
@@ -38,11 +39,29 @@ jobs:
       - uses: actions/checkout@v4
 
       # 只把 site/ 拷进产物目录：仓库其他部分一个字节都不上网。
-      - name: 组装产物（只含 site/）
+      - name: 组装产物（site/ + extras 下载件）
         run: |
           set -euo pipefail
           mkdir -p _modsite
           cp -r modsite/. _modsite/
+          # 「不兼容 / 参考件」的下载字节在 extras/：卡片里的链接是站相对路径（extras/<id>/*.zip），
+          # 不拷进产物就是死链。manifest.json 只给生成器读，不上网。
+          mkdir -p _modsite/extras
+          for d in extras/*/; do
+            id="$(basename "$d")"
+            mkdir -p "_modsite/extras/$id"
+            find "$d" -maxdepth 1 -name '*.zip' -exec cp {} "_modsite/extras/$id/" \;
+          done
+          node -e '
+            const fs=require("fs"),path=require("path");
+            const j=JSON.parse(fs.readFileSync("_modsite/extras.json","utf8"));
+            let bad=0;
+            for (const m of (j.items||[])) {
+              if (!fs.existsSync(path.join("_modsite", m.download))) { console.error("::error::" + m.id + " 的 download 没进产物: " + m.download); bad++; }
+            }
+            if (bad) process.exit(1);
+            console.log("✓ extras 下载件齐全: " + (j.items||[]).length + " 条");
+          '
           # mods.json 必须就位：页面 fetch 它，缺了就只剩骨架
           if [ ! -s _modsite/mods.json ]; then
             echo "::error::_modsite/mods.json 缺失或为空 —— 页面会渲染不出列表"
@@ -51,7 +70,7 @@ jobs:
           # 自检：页面里写的开源地址必须在
           grep -q 'jingjiangze/Stronghold-Protocol-Forge-Mods' _modsite/index.html \
             || { echo "::error::页面里没有开源地址（仓库路径不在源文件里）"; exit 1; }
-          echo "产物文件数: $(find _site -type f | wc -l)"
+          echo "产物文件数: $(find _modsite -type f | wc -l)"
 
       - uses: actions/configure-pages@v5
 

@@ -30,8 +30,8 @@
   "download": "extras/engine-ai/engine-ai-snapshot.zip",
   "zip": {
     "name": "engine-ai-snapshot.zip",
-    "bytes": 174080,
-    "sha256": "b0b04385df45250f7d096024cb025d8be7ae94968c91a217be632733064d3265"
+    "bytes": 58484,
+    "sha256": "b229c55bf243aa62db72b60e9317016e62c1b4d87b9f007bcd205408bf66f35d"
   },
   "files": [
     {

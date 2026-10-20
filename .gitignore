@@ -15,6 +15,8 @@ desktop.ini
 # 文件就是凭空消失）—— 2026-10-20 实测证实：git add -n 里看不到 incoming/testmod/mod.zip。
 # 这正是「方式 B：git push 上传」整条路径失效的原因，所以必须与 mods/、packs/ 同等放行。
 !incoming/**/*.zip
+# `extras/` 是「不兼容 / 参考件」的下载件（deploy 会拷进产物），同理要放行
+!extras/**/*.zip
 
 # 上传站的运行数据（投稿、决定）—— 绝不能进版本库
 site/data/

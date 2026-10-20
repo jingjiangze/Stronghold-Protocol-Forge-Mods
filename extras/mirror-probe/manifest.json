@@ -25,8 +25,8 @@
   "download": "extras/mirror-probe/mirror-probe-source.zip",
   "zip": {
     "name": "mirror-probe-source.zip",
-    "bytes": 20480,
-    "sha256": "b7a4d50be6c2b0d1d2b2564af1125074c307f379a628abaeff336d31d2f83bae"
+    "bytes": 4974,
+    "sha256": "7b2e56cb64cd29d28cfb89504e1caba23c84cba2a49d8eebb3b46ed904ebbd59"
   },
   "files": [
     {
