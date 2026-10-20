@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-20T02:55:46.445Z",
+ "generatedAt": "2026-10-20T16:36:20.108Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -510,6 +510,23 @@
    "sha256": "ba194faf0b4116834202eeec39c3cf9b79c27ddf2ad42c785e4b86afd2650a5b",
    "packId": "",
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ws-compression-reference/1.0.0/mod.zip"
+  },
+  {
+   "id": "stronghold-ui",
+   "name": "盟约界面增强（大厅音乐）",
+   "version": "0.3.1",
+   "category": "functional",
+   "note": "插件包（plugin.json，不是 pack.json）：需要支持 code.client 客户端覆盖的基座；装好后在 plugins/config.json 的 trusted 里钉 plugin.lock.json 的 sha256。\n官方 0.3.1 原版不支持 code.client，装上不生效。\n大厅音乐的搜索/解析依赖第三方接口（ffapi.cn 优先、Meting 回退）。",
+   "author": "原件未署名（UI 包来自一份匿名定制部署）；插件化整合与大厅音乐：jingjiangze",
+   "license": "原件未声明许可；原包 `AGENTS.md` 写明「仅供学习研究、禁止商用」",
+   "compatAuthor": "jingjiangze",
+   "isCompat": true,
+   "from": "上传站记录 `d11dbaf5a6c4` · 原件 `ui-package-20261014`（Stronghold Protocol 0.2.6 定制前端）",
+   "sizeBytes": 323634,
+   "fileCount": 37,
+   "sha256": "5c2ef28eab7d95d3446ac04ce089cff84bb1040b2d736879433299f344492574",
+   "packId": "stronghold-ui",
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/stronghold-ui/0.3.1/mod.zip"
   }
  ]
 }
