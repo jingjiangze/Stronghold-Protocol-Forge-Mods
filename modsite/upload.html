@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>上传 mod · 卫戍协议 MOD 站</title>
-<meta name="description" content="把工坊包提交到 MOD 站：fork 后提 PR，CI 校验通过、维护者审核后合并。">
+<meta name="description" content="把工坊包提交到 MOD 站：fork 后提 PR，CI 自动校验，维护者审核通过才合并上线。">
 <style>
 :root{
   color-scheme:dark;
@@ -24,22 +24,25 @@ h1{font-size:22px;margin:0 0 6px;color:var(--text-hi)}
 p.sub{margin:0 0 26px;color:var(--text-lo);font-size:13px}
 a{color:var(--mint-400)}
 .panel{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:0 0 16px}
+.panel.hl{border-color:var(--mint-600);background:linear-gradient(180deg,#173a31,#141816)}
 .panel h2{font-size:13px;margin:0 0 12px;color:var(--mint-400);letter-spacing:.05em}
 .panel h3{font-size:13.5px;margin:18px 0 8px;color:var(--text-hi)}
 .panel h3:first-of-type{margin-top:0}
 ol,ul{margin:8px 0 0;padding-left:22px;font-size:13px}
-li{margin:6px 0}
+li{margin:7px 0}
 code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-radius:3px;color:var(--ice)}
 pre{white-space:pre-wrap;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px 14px;font:12px/1.7 var(--font-mono);color:var(--text-md);overflow:auto;margin:10px 0 0}
-.btn{display:inline-block;padding:10px 24px;border-radius:var(--radius);font-size:14px;
+.btn{display:inline-block;padding:11px 26px;border-radius:var(--radius);font-size:14px;
   border:1px solid var(--mint-600);background:#173a31;color:var(--mint-400);text-decoration:none}
 .btn:hover{background:var(--mint-600);color:var(--text-on-mint)}
 .btn.alt{border-color:var(--line-2);background:var(--bg-2);color:var(--text-md)}
 .btn.alt:hover{background:var(--line);color:var(--text-hi)}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 .warn{border-left:3px solid var(--gold);padding-left:12px;color:var(--text-md);font-size:13px;margin:12px 0 0}
-.bad{border-left-color:var(--red)}
+.warn.bad{border-left-color:var(--red)}
+.flow{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;font:12px/2 var(--font-mono);color:var(--text-md);white-space:pre;overflow:auto;margin:10px 0 0}
 table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
 th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #242c38;vertical-align:top}
 th{color:var(--text-lo);font-weight:500}
@@ -50,68 +53,62 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);color:v
 <body>
 <main>
   <h1>上传 mod</h1>
-  <p class="sub">两条通道，按包体积选。<b>上传即提 PR</b>；CI 校验 + 维护者审核通过后才会上线。</p>
+  <p class="sub">提 PR 到 mod 仓库 → CI 自动校验 → <b>维护者审核通过才合并</b>。不需要装 git，也不需要任何 token。</p>
 
-  <div class="panel">
-    <h2>怎么选通道</h2>
-    <table>
-      <thead><tr><th>你的包</th><th>走哪条</th><th>上限</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>≤ 25 MiB</td>
-          <td><b>GitHub 网页提 PR</b>（不用装 git）</td>
-          <td>网页单文件 25 MiB</td>
-        </tr>
-        <tr>
-          <td>25–100 MiB</td>
-          <td><b>上传站</b>（网页传 zip，维护者代提 PR）</td>
-          <td>100 MiB / 15 分钟时限</td>
-        </tr>
-        <tr>
-          <td>&gt; 100 MiB</td>
-          <td>先开 issue 说明，维护者单独安排</td>
-          <td>引擎装载上限 200 MiB</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="panel hl">
+    <h2>三步走</h2>
+    <div class="flow">① Fork + 上传        ② CI 自动校验           ③ 等维护者审核
+   GitHub 网页             mod-gate / mod-compat      缺审批时 PR 是 blocked
+   放 incoming/&lt;名字&gt;/      约 1–2 分钟              合不了 —— 必须人批</div>
     <div class="row">
-      <a class="btn" id="prLink" href="#">去 GitHub 提 PR →</a>
-      <a class="btn alt" id="stationLink" href="#">用上传站（大文件）</a>
+      <a class="btn" id="forkBtn" href="#">① 去 Fork →</a>
+      <a class="btn alt" id="upBtn" href="#">直接上传页（小包）</a>
     </div>
     <p class="dim" style="margin:12px 0 0;font-size:12px">
-      PR 通道不需要你做任何账号配置：GitHub 会在你点「Upload files」时自动 fork 并开 PR。
+      小包（≤25 MiB）用网页即可；大包（25–100 MiB）用 git push 到你自己的 fork（不需要 token）。
     </p>
   </div>
 
   <div class="panel">
-    <h2>通道一：GitHub 网页提 PR（≤ 25 MiB）</h2>
+    <h2>方式 A：GitHub 网页（≤ 25 MiB，推荐）</h2>
     <ol>
-      <li>打开 <a id="uploadPage" href="#">仓库上传页</a>（GitHub 会让你先 fork 到你自己的账号）。</li>
-      <li>目标目录 <code>incoming/&lt;你的 mod 名字&gt;/</code>（目录名就是 mod 名，不要多套一层）。</li>
-      <li>把 <code>mod.zip</code> 与 <code>SOURCE.md</code> 一起传上去（模板见下方「上传规范」）。</li>
-      <li>提交后 GitHub 会自动开 PR。等 <code>mod-gate</code> 变绿，再等维护者审。</li>
+      <li>打开 <a id="repoLinkA" href="#">mod 仓库</a>，点右上角 <b>Fork</b> → <b>Create fork</b>（fork 到你自己的账号下）。</li>
+      <li>进你 fork 里的 <code>incoming/</code> 目录 → <b>Add file ▾ → Create new file</b>。</li>
+      <li>文件名填 <code>incoming/&lt;你的 mod 名字&gt;/SOURCE.md</code> —— <b>打斜杠会自动建目录</b>。
+          内容照抄 <a id="tplLink" href="#">SOURCE 模板</a> 填好五件事。</li>
+      <li>回到 <code>incoming/&lt;你的 mod 名字&gt;/</code> → <b>Add file ▾ → Upload files</b> → 把 <code>mod.zip</code> 拖进去。
+          （支持直接拖整个文件夹）</li>
+      <li>点 <b>Commit changes</b>，GitHub 会引导你 <b>Create pull request</b> 回原仓库。</li>
+      <li>等 <code>mod-gate</code> 变绿，然后 <b>等维护者审核</b>。在那之前 PR 显示 Review required，合不了。</li>
     </ol>
-    <div class="warn">
-      <b>zip 里要有 <code>pack.json</code>（工坊包）或 <code>plugin.json</code>（插件包），且放在 zip 根。</b>
-      两个都没有的包 CI 会直接判失败（引擎也装不上）。
-    </div>
   </div>
 
   <div class="panel">
-    <h2>通道二：上传站（25–100 MiB）</h2>
-    <ol>
-      <li>打开 <a id="stationLink2" href="#">上传站</a>，填「mod 名 + 备注」，选 zip，点上传。</li>
-      <li>会给你一个 <b>认领码</b>（只显示一次，请存好）——用它可以在「我的投稿」里改包、撤回。</li>
-      <li>维护者审核通过后，用服务端的「过审 → 代提 PR」把这条推进仓库的 PR，
-          <code>mod-gate</code> 再校验一遍、人合并。上线前是待审状态，不公开。</li>
-    </ol>
+    <h2>方式 B：git（25–100 MiB）</h2>
+    <p class="dim" style="margin:0;font-size:12.5px">推到<b>你自己的 fork</b>，不需要任何 token（fork 是你自己的仓）：</p>
+    <pre>git clone https://github.com/&lt;你的账号&gt;/Stronghold-Protocol-Forge-Mods.git
+cd Stronghold-Protocol-Forge-Mods
+mkdir -p "incoming/&lt;你的 mod 名字&gt;"
+cp /path/to/mod.zip "incoming/&lt;你的 mod 名字&gt;/"
+# 照着模板写 incoming/&lt;你的 mod 名字&gt;/SOURCE.md（五件事）
+git add "incoming/&lt;你的 mod 名字&gt;"
+git commit -m "上传 &lt;你的 mod 名字&gt;"
+git push</pre>
     <p class="dim" style="margin:10px 0 0;font-size:12px">
-      包大小 ÷ 上行速度要小于 15 分钟。100 MB 需要上行 ≥ 114 KB/s；网慢请压缩或分包。
+      然后在 GitHub 上开 PR 回 <code id="baseRepo">jingjiangze/Stronghold-Protocol-Forge-Mods</code> 的 <code>master</code>。
     </p>
+  </div>
+
+  <div class="panel">
+    <h2>方式 C：上传站（不想碰 GitHub 时）</h2>
+    <ol>
+      <li>打开 <a id="stationLink" href="#">上传站</a>，填「mod 名 + 备注」，选 zip，点上传（≤100 MiB）。</li>
+      <li>会给你一个 <b>认领码</b>（只显示一次，存好）——用它可改包、撤回。</li>
+      <li>维护者审过后，用服务端「过审 → 代提 PR」推进仓库，再走同一条 CI + 审核 + 合并。</li>
+    </ol>
     <div class="warn">
-      <b>为什么代提 PR 由服务端做、不在这页做：</b>提 PR 需要 GitHub 写入凭证。
-      本站是纯静态页，凭证一旦放进页面就等于公开分发（任何人打开 DevTools 都能拿到），
-      而且能拿到它的凭证会覆盖账号下所有仓库。所以凭证只存在服务器上，页面不碰。
+      <b>这条不是主路径。</b>上传站要把包转手一次，比直接提 PR 多一道人工。
+      能用方式 A/B 就用它们。
     </div>
   </div>
 
@@ -120,17 +117,16 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);color:v
 
     <h3>一、包的形态</h3>
     <ul>
-      <li>一个 mod 一个目录；<b>目录名 = mod 名字</b>，不要多套一层目录。</li>
-      <li><code>pack.json</code>（工坊包）或 <code>plugin.json</code>（插件包）必须在 <b>zip 根</b>；允许一层包裹目录，但不要更深的嵌套。</li>
-      <li>单个文件 ≤ 32 MB（引擎的 zip 读取上限；超了引擎自带的导入路径会拒收）。</li>
-      <li>整包 ≤ 200 MiB（引擎 <code>PLUGIN_LIMITS.pluginBytes</code>）。</li>
-      <li>同一 mod 的不同版本放 <code>mods/&lt;id&gt;/&lt;version&gt;/</code>，不要覆盖旧版本目录。</li>
+      <li>一个 mod 一个目录；<b>目录名 = mod 名字</b>，不要多套一层。</li>
+      <li><code>pack.json</code>（工坊包）或 <code>plugin.json</code>（插件包）必须放在 <b>zip 根</b>；允许一层包裹目录。</li>
+      <li>单个文件 ≤ 32 MB（引擎 zip 读取上限；超了引擎自带导入路径会拒收）。</li>
+      <li>整个 zip ≤ 200 MiB（引擎 <code>PLUGIN_LIMITS.pluginBytes</code>）。</li>
     </ul>
 
     <h3>二、SOURCE.md 要写清的五件事</h3>
     <ul>
-      <li><b>原件叫什么、从哪来</b>（可追溯的链接或来源说明）。</li>
-      <li><b>原作者是谁</b>（署名用原作者的名字，不要写成你的）。</li>
+      <li><b>原件叫什么、从哪来</b>（可追溯的链接或来源）。</li>
+      <li><b>原作者是谁</b>（用原作者的名字，不要写成你的）。</li>
       <li><b>原件的许可</b>（如 GPL-3.0-or-later / 未声明）。</li>
       <li><b>你改了什么</b>：具体到文件、数据、数值，不要只写「优化了一些东西」。</li>
       <li><b>自带素材哪来的</b>（自绘 / 从游戏客户端导出 / 第三方，各自标注）。</li>
@@ -138,65 +134,67 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);color:v
 
     <h3>三、素材与版权</h3>
     <ul>
-      <li>夹带游戏官方素材<b>会照收，但必须如实标注</b>——未标注才是问题。</li>
-      <li>含官方素材的包会在站上用醒目标记并在详情里写明「版权归鹰角网络 / Yostar，仅供非商业个人使用」。</li>
+      <li>夹带游戏官方素材<b>照收，但必须如实标注</b> —— 未标注才是问题。</li>
+      <li>含官方素材的包会在站上醒目标记，并写明「版权归鹰角网络 / Yostar，仅供非商业个人使用」。</li>
       <li>原作者明确禁止再分发的，不要提交。</li>
     </ul>
 
-    <h3>四、会被 CI 自动挡掉的</h3>
+    <h3>四、CI 会自动挡掉的</h3>
     <table>
       <thead><tr><th>判据</th><th>含义</th></tr></thead>
       <tbody>
         <tr><td>类型认不出</td><td>zip 中央目录里既无 <code>pack.json</code> 也无 <code>plugin.json</code></td></tr>
-        <tr><td>整档 CRC 失败</td><td>zip 本身损坏（传输中断/重复压缩）</td></tr>
+        <tr><td>整档 CRC 失败</td><td>zip 损坏（传输中断 / 重复压缩）</td></tr>
         <tr><td>超过 200 MiB</td><td>引擎装载上限</td></tr>
-        <tr><td>索引不一致</td><td>改了 <code>mods/</code> 下的 zip 却没同步 <code>mods/index.json</code>（缺 sha256 或路径不存在）</td></tr>
+        <tr><td>索引不一致</td><td>改了 <code>mods/</code> 下 zip 却没同步 <code>mods/index.json</code></td></tr>
       </tbody>
     </table>
 
-    <h3>五、审核会看什么</h3>
+    <h3>五、维护者审核会看什么</h3>
     <ul>
-      <li>署名对不对（原作者 ≠ 兼容改写者，两者要分开写）。</li>
-      <li>备注里有没有说清「装上了会生效什么」——<b>说明包不收</b>，只收能装的真功能包。</li>
-      <li>会不会和其它包撞 <code>pack.json</code> 的 <code>id</code>（引擎不允许同 id 并存）。</li>
+      <li>署名对不对（原作者 ≠ 兼容改写者，要分开写）。</li>
+      <li>说明包里有没有说清「装上会生效什么」—— <b>说明包不收</b>，只收能装的真功能包。</li>
+      <li>会不会和存量包撞 <code>pack.json</code> 的 <code>id</code>（引擎不允许同 id 并存）。</li>
     </ul>
+    <div class="warn bad">
+      <b>CI 绿 ≠ 已审核。</b>它只能证明「形状对、没损坏」，装不装得上还要维护者在引擎里实测。
+      合并前缺审批时 GitHub 会直接拦住。
+    </div>
   </div>
 
   <div class="panel">
-    <h2>本地自查（可选，但强烈建议）</h2>
-    <p class="dim" style="margin:0;font-size:12.5px">在提交前用管理器自带的校验器过一遍，能和 CI 判据对齐：</p>
-    <pre># 只出报告，不写文件（等价 dry-run）
-node tools/mod.mjs check &lt;你的包目录或 zip&gt;
-
-# 看它被识别成什么类型、有没有 blocker
-node tools/mod.mjs import &lt;包&gt; --dry-run</pre>
+    <h2>本地自查（可选）</h2>
+    <p class="dim" style="margin:0;font-size:12.5px">用管理器自带的校验器先过一遍，能和 CI 判据对齐：</p>
+    <pre>node tools/mod.mjs check &lt;包目录或 zip&gt;      # 只出报告，不写文件
+node tools/mod.mjs import &lt;包&gt; --dry-run     # 看类型与 blocker</pre>
   </div>
 
   <footer>
     提 PR 后 CI 会跑 <code>mod-gate</code>（类型 / CRC / 大小 / 索引一致性）与 <code>mod-compat</code>（静态契约预检）。
-    <b>CI 绿 ≠ 已审核</b>：它只能证明包「形状对、没损坏」，装不装得上还要维护者在引擎里实测。
+    两者都绿 + 维护者审批通过，才允许合并。
     <br>
-    <a href="./">← 返回 MOD 站</a> · <a id="repoLink" href="#">仓库源码</a> · <a id="specLink" href="#">上传规范原文（UPLOAD.md）</a>
+    <a href="./">← 返回 MOD 站</a> · <a id="repoLink" href="#">仓库</a> · <a id="specLink" href="#">UPLOAD.md 原文</a>
   </footer>
 </main>
 
 <script>
 'use strict';
-// 这个页面**不含任何 token**，也不发任何写请求：它只把两条官方通道指给用户。
-// 上传动作全部发生在 GitHub（fork + PR）或既有上传站上，凭证不经过本站。
+// 本页**不含任何 token**，也不发写请求：它只把 GitHub 的 fork+PR 流程指给作者。
+// 提 PR 用的是作者自己的 GitHub 账号 —— 这条路不需要你发任何凭证给任何人。
 const REPO = 'jingjiangze/Stronghold-Protocol-Forge-Mods';
 const STATION = 'http://47.103.14.217:25570/';
 
 const $ = (id) => document.getElementById(id);
 const set = (id, href, text) => { const e = $(id); if (e) { e.href = href; if (text) e.textContent = text; } };
 
-// GitHub 的「上传文件」页：会引导用户 fork 到自己的账号再开 PR
-set('prLink', 'https://github.com/' + REPO + '/upload/master/incoming');
-set('uploadPage', 'https://github.com/' + REPO + '/upload/master/incoming', 'incoming/ 上传页');
-set('stationLink', STATION);
-set('stationLink2', STATION, '上传站');
+set('forkBtn', 'https://github.com/' + REPO + '/fork');
+set('upBtn', 'https://github.com/' + REPO + '/upload/master/incoming');
+set('repoLinkA', 'https://github.com/' + REPO);
+set('tplLink', 'https://github.com/' + REPO + '/blob/master/incoming/SOURCE.template.md');
+set('stationLink', STATION, '上传站');
 set('repoLink', 'https://github.com/' + REPO);
 set('specLink', 'https://github.com/' + REPO + '/blob/master/UPLOAD.md');
+$('baseRepo').textContent = REPO;
 </script>
 </body>
 </html>
