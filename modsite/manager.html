@@ -56,11 +56,6 @@ code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-ra
   border:1px solid var(--mint-600);background:var(--mint-600);color:var(--text-on-mint);
   min-width:240px}
 .bigbtn:hover{background:var(--mint-400);border-color:var(--mint-400);color:var(--text-on-mint)}
-.snapbtn{display:inline-block;padding:9px 20px;border-radius:var(--radius);font-size:13px;
-  border:1px solid var(--mint-700);background:var(--bg-2);color:var(--mint-400)}
-.snapbtn:hover{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
-.snapbtn.alt{border-color:var(--line-2);color:var(--text-md)}
-.snapbtn.alt:hover{background:var(--bg-3);color:var(--text-hi)}
 .bigbtn[aria-disabled="true"]{background:var(--bg-3);border-color:var(--line-2);
   color:var(--text-dim);pointer-events:none}
 .dlbox .altline{margin:14px 0 0;font-size:12px;color:var(--text-dim)}
@@ -147,44 +142,6 @@ footer{margin:36px 0 0;padding-top:18px;border-top:1px solid var(--line);
     <p class="sha" id="sha">正在取…</p>
   </div>
 
-  <div class="panel" id="ai-snapshot">
-    <h2>引擎 AI 组件快照（附赠 · 非管理器本体）</h2>
-    <p class="dim" style="margin:0 0 10px;font-size:12.5px;line-height:1.8">
-      <code>server/sim/ai.js</code>（战斗 AI）与 <code>server/match/bot.js</code>（自动布阵规划器）的源码快照。
-      <b>不是机器学习、也不是训练</b>：AI 是固定规则决策（确定性）；bot 的评分方式是真打一场 Battle（rehearsal），
-      没有权重、没有梯度、没有训练集。
-    </p>
-    <div style="border-left:3px solid var(--amber);padding:2px 0 2px 12px;font-size:12.5px;line-height:1.9">
-      <b style="color:var(--amber)">⛔ 引擎层不兼容 —— 不能当独立模块用。</b>实测传递依赖闭包：
-      <table style="width:100%;border-collapse:collapse;font-size:12px;margin:8px 0 0">
-        <thead><tr>
-          <th style="text-align:left;padding:5px 8px;color:var(--text-lo);border-bottom:1px solid #242c38">文件</th>
-          <th style="text-align:left;padding:5px 8px;color:var(--text-lo);border-bottom:1px solid #242c38">传递依赖闭包</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td style="padding:5px 8px;border-bottom:1px solid #242c38"><code>sim/ai.js</code></td>
-            <td style="padding:5px 8px;border-bottom:1px solid #242c38">14 文件 / 4,839 行 / 267 KB（9 个 <code>server/sim/</code> + 5 个 <code>shared/</code>）</td>
-          </tr>
-          <tr>
-            <td style="padding:5px 8px;border-bottom:1px solid #242c38"><code>match/bot.js</code></td>
-            <td style="padding:5px 8px;border-bottom:1px solid #242c38">118 文件 / 35,855 行 / 1.9 MB（19 个 match/ + 15 个 sim/battle/ + 11 个 match/player/）= 整个引擎</td>
-          </tr>
-        </tbody>
-      </table>
-      单独加载 <code>bot.js</code> 会直接 <code>ERR_MODULE_NOT_FOUND</code>。<br>
-      <b>唯一正确用法</b>：把 <code>server/</code> 下的文件原样放回<b>版本相同</b>的完整引擎检出。
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-      <a class="snapbtn" id="aiSnap" href="#" target="_blank" rel="noopener">下载快照 · 215 KB</a>
-      <a class="snapbtn alt" id="aiSnapPage" href="#" target="_blank" rel="noopener">Release 页</a>
-    </div>
-    <p class="dim" style="margin:10px 0 0;font-size:11.5px;line-height:1.7">
-      校验：<code>sha256sum -c</code> 对照同目录 <code>.sha256</code>；逐文件哈希见包内 <code>MANIFEST.json</code>
-      （<code>standalone: false</code> / <code>verdict: "engine-layer-incompatible"</code>）。
-    </p>
-  </div>
-
   <footer>
     发布流程：上游同步成功 → <code>release-manager.yml</code> 自动构建（<code>tools/package.mjs --lite</code>）
     → 两关校验（整档 CRC + 条目清单：管理器 ≥4 文件、素材/开发面为 0）→ 同 tag 已存在则跳过不重传。
@@ -216,8 +173,6 @@ $('srcRepo').textContent = REPO;
 $('mgrRepo').href = 'https://github.com/' + MGR_REPO;
 $('mgrRepo').textContent = MGR_REPO;
 $('cdn').href = 'https://speedcdn.jiangjiangze.icu/';
-$('aiSnap').href = 'https://github.com/jingjiangze/stronghold-server/releases/download/engine-ai-snapshot-v0.2.5/Stronghold-Protocol-engine-ai-snapshot-v0.2.5.zip';
-$('aiSnapPage').href = 'https://github.com/jingjiangze/stronghold-server/releases/tag/engine-ai-snapshot-v0.2.5';
 
 /** 拿最新 release。直连 api.github.com（镜像不代理 JSON）。 */
 async function fetchLatest() {
