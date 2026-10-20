@@ -356,7 +356,9 @@ function render() {
     return [m.id, m.name, m.note, m.notes, m.packId, m.author, m.compatAuthor, m.license]
       .filter(Boolean).join(' ').toLowerCase().includes(q);
   });
-  if (sort === 'name') hit = hit.slice().sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'zh'));
+  // 默认排序：新发布的优先（addedAt 降序；没有时间的老条目落到末尾，保持原顺序）
+  if (sort === '') hit = hit.slice().sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  else if (sort === 'name') hit = hit.slice().sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'zh'));
   else if (sort === 'size-desc') hit = hit.slice().sort((a, b) => (b.sizeBytes || 0) - (a.sizeBytes || 0));
   else if (sort === 'new') hit = hit.slice().sort((a, b) => String(b.version || '').localeCompare(String(a.version || ''), 'zh', { numeric: true }));
 
