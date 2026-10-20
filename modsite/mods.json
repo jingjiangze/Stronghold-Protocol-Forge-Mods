@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-20T18:14:35.486Z",
+ "generatedAt": "2026-10-20T18:35:48.927Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -58,20 +58,20 @@
   {
    "id": "cdn-source",
    "name": "CDN 源选择（最快镜像）",
-   "version": "1.0.2",
+   "version": "1.0.3",
    "category": "functional",
-   "note": "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。",
-   "author": "jingjiangze（来源：pack.json）",
-   "license": "GPL-3.0-or-later",
-   "compatAuthor": "Mo233",
-   "isCompat": true,
-   "from": "站上记录 `e9de2c45e249` · 由原件 `2a031cf0f869` 改写",
-   "sizeBytes": 10276,
+   "note": "1.0.3：源清单从「只读 speedcdn 的 rank」（6 条）扩成 rank + downcdn mirrors（11 条）两份合并；rank 在前带延迟，mirrors 独有的追加在后并标「仅清单」；现场测速按各自清单里的探针路径。",
+   "author": "",
+   "license": "",
+   "compatAuthor": "",
+   "isCompat": false,
+   "from": "",
+   "sizeBytes": 10952,
    "fileCount": 6,
-   "sha256": "39574e4dd9fafa32a6148b350a530cf016c0ab6785a20ccdf959524108986d88",
+   "sha256": "81e0a64f3b4b4979d0f48ffbfb88d772a8f0cb393bc2edec99def591cce184d0",
    "packId": "",
-   "addedAt": 1791788018000,
-   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/cdn-source/1.0.2/mod.zip"
+   "addedAt": 1792521335000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/cdn-source/1.0.3/mod.zip"
   },
   {
    "id": "chat-bubble",
@@ -544,20 +544,20 @@
   {
    "id": "ws-compression-reference",
    "name": "WS 压缩参考（协商参数 / 档位 / 实测）",
-   "version": "1.0.0",
+   "version": "1.2.0",
    "category": "functional",
-   "note": "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。",
-   "author": "Stronghold-Protocol（本包作者；对应仓库 jingjiangze/stronghold-ws-compression）（来源：pack.json）",
-   "license": "MIT",
-   "compatAuthor": "Mo233",
-   "isCompat": true,
-   "from": "站上记录 `f3711c357e20` · 由原件 `20a46941c219` 改写",
-   "sizeBytes": 21774,
+   "note": "1.2.0：参数按 jingjiangze/stronghold-server 的 packages/ws-compression/（上游 commit f16a6e78，MIT）重写 —— level 6 / memLevel 5 / 64 B 阈值 / zlib 并发 8 / 服务端保持上下文 / 客户端不保持 / 6 类可压 + b.start / 入站 64 KiB / 两个只读路由契约。",
+   "author": "",
+   "license": "",
+   "compatAuthor": "",
+   "isCompat": false,
+   "from": "",
+   "sizeBytes": 13811,
    "fileCount": 6,
-   "sha256": "ba194faf0b4116834202eeec39c3cf9b79c27ddf2ad42c785e4b86afd2650a5b",
+   "sha256": "759eba0b6f6c69e35411461cdd17f127854b99b18cab2ecdcf35b1e6230ec580",
    "packId": "",
-   "addedAt": 1791788018000,
-   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ws-compression-reference/1.0.0/mod.zip"
+   "addedAt": 1792521335000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ws-compression-reference/1.2.0/mod.zip"
   },
   {
    "id": "stronghold-ui",
