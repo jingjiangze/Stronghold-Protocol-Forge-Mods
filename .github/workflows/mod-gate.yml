@@ -21,6 +21,12 @@ name: 门 — mod 入库闸门（PR 上传，通过才允许合并）
 on:
   pull_request:
     branches: [master]
+  # 直推 master 也要跑。分支保护要求 `mod-gate` 这个 check 存在且通过，
+  # 而 build-mods-json.yml 自己 push master 时没有 PR ⇒ 没有 mod-gate ⇒ 被 protected branch hook 挡下
+  # （实测 2026-10-20：remote rejected，"Required status check mod-gate is expected"）。
+  # 加上这条不是为了给 CI 开后门：判据一条没少，只是让它在 push 路径上也执行一遍。
+  push:
+    branches: [master]
   workflow_dispatch:
 
 permissions:
