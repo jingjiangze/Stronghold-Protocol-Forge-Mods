@@ -49,7 +49,7 @@ incoming/
 
 ### 方式 A · GitHub 网页（不装 git 的用这个）
 
-1. 打开 https://github.com/XiaMo233M/Stronghold-Protocol-Forge-Mods
+1. 打开 https://github.com/jingjiangze/Stronghold-Protocol-Forge-Mods
 2. 进 `incoming/` 目录 → **Add file ▾ → Create new file**
 3. 文件名里**打斜杠就会自动建目录**，所以填：`incoming/<mod 名字>/SOURCE.md`
    - 内容照抄 [`incoming/SOURCE.template.md`](incoming/SOURCE.template.md) 填好五件事
@@ -62,7 +62,7 @@ incoming/
 ### 方式 B · git（熟手的用这个）
 
 ```bash
-git clone https://github.com/XiaMo233M/Stronghold-Protocol-Forge-Mods.git
+git clone https://github.com/jingjiangze/Stronghold-Protocol-Forge-Mods.git
 cd Stronghold-Protocol-Forge-Mods
 mkdir -p "incoming/<mod 名字>"
 # 把原件放进去，照模板写 incoming/<mod 名字>/SOURCE.md
