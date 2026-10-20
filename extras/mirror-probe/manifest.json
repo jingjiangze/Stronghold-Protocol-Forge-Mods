@@ -1,0 +1,39 @@
+{
+  "id": "mirror-probe",
+  "name": "镜像源探测（源码快照）",
+  "version": "0.2.5",
+  "kind": "reference",
+  "source": {
+    "repo": "jingjiangze/stronghold-server",
+    "version": "0.2.5"
+  },
+  "note": "server/mirrorProbe.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件：可以单独放回同版本 tree 使用。",
+  "compatibility": {
+    "verdict": "self-contained",
+    "standalone": true,
+    "reason": "闭包 1 个文件：可以单独放回同版本 tree 使用。"
+  },
+  "closure": {
+    "mirrorProbe.js": {
+      "files": 1,
+      "lines": 191,
+      "kb": 10.6
+    }
+  },
+  "author": "jingjiangze",
+  "license": "GPL-3.0-or-later",
+  "download": "extras/mirror-probe/mirror-probe-source.zip",
+  "zip": {
+    "name": "mirror-probe-source.zip",
+    "bytes": 20480,
+    "sha256": "b7a4d50be6c2b0d1d2b2564af1125074c307f379a628abaeff336d31d2f83bae"
+  },
+  "files": [
+    {
+      "path": "mirrorProbe.js",
+      "bytes": 10884,
+      "lines": 191,
+      "sha256": "396010b191c049485f51b4523f55fba198b05c322f48374591cb5af4cc17356c"
+    }
+  ]
+}
