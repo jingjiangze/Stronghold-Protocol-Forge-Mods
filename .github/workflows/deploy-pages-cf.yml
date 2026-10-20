@@ -72,6 +72,14 @@ jobs:
           set -euo pipefail
           npm i -g wrangler@3 || npm i -g wrangler@latest
           wrangler --version
+          # wrangler 的 `pages deploy` **不会**自动建项目：项目不存在时报
+          # `Project not found [code: 8000007]`（2026-10-20 实测）。所以先确保它在。
+          if ! wrangler pages project list 2>/dev/null | grep -q 'stronghold-mods'; then
+            echo "项目不存在 —— 创建 stronghold-mods（生产分支 main）"
+            wrangler pages project create stronghold-mods --production-branch=main
+          else
+            echo "项目已存在"
+          fi
           wrangler pages deploy _modsite \
             --project-name=stronghold-mods \
             --branch=main \
