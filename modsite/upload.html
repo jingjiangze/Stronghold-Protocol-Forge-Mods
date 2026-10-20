@@ -175,11 +175,24 @@ footer{margin:40px 0 0;padding-top:18px;border-top:1px solid var(--line);
     <div class="note">
       <b>为什么 fork 而不是直接改？</b>你没有原仓库的写权限——这是设计如此。fork + PR 让改动先经 CI 与人工审核，才进入公开站。
     </div>
+    <div class="note">
+      <b>传完请核对文件列表。</b>把 <code>mod.zip</code> 与 <code>SOURCE.md</code> 都拖进去后，
+      确认提交页的文件清单里<b>两个都在</b>再点提交。若 zip 没出现在清单里，说明它被忽略了 ——
+      换方式 B（git）或方式 C（上传站）。
+    </div>
+    <div class="note bad">
+      <b>PR 合并 ≠ mod 已上线。</b>合并后包落在仓库 <code>incoming/</code> 里等维护者处理；
+      要让它出现在上面这个站上，还需维护者做完兼容、经上传站审核上线。
+    </div>
   </div>
 
   <div class="panel" id="p-b" hidden>
     <h2>方式 B · git（25–100 MB）</h2>
     <p class="dim" style="margin:0;font-size:12.5px">推到<b>你自己的 fork</b>，不需要任何 token（fork 是你自己的仓）：</p>
+    <div class="note">
+      <b>这条路有两个前提</b>：① 本机装了 Git；② <code>git clone</code> 会下载整个仓库（约 60.9 MB）。
+      不满足的话，超过 25 MB 请用<b>方式 C（上传站）</b>。
+    </div>
     <pre>git clone https://github.com/&lt;你的账号&gt;/Stronghold-Protocol-Forge-Mods.git
 cd Stronghold-Protocol-Forge-Mods
 mkdir -p "incoming/&lt;mod 名字&gt;"
@@ -188,6 +201,11 @@ cp /path/to/mod.zip "incoming/&lt;mod 名字&gt;/"
 git add "incoming/&lt;mod 名字&gt;"
 git commit -m "上传 &lt;mod 名字&gt;"
 git push</pre>
+    <div class="note bad">
+      <b>推完请确认 zip 真的在列表里。</b>本仓的 <code>.gitignore</code> 忽略 <code>*.zip</code>，
+      已为 <code>incoming/</code>、<code>mods/</code>、<code>packs/</code> 三处开了放行。
+      若 <code>git status</code> 里看不到你的 <code>mod.zip</code>，说明放行规则被改坏了 —— 那就先别推，开 issue 告知。
+    </div>
     <p class="dim" style="margin:10px 0 0;font-size:12px">
       然后在 GitHub 上开 PR 回 <code id="baseName">jingjiangze/Stronghold-Protocol-Forge-Mods</code> 的 <code>master</code>。
     </p>
@@ -203,8 +221,14 @@ git push</pre>
       <li>会给你一个<b>认领码</b>（只显示一次，存好）——用它可改包、撤回。</li>
       <li>维护者审过后，用服务端「过审 → 代提 PR」推进仓库，再走同一条 CI + 审核 + 合并。</li>
     </ol>
+    <div class="note ok">
+      <b>包超过 25 MB 时，这条是唯一省事的路。</b>方式 A 有 GitHub 网页 25 MB 硬限；
+      方式 B 要先装 Git 并下载整个仓库（约 60.9 MB）。上传站不用装任何东西，填表选文件即可。
+    </div>
     <div class="note bad">
-      <b>这条不是主路径。</b>上传站要把包转手一次，比直接提 PR 多一道人工。能用 A/B 就用它们。
+      <b>三种方式的终点不同，别误解。</b>方式 A/B 提的 PR 合并后，包落在仓库的
+      <code>incoming/</code> 里等维护者处理；要让它出现在上面这个站上，还需维护者做完兼容、
+      经上传站审核上线。也就是说：<b>PR 合并 ≠ mod 已上线</b>。
     </div>
   </div>
 
