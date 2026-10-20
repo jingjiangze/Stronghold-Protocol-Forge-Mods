@@ -50,6 +50,9 @@ section > h2{font-size:13px;color:var(--mint-400);margin:0 0 10px;letter-spacing
 .card h3{margin:0 0 4px;font-size:14px;color:var(--text-hi);font-weight:600}
 .meta{font-size:12px;color:var(--text-lo);display:flex;gap:10px;flex-wrap:wrap;margin:0 0 6px}
 .note{font-size:12.5px;color:var(--text-md);margin:4px 0 0;white-space:pre-wrap}
+.noteWrap{margin-top:6px}
+.byline{display:flex;gap:14px;flex-wrap:wrap;margin:5px 0 0;font-size:12.5px;color:var(--text-md)}
+.byline .who b{color:var(--text-lo);font-weight:500;margin-right:4px;font-size:12px}
 .right{text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .size{font:12px var(--font-mono);color:var(--text-lo)}
 a.dl{
@@ -89,7 +92,6 @@ footer .dim{color:var(--text-dim)}
     <select id="cat">
       <option value="">全部分类</option>
       <option value="functional">真功能</option>
-      <option value="documentation">说明包</option>
       <option value="unknown">未核实</option>
     </select>
     <span class="count" id="count"></span>
@@ -98,19 +100,35 @@ footer .dim{color:var(--text-dim)}
 
   <footer>
     <div class="src">
+      <b>上传投稿 · Submit</b>
+      <div class="srcline">
+        <a id="upload" href="#">上传站</a>
+        <span class="dim">（网页填「mod 名 + 备注」再选 zip；≤100 MiB，收件后维护者审过才上线）</span><br>
+        <span class="dim">另一种：把</span><a id="repo2" href="#">mod 仓库</a><span class="dim">fork 后提 PR（适合已在 GitHub 上的包；网页上传单文件 ≤25 MiB）</span>
+      </div>
+    </div>
+    <div class="src">
+      <b>MOD 管理器下载 · Manager</b>
+      <div class="srcline">
+        <a id="mgr" href="#">stronghold-mod-manager</a>
+        <span class="dim">（管理器规格、来源镜像与一致性闸门）</span><br>
+        <span class="dim">可运行的整包（服务端 + 管理器，不含游戏素材）在</span>
+        <a id="rel" href="#">Releases · latest</a>
+        <span class="dim">；素材默认走 </span><a id="cdn" href="#">speedcdn</a>
+        <span class="dim">，也可 npm start 时由 setup 自取</span>
+      </div>
+    </div>
+    <div class="src">
       <b>开源地址 · Source</b>
       <div class="srcline">
         本页与索引生成器源码：
         <a id="repo" href="#">mod 仓库</a>
-        <span class="dim">（GPL-3.0，欢迎自建、提 PR）</span><br>
-        客户端 / MOD 管理器：
-        <a id="mgr" href="#">stronghold-mod-manager</a>
-        <span class="dim">（管理器规格、来源镜像与一致性闸门）</span>
+        <span class="dim">（GPL-3.0，欢迎自建、提 PR）</span>
       </div>
     </div>
     <div class="note">
       索引由 GitHub Actions 预生成（<code>mods.json</code>），本页是静态的：不查接口、不跑脚本、不碰 Cloudflare。
-      下载直链由 <span id="store"></span> 提供。投稿请到上面的 mod 仓库提 PR，CI 通过后才合并。
+      下载直链由 <span id="store"></span> 提供。说明包不在本站展示（只收能装的真功能包）。
     </div>
   </footer>
 </main>
@@ -119,37 +137,56 @@ footer .dim{color:var(--text-dim)}
 // 纯静态：只读一个预生成的 mods.json，不做运行时 API 调用。
 // 理由（审计结论）：浏览器的匿名 api.github.com 只有 60 次/小时，且 raw 可达性按 URL 波动；
 // 把 API 调用挪到 Actions 侧（GITHUB_TOKEN 1000/h），浏览器只读静态文件 —— 省额度也稳。
-// 站点配置。刻意写死而不是读外部配置：多一次请求就多一个失败点，而这里两个值几乎不会变。
+// 站点配置。刻意写死而不是读外部配置：多一次请求就多一个失败点，而这里几个值几乎不会变。
 const CFG = {
   store: 'GitHub Releases',
   repo: 'jingjiangze/Stronghold-Protocol-Forge-Mods',   // 本页 + 索引生成器源码（GPL-3.0）
-  managerRepo: 'jingjiangze/stronghold-mod-manager',     // 客户端 / MOD 管理器
+  uploadSite: 'http://47.103.14.217:25570/',            // 上传站：网页投稿（≤100 MiB）
+  engineRepo: 'jingjiangze/Stronghold-Protocol-Forge',  // 可运行的整包在它的 Releases
+  cdn: 'https://speedcdn.jiangjiangze.icu/',            // 素材默认源（R2 + Worker 前置）
+  // oldDomain 只作说明用：曾经想用 mod. 但被通配符 DNS 吞进 P2P 隧道，已改 CNAME 抢回。
 };
+const link = (id, href, text) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.href = href;
+  if (text) el.textContent = text;
+};
+link('repo', 'https://github.com/' + CFG.repo);
+link('repo2', 'https://github.com/' + CFG.repo + '/upload/master/incoming/');
+link('upload', CFG.uploadSite);
+link('rel', 'https://github.com/' + CFG.engineRepo + '/releases/latest');
+link('cdn', CFG.cdn);
 document.getElementById('store').textContent = CFG.store;
-{
-  const a = document.getElementById('repo');
-  a.href = 'https://github.com/' + CFG.repo;
-  a.textContent = CFG.repo;
-  // 开源地址要写在页面上（用户口径 2026-10-20）：标题里也带一份，收藏/分享时看得见。
-  document.title = 'MOD 站 · 卫戍协议 · ' + CFG.repo;
-}
-{
-  const a = document.getElementById('mgr');
-  a.href = 'https://github.com/' + CFG.managerRepo;
-  a.textContent = CFG.managerRepo;
-}
+// 开源地址要写在页面上（用户口径 2026-10-20）：标题里也带一份，收藏/分享时看得见。
+document.title = 'MOD 站 · 卫戍协议 · ' + CFG.repo;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const mb = (n) => (Number(n) / 1048576).toFixed(1) + ' MiB';
+// notes 在 index.json 里是数组；页面统一按字符串用（不靠隐式 String()）。
+const flat = (x) => Array.isArray(x) ? x.join('\n') : (x == null ? '' : String(x));
 
-const CAT_ORDER = ['functional', 'documentation', 'unknown'];
-const CAT_TITLE = { functional: '真功能', documentation: '说明包', unknown: '未核实' };
+// 说明包不在站点展示（业主口径 2026-10-20「去掉说明包」）。
+// 数据侧已有两道：上游 build-index.mjs 的入库闸门不收 documentation（mods/README.md:56），
+// build-mods-json.yml 又过滤一次。这里第三道是展示层——少一个死分支，也防回归。
+const CAT_ORDER = ['functional', 'unknown'];
+const CAT_TITLE = { functional: '真功能', unknown: '未核实' };
 
 let ALL = [];
 
 function card(m) {
   const cat = m.category || 'unknown';
   const sha = (m.sha256 || '').slice(0, 16);
+  const note = flat(m.note || m.notes);
+  const author = String(m.author || '').trim();
+  const compat = String(m.compatAuthor || '').trim();
+  const isCompat = m.isCompat === true;
+  // 原作者 / 兼容改写者：**两栏分开，各自带标签**。照上传站 site/pages/mods.html:250-261 的口径 ——
+  //   普通投稿没有「兼容」这回事，那一栏整栏不画（画个「（未记）」会让人以为有个兼容者没填）；
+  //   兼容包两个都画，缺的写「未声明」。
+  // 「未声明」也要收尾：PROVENANCE.md 里 ② 原作者可能就是**未声明**，那不是作者名。
+  const hasAuthor = author && author !== '**未声明**';
+  const hasCompat = compat && compat !== '**未声明**';
   return `<div class="card">
     <div>
       <h3>${esc(m.name || m.id)}</h3>
@@ -158,8 +195,13 @@ function card(m) {
         ${m.version ? `<span>v${esc(m.version)}</span>` : ''}
         ${m.id ? `<code>${esc(m.id)}</code>` : ''}
         ${m.fileCount ? `<span>${esc(m.fileCount)} 个文件</span>` : ''}
+        ${m.license ? `<span>${esc(m.license)}</span>` : ''}
       </div>
-      ${m.note || m.notes ? `<p class="note">${esc((m.notes || m.note || '').slice(0, 300))}</p>` : ''}
+      <div class="byline">
+        ${hasAuthor ? `<span class="who"><b>原作者</b> ${esc(author)}</span>` : ''}
+        ${isCompat ? `<span class="who"><b>兼容改写</b> ${hasCompat ? esc(compat) : '未声明'}</span>` : ''}
+      </div>
+      ${note ? `<details class="noteWrap"><summary>备注</summary><p class="note">${esc(note)}</p></details>` : ''}
       ${sha ? `<details><summary>SHA256</summary><code>${esc(m.sha256)}</code></details>` : ''}
     </div>
     <div class="right">
@@ -175,7 +217,7 @@ function render() {
   const hit = ALL.filter((m) => {
     if (cat && (m.category || 'unknown') !== cat) return false;
     if (!q) return true;
-    return [m.id, m.name, m.note, m.notes, m.packId].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return [m.id, m.name, m.note, m.notes, m.packId, m.author, m.compatAuthor].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
   // 按分类分组，沿用 mod 站「列表按类目分段」的信息架构
   const groups = CAT_ORDER.map((c) => ({ c, items: hit.filter((m) => (m.category || 'unknown') === c) }))
