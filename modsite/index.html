@@ -6,256 +6,358 @@
 <title>MOD 站 · 卫戍协议</title>
 <meta name="description" content="卫戍协议工坊包（mod）索引：查看、筛选、搜索、下载。">
 <style>
-/* 配色沿用 dl 站 / mod 站的既有主题（--mint-500:#4ed8af / --bg-0:#0c0f0e），保持一致观感 */
+/* 设计 token 与 dl 站 / 上传站同一套（research 06 §12：近黑绿灰 + 薄荷强调 + 金价 + 括号边框）。
+   改这里的值要同时看 site/pages/mods.html —— 三个站必须看起来是同一个产品。 */
 :root{
   color-scheme:dark;
-  --mint-500:#4ed8af; --mint-400:#59f4ca; --mint-600:#35d8b4;
   --bg-0:#0c0f0e; --bg-1:#141816; --bg-2:#1e2421; --bg-3:#252c29;
-  --line:#2f3a35; --line-2:#3e4b45;
+  --bg-glass:rgba(16,20,18,.82);
+  --line:#2f3a35; --line-2:#3e4b45; --line-3:#58675f;
+  --mint-500:#4ed8af; --mint-400:#59f4ca; --mint-600:#35d8b4; --mint-700:#2a9e7f;
+  --mint-a10:rgba(78,216,175,.10); --mint-a20:rgba(78,216,175,.20);
+  --gold:#ffc600; --gold-a20:rgba(255,198,0,.2);
+  --amber:#f6a329; --red:#e73118; --ice:#9fd4ff; --ice-a20:rgba(159,212,255,.2);
   --text-hi:#f2f2f2; --text-md:#c3cbc7; --text-lo:#8a948f; --text-dim:#5d6863;
   --text-on-mint:#06110d;
-  --gold:#ffc600; --amber:#f6a329; --red:#e73118; --ice:#9fd4ff;
   --font-cjk:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --font-label:"Bahnschrift","DIN Alternate","Roboto Condensed",var(--font-cjk);
   --font-mono:"Cascadia Mono",ui-monospace,Consolas,monospace;
   --radius:4px;
 }
 *{box-sizing:border-box}
-body{margin:0;padding:0;background:var(--bg-0);color:var(--text-md);
-  font:14px/1.6 var(--font-cjk)}
-main{max-width:1080px;margin:0 auto;padding:28px 20px 64px}
-h1{font-size:20px;margin:0 0 4px;color:var(--text-hi)}
-p.sub{margin:0 0 22px;color:var(--text-lo);font-size:13px}
-
-/* 角标卡片：两站共用的 .panel + 括号角标形态 */
-.panel{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:0 0 14px}
-.brackets{position:relative}
-.brackets::before,.brackets::after{content:"";position:absolute;width:10px;height:10px;border:2px solid var(--mint-500)}
-.brackets::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
-.brackets::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
-
-/* 控制条 */
-.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
-input[type=search],select{
-  background:var(--bg-2);border:1px solid var(--line-2);color:var(--text-hi);
-  padding:8px 11px;border-radius:var(--radius);font:inherit;font-size:13px}
-input[type=search]{flex:1;min-width:180px}
-input[type=search]:focus,select:focus{outline:1px solid var(--mint-600)}
-.count{color:var(--text-lo);font-size:12px}
-
-/* 列表 = 分组 section + 卡片堆叠（沿用 mod 站形态） */
-section{margin:0 0 22px}
-section > h2{font-size:13px;color:var(--mint-400);margin:0 0 10px;letter-spacing:.05em}
-.card{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);
-  padding:12px 14px;margin:0 0 10px;display:grid;grid-template-columns:1fr auto;gap:10px}
-.card h3{margin:0 0 4px;font-size:14px;color:var(--text-hi);font-weight:600}
-.meta{font-size:12px;color:var(--text-lo);display:flex;gap:10px;flex-wrap:wrap;margin:0 0 6px}
-.note{font-size:12.5px;color:var(--text-md);margin:4px 0 0;white-space:pre-wrap}
-.noteWrap{margin-top:6px}
-.byline{display:flex;gap:14px;flex-wrap:wrap;margin:5px 0 0;font-size:12.5px;color:var(--text-md)}
-.byline .who b{color:var(--text-lo);font-weight:500;margin-right:4px;font-size:12px}
-/* MOD 管理器入口：首页第一块，比卡片更醒目（业主口径「放在第一个」） */
-.hero{display:flex;align-items:center;justify-content:space-between;gap:16px;
-  background:linear-gradient(180deg,#173a31,#141a21);border-color:var(--mint-600);margin:0 0 18px}
-.hero:hover{background:linear-gradient(180deg,#1c4a3e,#161d24)}
-.hero .heroT{font-size:15px;color:var(--mint-400);font-weight:600;letter-spacing:.02em}
-.hero .heroS{font-size:12.5px;color:var(--text-lo);margin-top:3px}
-.hero .heroR{flex:0 0 auto}
-.hero .heroBtn{display:inline-block;padding:8px 18px;border-radius:var(--radius);
-  border:1px solid var(--mint-600);color:var(--mint-400);font-size:13px;white-space:nowrap}
-.hero:hover .heroBtn{background:var(--mint-600);color:var(--text-on-mint)}
-.right{text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
-.size{font:12px var(--font-mono);color:var(--text-lo)}
-a.dl{
-  display:inline-block;padding:6px 14px;border-radius:var(--radius);
-  border:1px solid var(--mint-600);background:var(--bg-2);color:var(--mint-400);
-  text-decoration:none;font-size:13px;white-space:nowrap}
-a.dl:hover{background:var(--mint-600);color:var(--text-on-mint)}
-.tag{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;
-  border:1px solid var(--line-2);color:var(--text-lo)}
-.tag.functional{border-color:var(--mint-600);color:var(--mint-400)}
-.tag.documentation{border-color:var(--line-2);color:var(--text-lo)}
-.tag.unknown{border-color:var(--amber);color:var(--amber)}
+body{margin:0;background:var(--bg-0);color:var(--text-md);font:14px/1.65 var(--font-cjk);
+  -webkit-font-smoothing:antialiased}
+a{color:var(--mint-400);text-decoration:none}
+a:hover{color:var(--mint-500)}
 code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-radius:3px;color:var(--ice)}
-details{margin-top:6px}
-summary{cursor:pointer;color:var(--text-lo);font-size:12px}
-summary:hover{color:var(--mint-400)}
-.empty{color:var(--text-dim);font-size:13px;padding:20px 0;text-align:center}
-footer{margin-top:32px;padding-top:14px;border-top:1px solid var(--line);
-  color:var(--text-dim);font-size:12px;display:flex;flex-direction:column;gap:12px}
-footer a{color:var(--text-lo)}
-footer a:hover{color:var(--mint-400)}
-footer .src{border:1px solid var(--line);border-radius:var(--radius);padding:11px 13px;background:var(--bg-1)}
-footer .src b{display:block;color:var(--mint-400);font-size:12px;letter-spacing:.04em;margin-bottom:6px}
-footer .srcline{line-height:1.9}
-footer .note{line-height:1.7}
-footer .dim{color:var(--text-dim)}
-@media(max-width:640px){.card{grid-template-columns:1fr}.right{align-items:flex-start;text-align:left}}
+
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
+
+/* ---- 顶栏 ---- */
+.top{position:sticky;top:0;z-index:20;background:var(--bg-glass);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.top__in{max-width:1080px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:baseline;gap:10px;color:var(--text-hi)}
+.brand b{font:600 15px var(--font-label);letter-spacing:.06em}
+.brand span{font-size:11.5px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase}
+.top__nav{margin-left:auto;display:flex;gap:6px;align-items:center}
+.navlink{padding:7px 13px;border-radius:var(--radius);border:1px solid transparent;
+  color:var(--text-md);font-size:13px}
+.navlink:hover{background:var(--bg-2);color:var(--text-hi)}
+.navlink.cta{border-color:var(--mint-700);color:var(--mint-400);background:var(--mint-a10)}
+.navlink.cta:hover{background:var(--mint-600);color:var(--text-on-mint)}
+
+/* ---- 页头 ---- */
+.hero{padding:30px 0 22px}
+.hero h1{margin:0 0 6px;font:600 23px/1.3 var(--font-cjk);color:var(--text-hi)}
+.hero p{margin:0;color:var(--text-lo);font-size:13px}
+
+/* ---- 管理器入口：比卡片更醒目 ---- */
+.mgr{display:flex;align-items:center;gap:18px;margin:0 0 20px;padding:16px 18px;
+  border:1px solid var(--mint-700);border-radius:var(--radius);
+  background:linear-gradient(120deg,var(--mint-a10),transparent 60%),var(--bg-1)}
+.mgr:hover{border-color:var(--mint-500);background:linear-gradient(120deg,var(--mint-a20),transparent 60%),var(--bg-1)}
+.mgr__t{font:600 15px var(--font-cjk);color:var(--mint-400);margin:0 0 3px}
+.mgr__s{font-size:12.5px;color:var(--text-lo);margin:0}
+.mgr__go{margin-left:auto;flex:0 0 auto;padding:9px 20px;border-radius:var(--radius);
+  border:1px solid var(--mint-700);color:var(--mint-400);font-size:13px;white-space:nowrap;
+  background:var(--bg-2)}
+.mgr:hover .mgr__go{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
+
+/* ---- 工具条 ---- */
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.search{flex:1;min-width:200px;position:relative}
+.search input{
+  width:100%;padding:10px 12px 10px 34px;border-radius:var(--radius);
+  border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-hi);
+  font:13px var(--font-cjk)}
+.search input::placeholder{color:var(--text-dim)}
+.search input:focus{outline:none;border-color:var(--mint-700);box-shadow:0 0 0 2px var(--mint-a10)}
+.search::before{content:"";position:absolute;left:12px;top:50%;width:12px;height:12px;
+  margin-top:-7px;border:2px solid var(--text-dim);border-radius:50%}
+.search::after{content:"";position:absolute;left:21px;top:50%;width:2px;height:5px;
+  margin-top:3px;background:var(--text-dim);transform:rotate(-45deg)}
+select{padding:10px 12px;border-radius:var(--radius);border:1px solid var(--line-2);
+  background:var(--bg-1);color:var(--text-hi);font:13px var(--font-cjk)}
+select:focus{outline:none;border-color:var(--mint-700)}
+.count{font-size:12px;color:var(--text-dim);margin-left:2px}
+
+/* ---- 功能筛选条（对齐上传站 mods.html 的 funcbar） ---- */
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+.bar__label{font:11.5px var(--font-label);letter-spacing:.06em;color:var(--text-dim);
+  text-transform:uppercase;margin-right:4px}
+.chip{padding:5px 11px;border-radius:20px;border:1px solid var(--line-2);color:var(--text-md);
+  font-size:12px;cursor:pointer;background:transparent;font-family:inherit}
+.chip:hover{border-color:var(--line-3);color:var(--text-hi)}
+.chip.on{background:var(--mint-a20);border-color:var(--mint-500);color:var(--mint-400)}
+.chip i{font-style:normal;color:var(--text-dim);margin-left:5px}
+.chip.on i{color:var(--mint-600)}
+
+/* ---- 列表 ---- */
+.sec{margin:22px 0 0}
+.sec__h{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.sec__h h2{margin:0;font:600 12.5px var(--font-label);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-lo)}
+.sec__h .line{flex:1;height:1px;background:var(--line)}
+
+.card{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin:0 0 10px}
+.card:hover{border-color:var(--line-2)}
+.card--flag{border-left:3px solid var(--gold)}
+.card__head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+.card__name{margin:0;font:600 14.5px var(--font-cjk);color:var(--text-hi)}
+.card__kv{font-size:12px;color:var(--text-dim);margin:0 0 8px}
+.card__kv code{background:transparent;color:var(--text-dim);padding:0}
+
+/* 徽标 */
+.badge{display:inline-block;padding:1.5px 7px;border-radius:3px;font-size:11px;
+  letter-spacing:.02em;white-space:nowrap;border:1px solid}
+.badge.ok{border-color:var(--mint-700);color:var(--mint-400);background:var(--mint-a10)}
+.badge.dim{border-color:var(--line-2);color:var(--text-lo)}
+.badge.warn{border-color:var(--amber);color:var(--amber);background:rgba(246,163,41,.1)}
+.badge.ice{border-color:rgba(159,212,255,.4);color:var(--ice);background:var(--ice-a20)}
+
+/* 署名两栏 */
+.sig{display:flex;gap:22px;flex-wrap:wrap;padding:9px 12px;margin:8px 0 0;
+  background:var(--bg-2);border-radius:var(--radius);border:1px solid var(--line)}
+.sig__k{font:10.5px var(--font-label);letter-spacing:.06em;color:var(--text-dim);
+  text-transform:uppercase;display:block;margin-bottom:1px}
+.sig__v{font-size:12.5px;color:var(--text-md)}
+.sig__hint{font-size:11.5px;color:var(--text-dim);margin:6px 0 0;line-height:1.6}
+
+/* 折叠：备注 / 校验值 */
+details.note,details.sha{margin:8px 0 0}
+details.note summary,details.sha summary{
+  cursor:pointer;font-size:12px;color:var(--text-lo);list-style:none;
+  display:inline-flex;align-items:center;gap:5px;user-select:none}
+details.note summary::-webkit-details-marker,details.sha summary::-webkit-details-marker{display:none}
+details.note summary::before,details.sha summary::before{
+  content:"▸";font-size:10px;color:var(--text-dim)}
+details[open].note summary::before,details[open].sha summary::before{content:"▾"}
+details.note summary:hover,details.sha summary:hover{color:var(--mint-400)}
+.note__body{font-size:12.5px;color:var(--text-md);margin:8px 0 0;padding:10px 12px;
+  background:var(--bg-2);border-radius:var(--radius);border-left:2px solid var(--line-2);
+  white-space:pre-wrap;word-break:break-word}
+.sha__body{font:11.5px var(--font-mono);color:var(--ice);margin:6px 0 0;word-break:break-all}
+
+.card__foot{display:flex;align-items:center;gap:12px;margin:10px 0 0;padding-top:10px;
+  border-top:1px solid var(--line)}
+.size{font:12px var(--font-mono);color:var(--text-lo)}
+.dl{margin-left:auto;padding:7px 18px;border-radius:var(--radius);
+  border:1px solid var(--mint-700);background:var(--bg-2);color:var(--mint-400);
+  font-size:13px;white-space:nowrap}
+.dl:hover{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
+
+.empty{padding:44px 20px;text-align:center;color:var(--text-dim);font-size:13px}
+.empty b{display:block;color:var(--text-lo);margin-bottom:6px;font-weight:500}
+
+/* ---- 页脚 ---- */
+footer{margin:44px 0 0;padding-top:20px;border-top:1px solid var(--line);display:grid;gap:16px}
+.fblock{font-size:12.5px;color:var(--text-dim);line-height:1.9}
+.fblock b{display:block;color:var(--text-lo);font:600 11px var(--font-label);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.fblock .dim{color:var(--text-dim)}
+
+@media(max-width:680px){
+  .top__nav .navlink:not(.cta){display:none}
+  .mgr{flex-wrap:wrap}
+  .mgr__go{margin-left:0;width:100%;text-align:center}
+  .bar__label{width:100%;margin:0 0 2px}
+}
 </style>
 </head>
 <body>
-<main>
-  <h1>MOD 站 · 卫戍协议</h1>
-  <p class="sub" id="sub">正在载入索引…</p>
 
-  <!-- MOD 管理器放在第一位（业主口径 2026-10-20）：先给入口，再给 mod 列表。 -->
-  <a class="panel hero" href="manager" style="display:block;text-decoration:none;color:inherit">
-    <div class="heroL">
-      <div class="heroT">MOD 管理器</div>
-      <div class="heroS" id="mgrVer">服务端 + <code>/mod</code> 页面 + CLI · 不含游戏素材</div>
+<header class="top">
+  <div class="top__in">
+    <a class="brand" href="./"><b>MOD 站</b><span>卫戍协议</span></a>
+    <nav class="top__nav">
+      <a class="navlink" href="manager">MOD 管理器</a>
+      <a class="navlink cta" href="upload">上传 mod</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>工坊包</h1>
+    <p id="sub">正在载入索引…</p>
+  </div>
+
+  <a class="mgr" href="manager">
+    <div>
+      <p class="mgr__t">MOD 管理器</p>
+      <p class="mgr__s" id="mgrVer">服务端 + <code>/mod</code> 页面 + CLI · 不含游戏素材</p>
     </div>
-    <div class="heroR"><span class="heroBtn">下载 →</span></div>
+    <span class="mgr__go">下载 →</span>
   </a>
 
-  <div class="controls">
-    <input type="search" id="q" placeholder="搜名称 / id / 作者…" autocomplete="off">
-    <select id="cat">
-      <option value="">全部分类</option>
-      <option value="functional">真功能</option>
-      <option value="unknown">未核实</option>
+  <div class="tools">
+    <div class="search">
+      <input type="search" id="q" placeholder="搜名称 / id / 作者 / 备注…" autocomplete="off">
+    </div>
+    <select id="sort">
+      <option value="">默认排序</option>
+      <option value="name">按名称</option>
+      <option value="size-desc">按体积 ↓</option>
+      <option value="new">按版本</option>
     </select>
     <span class="count" id="count"></span>
   </div>
+
+  <div class="bar" id="funcbar"></div>
+
   <div id="list"><div class="empty">载入中…</div></div>
 
   <footer>
-    <div class="src">
-      <b>上传投稿 · Submit</b>
-      <div class="srcline">
-        <a id="upload" href="upload">上传 mod</a>
-        <span class="dim">（两条通道 + 上传规范：≤25 MiB 直接提 PR，25–100 MiB 用上传站）</span>
-      </div>
+    <div class="fblock">
+      <b>上传投稿</b>
+      <a href="upload">怎么上传</a>
+      <span class="dim">· fork 后提 PR，CI 自动校验，维护者审核通过才合并</span>
     </div>
-    <div class="src">
-      <b>MOD 管理器下载 · Manager</b>
-      <div class="srcline">
-        <a id="mgr" href="#">stronghold-mod-manager</a>
-        <span class="dim">（管理器规格、来源镜像与一致性闸门）</span><br>
-        <span class="dim">可运行的整包（服务端 + 管理器，不含游戏素材）在</span>
-        <a id="rel" href="#">Releases · latest</a>
-        <span class="dim">；素材默认走 </span><a id="cdn" href="#">speedcdn</a>
-        <span class="dim">，也可 npm start 时由 setup 自取</span>
-      </div>
+    <div class="fblock">
+      <b>开源地址</b>
+      <a id="repo" href="#">mod 仓库</a>
+      <span class="dim">（GPL-3.0，本页与索引生成器源码都在里面）</span>
     </div>
-    <div class="src">
-      <b>开源地址 · Source</b>
-      <div class="srcline">
-        本页与索引生成器源码：
-        <a id="repo" href="#">mod 仓库</a>
-        <span class="dim">（GPL-3.0，欢迎自建、提 PR）</span>
-      </div>
-    </div>
-    <div class="note">
-      索引由 GitHub Actions 预生成（<code>mods.json</code>），本页是静态的：不查接口、不跑脚本、不碰 Cloudflare。
-      下载直链由 <span id="store"></span> 提供。说明包不在本站展示（只收能装的真功能包）。
+    <div class="fblock">
+      <b>关于这份索引</b>
+      由 GitHub Actions 从 <code>mods/index.json</code> + 各包 <code>PROVENANCE.md</code> 预生成
+      （<code>mods.json</code>）。本页是静态的：不查接口、不跑脚本、不碰 Cloudflare。
+      下载直链由 <span id="store"></span> 提供。
     </div>
   </footer>
-</main>
+</div>
 
 <script>
-// 纯静态：只读一个预生成的 mods.json，不做运行时 API 调用。
-// 理由（审计结论）：浏览器的匿名 api.github.com 只有 60 次/小时，且 raw 可达性按 URL 波动；
+'use strict';
+// 纯静态：只读一个预生成的 mods.json。
+// 理由：浏览器匿名 api.github.com 只有 60 次/小时，raw 可达性按 URL 波动；
 // 把 API 调用挪到 Actions 侧（GITHUB_TOKEN 1000/h），浏览器只读静态文件 —— 省额度也稳。
-// 站点配置。刻意写死而不是读外部配置：多一次请求就多一个失败点，而这里几个值几乎不会变。
 const CFG = {
   store: 'GitHub Releases',
-  repo: 'jingjiangze/Stronghold-Protocol-Forge-Mods',   // 本页 + 索引生成器源码（GPL-3.0）
-  uploadSite: 'http://47.103.14.217:25570/',            // 上传站：网页投稿（≤100 MiB）
-  engineRepo: 'jingjiangze/Stronghold-Protocol-Forge',  // 可运行的整包在它的 Releases
-  cdn: 'https://speedcdn.jiangjiangze.icu/',            // 素材默认源（R2 + Worker 前置）
-  // oldDomain 只作说明用：曾经想用 mod. 但被通配符 DNS 吞进 P2P 隧道，已改 CNAME 抢回。
+  repo: 'jingjiangze/Stronghold-Protocol-Forge-Mods',
+  engineRepo: 'jingjiangze/Stronghold-Protocol-Forge',
 };
-const link = (id, href, text) => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.href = href;
-  if (text) el.textContent = text;
-};
-link('repo', 'https://github.com/' + CFG.repo);
-// upload 是静态链接到本站的 upload.html（不在这里改，改了会指回外部上传站）
-link('rel', 'https://github.com/' + CFG.engineRepo + '/releases/latest');
-link('cdn', CFG.cdn);
-document.getElementById('store').textContent = CFG.store;
-// 开源地址要写在页面上（用户口径 2026-10-20）：标题里也带一份，收藏/分享时看得见。
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const mb = (n) => (Number(n) / 1048576).toFixed(2) + ' MB';
+const flat = (x) => Array.isArray(x) ? x.join('\n') : (x == null ? '' : String(x));
+// PROVENANCE 里缺失字段写的是 **未声明**，那不是作者名，页面上当「没有」处理
+const real = (v) => { const s = String(v ?? '').trim(); return s && s !== '**未声明**' ? s : ''; };
+
+$('repo').href = 'https://github.com/' + CFG.repo;
+$('repo').textContent = CFG.repo;
+$('store').textContent = CFG.store;
 document.title = 'MOD 站 · 卫戍协议 · ' + CFG.repo;
 
-// 首页管理器入口显示当前版本（拿不到就保持静态文案，不报错）。
+// 管理器版本（拿不到就保留静态文案，不报错、不影响列表）
 fetch('https://api.github.com/repos/' + CFG.engineRepo + '/releases/latest', {
   headers: { accept: 'application/vnd.github+json' },
 }).then((r) => (r.ok ? r.json() : null)).then((rel) => {
   if (!rel || !rel.tag_name) return;
   const zip = (rel.assets || []).find((a) => a.name.endsWith('-lite.zip'));
-  const el = document.getElementById('mgrVer');
-  if (!el) return;
-  el.textContent = rel.tag_name + (zip ? ' · ' + (zip.size / 1048576).toFixed(1) + ' MiB' : '') +
-    ' · 服务端 + /mod 页面 + CLI · 不含游戏素材';
-}).catch(() => { /* 离线也不影响列表 */ });
+  const el = $('mgrVer');
+  if (el) el.textContent = rel.tag_name + (zip ? ' · ' + (zip.size / 1048576).toFixed(1) + ' MB' : '')
+    + ' · 服务端 + /mod 页面 + CLI · 不含游戏素材';
+}).catch(() => {});
 
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-const mb = (n) => (Number(n) / 1048576).toFixed(1) + ' MiB';
-// notes 在 index.json 里是数组；页面统一按字符串用（不靠隐式 String()）。
-const flat = (x) => Array.isArray(x) ? x.join('\n') : (x == null ? '' : String(x));
-
-// 说明包不在站点展示（业主口径 2026-10-20「去掉说明包」）。
-// 数据侧已有两道：上游 build-index.mjs 的入库闸门不收 documentation（mods/README.md:56），
-// build-mods-json.yml 又过滤一次。这里第三道是展示层——少一个死分支，也防回归。
-const CAT_ORDER = ['functional', 'unknown'];
-const CAT_TITLE = { functional: '真功能', unknown: '未核实' };
+// 功能类目：与上传站 mods.html 的 FUNC_ORDER 同一套词表
+const FUNC_TITLE = {
+  gameplay: '游戏玩法', expansion: '扩展内容', utility: '实用工具',
+  assets: '素材替换', documentation: '说明文档', uncategorized: '未分类',
+};
+const FUNC_ORDER = ['gameplay', 'expansion', 'utility', 'assets', 'documentation', 'uncategorized'];
+const funcOf = (m) => (FUNC_TITLE[m.funcKind] ? m.funcKind : 'uncategorized');
 
 let ALL = [];
+let ACTIVE_FUNC = '';
+
+function renderFuncBar() {
+  const counts = {};
+  for (const m of ALL) { const k = funcOf(m); counts[k] = (counts[k] || 0) + 1; }
+  const bar = $('funcbar');
+  const parts = ['<span class="bar__label">按功能</span>'];
+  parts.push('<button class="chip' + (ACTIVE_FUNC === '' ? ' on' : '') + '" data-f="">全部<i>' + ALL.length + '</i></button>');
+  for (const k of FUNC_ORDER) {
+    if (!counts[k]) continue;   // 没数据的类目不画空按钮
+    parts.push('<button class="chip' + (ACTIVE_FUNC === k ? ' on' : '') + '" data-f="' + k + '">'
+      + esc(FUNC_TITLE[k]) + '<i>' + counts[k] + '</i></button>');
+  }
+  bar.innerHTML = parts.join('');
+}
 
 function card(m) {
-  const cat = m.category || 'unknown';
-  const sha = (m.sha256 || '').slice(0, 16);
-  const note = flat(m.note || m.notes);
-  const author = String(m.author || '').trim();
-  const compat = String(m.compatAuthor || '').trim();
+  const name = esc(m.name || m.id);
+  const author = real(m.author);
+  const compat = real(m.compatAuthor);
   const isCompat = m.isCompat === true;
-  // 原作者 / 兼容改写者：**两栏分开，各自带标签**。照上传站 site/pages/mods.html:250-261 的口径 ——
-  //   普通投稿没有「兼容」这回事，那一栏整栏不画（画个「（未记）」会让人以为有个兼容者没填）；
-  //   兼容包两个都画，缺的写「未声明」。
-  // 「未声明」也要收尾：PROVENANCE.md 里 ② 原作者可能就是**未声明**，那不是作者名。
-  const hasAuthor = author && author !== '**未声明**';
-  const hasCompat = compat && compat !== '**未声明**';
-  return `<div class="card">
-    <div>
-      <h3>${esc(m.name || m.id)}</h3>
-      <div class="meta">
-        <span class="tag ${esc(cat)}">${esc(CAT_TITLE[cat] || cat)}</span>
-        ${m.version ? `<span>v${esc(m.version)}</span>` : ''}
-        ${m.id ? `<code>${esc(m.id)}</code>` : ''}
-        ${m.fileCount ? `<span>${esc(m.fileCount)} 个文件</span>` : ''}
-        ${m.license ? `<span>${esc(m.license)}</span>` : ''}
-      </div>
-      <div class="byline">
-        ${hasAuthor ? `<span class="who"><b>原作者</b> ${esc(author)}</span>` : ''}
-        ${isCompat ? `<span class="who"><b>兼容改写</b> ${hasCompat ? esc(compat) : '未声明'}</span>` : ''}
-      </div>
-      ${note ? `<details class="noteWrap"><summary>备注</summary><p class="note">${esc(note)}</p></details>` : ''}
-      ${sha ? `<details><summary>SHA256</summary><code>${esc(m.sha256)}</code></details>` : ''}
-    </div>
-    <div class="right">
-      <span class="size">${m.sizeBytes ? mb(m.sizeBytes) : ''}</span>
-      ${m.download ? `<a class="dl" href="${esc(m.download)}">下载</a>` : ''}
-    </div>
-  </div>`;
+  const note = flat(m.note || m.notes).trim();
+  const flagged = m.category === 'unknown';
+  const badges = [];
+  if (m.category === 'functional') badges.push('<span class="badge ok">真功能</span>');
+  else if (flagged) badges.push('<span class="badge warn">未核实</span>');
+  if (isCompat) badges.push('<span class="badge ice">兼容改写版</span>');
+  const fk = funcOf(m);
+  if (fk !== 'uncategorized') badges.push('<span class="badge dim">' + esc(FUNC_TITLE[fk]) + '</span>');
+  if (m.license) badges.push('<span class="badge dim">' + esc(m.license) + '</span>');
+
+  // 署名：原作者有就画；兼容改写者只在兼容包上画，缺了写「（未填）」
+  const sig = [];
+  if (author) sig.push('<div><span class="sig__k">原作者</span><span class="sig__v">' + esc(author) + '</span></div>');
+  if (isCompat) sig.push('<div><span class="sig__k">兼容改写者</span><span class="sig__v">'
+    + (compat ? esc(compat) : '（未填）') + '</span></div>');
+
+  return '<article class="card' + (flagged ? ' card--flag' : '') + '">\n'
+    + '    <div class="card__head">\n'
+    + '      <h3 class="card__name">' + name + '</h3>\n      ' + badges.join('') + '\n'
+    + '    </div>\n'
+    + '    <p class="card__kv">' + (m.sizeBytes ? mb(m.sizeBytes) : '')
+    + (m.version ? ' · v' + esc(m.version) : '')
+    + (m.id ? ' · <code>' + esc(m.id) + '</code>' : '') + '</p>\n'
+    + (sig.length
+      ? '    <div class="sig">' + sig.join('') + '</div>\n'
+        + (isCompat ? '    <p class="sig__hint">原作署名与说明原样保留自包内 <code>pack.json</code>；兼容改写是另一个人做的，记在站侧，不改包内元数据。</p>\n' : '')
+      : '')
+    + (note ? '    <details class="note"><summary>备注</summary><div class="note__body">' + esc(note) + '</div></details>\n' : '')
+    + (m.sha256 ? '    <details class="sha"><summary>SHA256</summary><div class="sha__body">' + esc(m.sha256) + '</div></details>\n' : '')
+    + '    <div class="card__foot">\n'
+    + '      <span class="size">' + (m.fileCount ? esc(m.fileCount) + ' 个文件' : '') + '</span>\n'
+    + (m.download
+      ? '      <a class="dl" href="' + esc(m.download) + '" rel="noopener">下载</a>\n'
+      : '      <span class="size">无下载直链</span>\n')
+    + '    </div>\n'
+    + '  </article>';
 }
 
 function render() {
-  const q = (document.getElementById('q').value || '').trim().toLowerCase();
-  const cat = document.getElementById('cat').value;
-  const hit = ALL.filter((m) => {
-    if (cat && (m.category || 'unknown') !== cat) return false;
+  const q = ($('q').value || '').trim().toLowerCase();
+  const sort = $('sort').value;
+  let hit = ALL.filter((m) => {
+    if (ACTIVE_FUNC && funcOf(m) !== ACTIVE_FUNC) return false;
     if (!q) return true;
-    return [m.id, m.name, m.note, m.notes, m.packId, m.author, m.compatAuthor].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return [m.id, m.name, m.note, m.notes, m.packId, m.author, m.compatAuthor, m.license]
+      .filter(Boolean).join(' ').toLowerCase().includes(q);
   });
-  // 按分类分组，沿用 mod 站「列表按类目分段」的信息架构
-  const groups = CAT_ORDER.map((c) => ({ c, items: hit.filter((m) => (m.category || 'unknown') === c) }))
+  if (sort === 'name') hit = hit.slice().sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'zh'));
+  else if (sort === 'size-desc') hit = hit.slice().sort((a, b) => (b.sizeBytes || 0) - (a.sizeBytes || 0));
+  else if (sort === 'new') hit = hit.slice().sort((a, b) => String(b.version || '').localeCompare(String(a.version || ''), 'zh', { numeric: true }));
+
+  $('count').textContent = hit.length === ALL.length ? '共 ' + ALL.length + ' 个' : hit.length + ' / ' + ALL.length + ' 个';
+  const list = $('list');
+  if (!hit.length) {
+    list.innerHTML = '<div class="empty"><b>没有匹配的 mod</b>试试换个关键词，或点上面「全部」。</div>';
+    return;
+  }
+  // 按功能类目分段（与上传站同一信息架构）
+  const groups = FUNC_ORDER
+    .map((k) => ({ k: k, items: hit.filter((m) => funcOf(m) === k) }))
     .filter((g) => g.items.length);
-  const list = document.getElementById('list');
-  document.getElementById('count').textContent = `共 ${hit.length} 个（总 ${ALL.length}）`;
-  if (!hit.length) { list.innerHTML = '<div class="empty">没有匹配的 mod</div>'; return; }
   list.innerHTML = groups.map((g) =>
-    `<section><h2>${esc(CAT_TITLE[g.c])}（${g.items.length}）</h2>${g.items.map(card).join('')}</section>`).join('');
+    '<section class="sec">\n    <div class="sec__h"><h2>' + esc(FUNC_TITLE[g.k]) + '</h2>'
+    + '<span class="line"></span><span class="count">' + g.items.length + '</span></div>\n'
+    + g.items.map(card).join('\n') + '\n  </section>').join('\n');
 }
 
 (async () => {
@@ -263,18 +365,28 @@ function render() {
     const r = await fetch('mods.json', { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
-    ALL = Array.isArray(j) ? j : (j.mods || []);
-    document.getElementById('sub').textContent =
-      `${ALL.length} 个工坊包 · 索引由 Actions 预生成 · 下载走 ${CFG.store}`;
+    ALL = (Array.isArray(j) ? j : (j.mods || []))
+      // 说明包不进站点（上游入库闸门 + 索引生成器都已排除，这里是第三道展示层兜底）
+      .filter((m) => m.category !== 'documentation');
+    $('sub').textContent = ALL.length + ' 个工坊包 · 索引由 Actions 预生成 · 下载走 ' + CFG.store;
+    renderFuncBar();
     render();
   } catch (e) {
-    document.getElementById('list').innerHTML =
-      '<div class="empty">索引载入失败：' + esc(String(e.message || e)) + '<br>请确认 mods.json 已由 Actions 生成。</div>';
+    $('sub').textContent = '索引载入失败';
+    $('list').innerHTML = '<div class="empty"><b>索引载入失败</b>' + esc(String(e.message || e))
+      + '<br>请确认 mods.json 已由 Actions 生成。</div>';
   }
 })();
 
-document.getElementById('q').addEventListener('input', render);
-document.getElementById('cat').addEventListener('change', render);
+$('q').addEventListener('input', render);
+$('sort').addEventListener('change', render);
+$('funcbar').addEventListener('click', (e) => {
+  const btn = e.target.closest('.chip');
+  if (!btn) return;
+  ACTIVE_FUNC = btn.dataset.f || '';
+  renderFuncBar();
+  render();
+});
 </script>
 </body>
 </html>
