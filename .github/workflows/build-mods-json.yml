@@ -111,6 +111,14 @@ jobs:
                   fileCount: m.fileCount || 0,
                   sha256: m.sha256 || "",
                   packId: m.packId || "",
+                  // 新发布的优先：取 mod.zip 在本仓库**首次提交**的时间（毫秒）。取不到就 0，排在最后。
+                  addedAt: (() => {
+                    try {
+                      if (!m.path) return 0;
+                      const t = require("child_process").execSync(`git log --diff-filter=A --format=%ct -1 -- ${JSON.stringify(m.path)}`, { encoding: "utf8" }).trim();
+                      return t ? Number(t) * 1000 : 0;
+                    } catch { return 0; }
+                  })(),
                   download,
                 };
               }).filter((m) => m.id);
