@@ -25,8 +25,8 @@
   "download": "extras/asset-cdn/asset-cdn-source.zip",
   "zip": {
     "name": "asset-cdn-source.zip",
-    "bytes": 10240,
-    "sha256": "ddc31b9bbb278a515998d4fcf55a11e64fbabe9d337d0bc7395e24c47dac0dc9"
+    "bytes": 2271,
+    "sha256": "97e7dffd84af2d144b77e0f699316908ff0b85afffcbfef1a6ac77dfc5cec625"
   },
   "files": [
     {

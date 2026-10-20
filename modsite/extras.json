@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-20T19:02:55.245Z",
+ "generatedAt": "2026-10-20T19:44:24.210Z",
  "items": [
   {
    "id": "asset-cdn",
@@ -24,8 +24,8 @@
    "download": "extras/asset-cdn/asset-cdn-source.zip",
    "zip": {
     "name": "asset-cdn-source.zip",
-    "bytes": 10240,
-    "sha256": "ddc31b9bbb278a515998d4fcf55a11e64fbabe9d337d0bc7395e24c47dac0dc9"
+    "bytes": 2271,
+    "sha256": "97e7dffd84af2d144b77e0f699316908ff0b85afffcbfef1a6ac77dfc5cec625"
    },
    "files": [
     {
@@ -59,8 +59,8 @@
    "download": "extras/cluster-rpc/cluster-rpc-source.zip",
    "zip": {
     "name": "cluster-rpc-source.zip",
-    "bytes": 20480,
-    "sha256": "8a3acd0f830d643243d0a02f33b0c727e95fbf3a7972c0e0459ae6ffe9661979"
+    "bytes": 3625,
+    "sha256": "c3a9bef43f4254c535579cfc914a85ba8b288d06c28bc77698c3dd573149a9ee"
    },
    "files": [
     {
@@ -99,8 +99,8 @@
    "download": "extras/engine-ai/engine-ai-snapshot.zip",
    "zip": {
     "name": "engine-ai-snapshot.zip",
-    "bytes": 174080,
-    "sha256": "b0b04385df45250f7d096024cb025d8be7ae94968c91a217be632733064d3265"
+    "bytes": 58484,
+    "sha256": "b229c55bf243aa62db72b60e9317016e62c1b4d87b9f007bcd205408bf66f35d"
    },
    "files": [
     {
@@ -146,8 +146,8 @@
    "download": "extras/mirror-probe/mirror-probe-source.zip",
    "zip": {
     "name": "mirror-probe-source.zip",
-    "bytes": 20480,
-    "sha256": "b7a4d50be6c2b0d1d2b2564af1125074c307f379a628abaeff336d31d2f83bae"
+    "bytes": 4974,
+    "sha256": "7b2e56cb64cd29d28cfb89504e1caba23c84cba2a49d8eebb3b46ed904ebbd59"
    },
    "files": [
     {
@@ -181,8 +181,8 @@
    "download": "extras/upstream-watch/upstream-watch-source.zip",
    "zip": {
     "name": "upstream-watch-source.zip",
-    "bytes": 10240,
-    "sha256": "b414fc48bc4deb2b5b9c49fb6fdf79f783b0d84fdb5448c6ef9de8f0992f8c08"
+    "bytes": 3784,
+    "sha256": "2085a648e0e3be2e9535a2cc11dec3e361d9d8da653b15d37e54311bfd4efd47"
    },
    "files": [
     {

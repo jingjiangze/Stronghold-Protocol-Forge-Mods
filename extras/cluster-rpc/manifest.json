@@ -25,8 +25,8 @@
   "download": "extras/cluster-rpc/cluster-rpc-source.zip",
   "zip": {
     "name": "cluster-rpc-source.zip",
-    "bytes": 20480,
-    "sha256": "8a3acd0f830d643243d0a02f33b0c727e95fbf3a7972c0e0459ae6ffe9661979"
+    "bytes": 3625,
+    "sha256": "c3a9bef43f4254c535579cfc914a85ba8b288d06c28bc77698c3dd573149a9ee"
   },
   "files": [
     {

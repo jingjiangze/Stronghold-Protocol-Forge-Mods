@@ -25,8 +25,8 @@
   "download": "extras/upstream-watch/upstream-watch-source.zip",
   "zip": {
     "name": "upstream-watch-source.zip",
-    "bytes": 10240,
-    "sha256": "b414fc48bc4deb2b5b9c49fb6fdf79f783b0d84fdb5448c6ef9de8f0992f8c08"
+    "bytes": 3784,
+    "sha256": "2085a648e0e3be2e9535a2cc11dec3e361d9d8da653b15d37e54311bfd4efd47"
   },
   "files": [
     {
