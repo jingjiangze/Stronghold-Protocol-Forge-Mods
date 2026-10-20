@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-20T18:01:36.889Z",
+ "generatedAt": "2026-10-20T18:14:35.486Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -720,6 +720,24 @@
    "packId": "nlc-skins",
    "addedAt": 1792519096000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/nlc-skins/1.0.0/mod.zip"
+  },
+  {
+   "id": "csp-allow",
+   "name": "跨域资源放行（CSP 声明）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。\n只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。\n装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later",
+   "compatAuthor": "jingjiangze",
+   "isCompat": true,
+   "from": "本项目自建；配套基座改动见 SOURCE.md 第 4 节",
+   "sizeBytes": 1362,
+   "fileCount": 3,
+   "sha256": "f14d4b0de6c73644ffcaaf41d70cd696cfe89a79fde77ca6e832103ab44affdd",
+   "packId": "csp-allow",
+   "addedAt": 1792520061000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/csp-allow/1.0.0/mod.zip"
   }
  ]
 }
