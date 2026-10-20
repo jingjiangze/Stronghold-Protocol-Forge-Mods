@@ -78,6 +78,22 @@ jobs:
           FAIL=0; OK=0
           while read -r z; do
             [ -f "$z" ] || { echo "::error::$z 不在工作树里"; FAIL=$((FAIL+1)); continue; }
+            # incoming/ 是**收件区**（未做兼容的原件），按 incoming/README.md 的口径
+            # 「被引擎拒掉是正常现象」—— 那里头的 zip 本来就可能没有 pack.json。
+            # 所以只对成品区（mods/、packs/）做强校验；收件区只提示、不算失败。
+            # 否则陌生人按文档传一个未兼容原件，就会被 J1 判 FAIL、PR 卡住。
+            case "$z" in
+              incoming/*)
+                if unzip -Z1 "$z" | grep -qE '(^|/)(pack|plugin)\.json$'; then
+                  echo "  ✓ $z（收件区，已认出类型）"; OK=$((OK+1))
+                else
+                  echo "  · $z（收件区原件，无 pack.json/plugin.json —— 按 incoming/README 的口径这是正常的，不判失败）"
+                  OK=$((OK+1))
+                fi
+                continue
+                ;;
+            esac
+
             # 只读 zip 中央目录：出现 pack.json 或 plugin.json 即认出类型（与引擎 sniffArchive 同判据）
             if unzip -Z1 "$z" | grep -qE '(^|/)(pack|plugin)\.json$'; then
               echo "  ✓ $z"; OK=$((OK+1))
