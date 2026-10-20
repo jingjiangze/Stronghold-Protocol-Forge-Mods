@@ -1,0 +1,39 @@
+{
+  "id": "asset-cdn",
+  "name": "CDN 资源（源码快照）",
+  "version": "0.2.5",
+  "kind": "reference",
+  "source": {
+    "repo": "jingjiangze/stronghold-server",
+    "version": "0.2.5"
+  },
+  "note": "server/http/asset-cdn.js 的源码快照。\n\n未拆成独立包的原因：闭包 2 个文件（还需 shared/ 或 http/config.js 中的 1 个）。",
+  "compatibility": {
+    "verdict": "1-file-closure",
+    "standalone": false,
+    "reason": "闭包 2 个文件（还需 shared/ 或 http/config.js 中的 1 个）。"
+  },
+  "closure": {
+    "asset-cdn.js": {
+      "files": 2,
+      "lines": 107,
+      "kb": 5.1
+    }
+  },
+  "author": "jingjiangze",
+  "license": "GPL-3.0-or-later",
+  "download": "extras/asset-cdn/asset-cdn-source.zip",
+  "zip": {
+    "name": "asset-cdn-source.zip",
+    "bytes": 10240,
+    "sha256": "ddc31b9bbb278a515998d4fcf55a11e64fbabe9d337d0bc7395e24c47dac0dc9"
+  },
+  "files": [
+    {
+      "path": "asset-cdn.js",
+      "bytes": 5189,
+      "lines": 107,
+      "sha256": "f6a0c9fb2f2aa3a3d6d84447f284f7172d57cbeb3c8264b9ac4f6bfca041c858"
+    }
+  ]
+}
