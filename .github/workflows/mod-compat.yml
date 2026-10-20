@@ -36,11 +36,13 @@ on:
         default: true
   schedule:
     - cron: '43 5 * * 1'
-  pull_request:
-    branches: [master]
-    paths:
-      - site/packcheck.mjs
-      - .github/workflows/mod-compat.yml
+  # ⚠ 已去掉 pull_request 触发（2026-10-20 安全审计）。
+  #    原因：这个 workflow 会 `await import('site/packcheck.mjs')` —— 那是在**执行仓库里的文件**。
+  #    而 pull_request 事件检出的是 PR 的内容 ⇒ 陌生人改 site/packcheck.mjs 就能在
+  #    GitHub runner 上跑任意 Node 代码。虽然 fork PR 的 token 只读、无 secrets、
+  #    runner 是一次性隔离 VM，但这不是隔离，只是兜底。
+  #    这条 workflow 的用途本来就是对**线上 87 个 mod** 的周期性复验，跟 PR 无关；
+  #    改了 packcheck.mjs 想复验时用 workflow_dispatch 手动跑（那时检出的是 master 的可信版本）。
 
 permissions:
   contents: read
