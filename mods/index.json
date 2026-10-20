@@ -1211,6 +1211,69 @@
         "**适配说明**：原件以 `install.mjs` + `manifest.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
         "大厅背景面板新增第三个页签，支持 MP4 / WebM 视频背景（客户端 CSS/JS + 服务端转发 + 对话框改造）。"
       ]
+    },
+    {
+      "id": "ave-mujica",
+      "name": "颂乐人偶（Ave Mujica）",
+      "version": "1.8.24",
+      "sha256": "a5adff9226983faef872d2a26f42079ec61160779647c25f832682446ce68c20",
+      "packHash": "d64c50c51e10bb8a3212a1d03b469ed7b13c8c3420fc958e7b575ba2b73bd85d",
+      "category": "functional",
+      "categoryWhy": "声明了 content（bonds/chess/operators）",
+      "packId": "ave-mujica",
+      "path": "mods/ave-mujica/1.8.24/mod.zip",
+      "sizeBytes": 18001810,
+      "fileCount": 1108,
+      "unpackedBytes": 31479202,
+      "assets": {
+        "assetFree": false,
+        "count": 839,
+        "bytes": 24233376,
+        "byKind": {
+          "png": 63,
+          "m4a": 1,
+          "mp3": 96,
+          "webp": 643,
+          "atlas": 18,
+          "skel": 18
+        },
+        "containers": []
+      },
+      "notes": [
+        "原件形态：唯一顶层目录 `ave-mujica/` + pack.json，已是规范工坊包。",
+        "站上已有旧版 ave-mujica 1.1.0；本条是 1.8.24 新版本，按新版本收录。"
+      ]
+    },
+    {
+      "id": "nlc-skins",
+      "name": "国家图书馆联动皮肤（NLC 三款 + 追忆回合修复）",
+      "version": "1.0.0",
+      "sha256": "9dd82dc4e98c735005363fbf4f979e25fe3d443f29a5be3ea388e7536af20417",
+      "packHash": "98c51fa49dcaece095288e3582310ca182851d4c1e66a1adb281837733701bc6",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件是 .ps1 安装器形态）",
+      "packId": "nlc-skins",
+      "path": "mods/nlc-skins/1.0.0/mod.zip",
+      "sizeBytes": 5154715,
+      "fileCount": 39,
+      "unpackedBytes": 10604468,
+      "assets": {
+        "assetFree": false,
+        "count": 30,
+        "bytes": 7325735,
+        "byKind": {
+          "png": 18,
+          "atlas": 6,
+          "skel": 6
+        },
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件是 PowerShell 安装器（`Install-NLC-Skins.ps1`）+ 整文件覆盖；本次补写 pack.json 并**去掉 .ps1**，按工坊包形态交付。",
+        "含三款 2026-10-16 官方皮肤：黍·源远流长、烛煌·夜行烛火、琳琅诗怀雅·盛世之象（头像 / 商店立绘 / 战斗模型 Spine 三件套）。",
+        "⚠️ **含官方素材**：全部从国服客户端用 UnityPy 解包，版权归鹰角网络 / Yostar，仅供非商业个人使用。",
+        "另附 jibian_zhuiji（追忆）卡牌引擎修复：`_engine-fix-zhuiji/server/match/match/phases.js`，修「回到第 10 回合不出怪/卡死」。"
+      ]
     }
   ],
   "rejected": [],
