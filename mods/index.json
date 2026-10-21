@@ -1305,13 +1305,13 @@
     {
       "id": "csp-allow",
       "name": "跨域资源放行（CSP 声明）",
-      "version": "1.0.0",
-      "sha256": "f14d4b0de6c73644ffcaaf41d70cd696cfe89a79fde77ca6e832103ab44affdd",
+      "version": "1.1.0",
+      "sha256": "2c82db6601157390cab95ae169e6df6f524d46f68643b1efce43774eb6e79701",
       "category": "functional",
       "categoryWhy": "声明了 csp 白名单；需要基座支持 plugin.json 的 csp 字段",
       "packId": "csp-allow",
-      "path": "mods/csp-allow/1.0.0/mod.zip",
-      "sizeBytes": 1362,
+      "path": "mods/csp-allow/1.1.0/mod.zip",
+      "sizeBytes": 1433,
       "fileCount": 3,
       "unpackedBytes": 1854,
       "assets": {
@@ -1324,7 +1324,8 @@
       "notes": [
         "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。",
         "只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。",
-        "装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。"
+        "装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。",
+        "**1.1.0（2026-10-21）**：基座已内置 `csp` 字段解析与合并（`shared/plugins/manifest.js` / `server/http/csp.js` / `server/index.js`），本包现在装好、钉 lock、重启即可生效；同源的声明也已写进「大厅音乐 1.9.1」，只装音乐包时无需再装本包。"
       ]
     },
     {
