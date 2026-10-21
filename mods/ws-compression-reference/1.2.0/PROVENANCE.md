@@ -15,7 +15,7 @@
 
 ## 原作者
 
-`jingjiangze` —— 见包内 `pack.json` 的 `author` 字段，以及包内 `NOTICE-来源说明.md`「本包是原作者自己做的」一节。
+不单列个人署名 —— 见包内 `pack.json` 的 `author` 字段（原件未改动），以及包内 `NOTICE-来源说明.md`「本包是原作者自己做的」一节。
 
 **上游**：`jingjiangze/stronghold-ws-compression`（<https://github.com/jingjiangze/stronghold-ws-compression>，
 2026-10-11 建，MIT）。它是从一个在跑的卫戍协议服务端 `jingjiangze/stronghold-master-play`
