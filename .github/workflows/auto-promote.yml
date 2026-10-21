@@ -52,6 +52,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # mods.json 的 addedAt 要 mod.zip 的首次提交时间（完整历史）
+          # ⚠ 不要持久化 GITHUB_TOKEN：checkout 会把它写成 http.https://github.com/.extraheader，
+          # 而 git push 时该 header 的优先级高于 URL 里的 user:PAT ⇒ GitHub 看到的是只读的
+          # github-actions[bot]（本 workflow permissions: contents: read），push 403 且报
+          # "denied to github-actions[bot]"（实测 2026-10-21 run 39602934525）。
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -99,4 +104,7 @@ jobs:
           fi
           TITLE="${TITLE:-workflow_dispatch}"
           git commit -m "auto-promote: incoming 合并自动上架（${TITLE}）"
+          # 双保险：即便某个 checkout 版本又写回了 extraheader，这里也把它摘掉 ——
+          # 否则 GITHUB_TOKEN 的只读身份会盖过 URL 里的 PAT（实测 403 denied to github-actions[bot]）。
+          git config --local --unset-all "http.https://github.com/.extraheader" 2>/dev/null || true
           git push "https://jingjiangze:$PAT@github.com/${{ github.repository }}.git" HEAD:master
