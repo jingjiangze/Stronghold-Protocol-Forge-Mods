@@ -1,0 +1,100 @@
+# 自动上架（auto-promote）：incoming/ 的 PR 合并 → 自动晋升 mods/ → 站点数据更新 → 直推 master。
+#
+# 链路（一条工作流走完，消灭两处人工环节）：
+#   1. 晋升：tools/promote-incoming.mjs —— 合成 staging → 调 build-index.mjs（引擎那一份装载器，四道闸门：
+#      sha256 / pack.json / category / 引擎装载 packsLoaded 恰好 [packId] errors=0）→ 外科手术式并进 mods/index.json
+#      （同 id 旧版本条目替换，其余条目一字不动）→ 重生成 modsite/mods.json（与 build-mods-json.yml 同款逻辑）。
+#   2. 提交：mods/ + mods/index.json + modsite/mods.json 一个提交，**直推 master**（owner 的 fine-grained PAT
+#      = admin，enforce_admins=false 放行；先例 a71c547）。
+#   3. 部署：master 一动，deploy-pages（GitHub Pages）与 CF Pages 两条腿自动跟上；build-mods-json 的
+#      push 触发会复核 mods.json —— 一致则「无变化 不推分支」。
+#
+# 需要的 secret：**MODSITE_PAT**
+#   GitHub → Settings → Developer settings → Fine-grained tokens → 新建：
+#     · Repository access：只勾 jingjiangze/Stronghold-Protocol-Forge-Mods 这一个仓
+#     · Permissions：Contents = Read and write（其余一律不给；不要 Administration）
+#     · Expiration：可设长一些（自动化用；泄露爆炸半径 = 这一个公开仓）
+#   配到本仓 Settings → Secrets and variables → Actions → New repository secret，名字必须是 MODSITE_PAT。
+#   没配时本工作流在 push 步骤红掉并点名（晋升闸门照跑，报告照出）。
+#
+# 人审边界：闸门是机器四项；「这个包该不该上架」的人审动作就是**点合并**——合并即审，
+# 与站侧流（decision=approved 才代提 PR）同级的信任语义。
+
+name: 自动上架（incoming 合并 → mods/ → 站点）
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'incoming/**'
+  workflow_dispatch:
+    inputs:
+      incoming:
+        description: '要晋升的 incoming/<名>（留空 = 扫全部 incoming/*）'
+        required: false
+        default: ''
+
+concurrency:
+  group: auto-promote
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # mods.json 的 addedAt 要 mod.zip 的首次提交时间（完整历史）
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # 闸门引擎：Forge main（0.19.x）——pack.msg / server.modules[].channels 所在的线，
+      # 与站侧晋升闸门（0.18.3+）同一条产品线。公开仓，GITHUB_TOKEN 即可拉。
+      - name: 闸门引擎检出（Forge main）
+        uses: actions/checkout@v4
+        with:
+          repository: jingjiangze/Stronghold-Protocol-Forge
+          ref: main
+          path: engine
+          fetch-depth: 1
+
+      - name: 晋升（四道闸门不过就红，绝不带伤上架）
+        env:
+          INCOMING: ${{ github.event.inputs.incoming }}
+          PR: ${{ github.event.pull_request.number }}
+          ACTOR: ${{ github.event.pull_request.merged_by.login || github.actor }}
+        run: |
+          set -uo pipefail
+          ARGS=(--engine ./engine)
+          if [ -n "$INCOMING" ]; then ARGS+=(--incoming "incoming/$INCOMING"); else ARGS+=(--all); fi
+          if [ -n "$PR" ]; then ARGS+=(--pr "$PR"); fi
+          if [ -n "$ACTOR" ]; then ARGS+=(--actor "$ACTOR"); fi
+          node tools/promote-incoming.mjs "${ARGS[@]}" --write
+
+      - name: 提交并直推 master
+        env:
+          PAT: ${{ secrets.MODSITE_PAT }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -uo pipefail
+          if [ -z "$PAT" ]; then
+            echo "::error::缺 secret MODSITE_PAT —— 见本文件头注释的创建步骤（fine-grained，仅本仓，Contents: R/W），配好后用 workflow_dispatch 重跑"
+            exit 1
+          fi
+          git config user.name "modsite-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add mods modsite/mods.json
+          if git diff --cached --quiet; then
+            echo "无变化（包已在站上，或闸门后没有净改动）—— 完成"
+            exit 0
+          fi
+          TITLE="${TITLE:-workflow_dispatch}"
+          git commit -m "auto-promote: incoming 合并自动上架（${TITLE}）"
+          git push "https://x-access-token:$PAT@github.com/${{ github.repository }}.git" HEAD:master
