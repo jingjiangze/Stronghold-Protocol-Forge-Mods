@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T05:00:11.694Z",
+ "generatedAt": "2026-10-21T05:29:23.548Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -726,7 +726,7 @@
    "name": "跨域资源放行（CSP 声明）",
    "version": "1.1.0",
    "category": "functional",
-   "note": "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。\n只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。\n装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。\n**1.1.0（2026-10-21）**：基座已内置 `csp` 字段解析与合并（`shared/plugins/manifest.js` / `server/http/csp.js` / `server/index.js`），本包现在装好、钉 lock、重启即可生效；同源的声明也已写进「大厅音乐 1.9.1」，只装音乐包时无需再装本包。",
+   "note": "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。\n只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。\n装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。\n**1.1.0（2026-10-21）**：基座已内置 csp 字段解析与合并（shared/plugins/manifest.js / server/http/csp.js / server/index.js），本包装好、钉 lock、重启即可生效；同源声明也已写进「大厅音乐 1.9.1」，只装音乐包时无需再装本包。",
    "author": "jingjiangze",
    "license": "GPL-3.0-or-later",
    "compatAuthor": "jingjiangze",
@@ -736,7 +736,7 @@
    "fileCount": 3,
    "sha256": "2c82db6601157390cab95ae169e6df6f524d46f68643b1efce43774eb6e79701",
    "packId": "csp-allow",
-   "addedAt": 1792558300000,
+   "addedAt": 1792558613615,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/csp-allow/1.1.0/mod.zip"
   },
   {
