@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T04:01:36.123Z",
+ "generatedAt": "2026-10-21T04:27:59.597Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -792,6 +792,24 @@
    "packId": "vanilla-plus",
    "addedAt": 1792524491000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/vanilla-plus/0.1.19/mod.zip"
+  },
+  {
+   "id": "watch-lineup",
+   "name": "观阵 · 战斗中查看队友布阵（只读透传）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": "工坊包（pack.json）：目标线 game 0.15.1 || 0.16.x、api >=1 <2；modmgr 0.3.1 基座没有 pack.msg 机制，装了不生效。\n纯只读透传：matchClass 收到查看请求后调引擎现成 prepFieldMeta 拼装读法并原样 sendTo 给观看者，不做模拟、不改对局数值。combat:true 是能力面声明（引擎硬闸门要求 matchClass 挂载点），不等于会改战斗结果。\n开关是观看者自己的（仿 g.autoplay，默认关；关着时本包一个分支都不进）。\n战斗中查看时主画面会临时切到该棋盘，点「返回自己」即恢复；clientCombat 战场 fieldId 恰为 n:<pid>，先查 fields 再进布阵板分支。\n与引擎内置实现（Deploy#1/#2、Forge#8/#9）语义一致、互不依赖：没合引擎 PR 的树上独立生效，合了的树上共存。\n不含任何图片 / 音频 / 字体 / Spine 素材，无第三方代码。",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later（随游戏本体；本包无自有素材）",
+   "compatAuthor": "jingjiangze",
+   "isCompat": true,
+   "from": "本项目自建；走与外部作者相同的 `incoming/` 收件流程",
+   "sizeBytes": 15157,
+   "fileCount": 12,
+   "sha256": "8da58c0eeb0c3e3420ea35de9f18cf3b086b121a7f393199030dd55679386d8d",
+   "packId": "watch-lineup",
+   "addedAt": 1792556830000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/watch-lineup/1.0.0/mod.zip"
   }
  ]
 }
