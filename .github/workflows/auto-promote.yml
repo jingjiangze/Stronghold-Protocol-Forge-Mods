@@ -4,7 +4,9 @@
 #   1. 晋升：tools/promote-incoming.mjs —— 合成 staging → 调 build-index.mjs（引擎那一份装载器，四道闸门：
 #      sha256 / pack.json / category / 引擎装载 packsLoaded 恰好 [packId] errors=0）→ 外科手术式并进 mods/index.json
 #      （同 id 旧版本条目替换，其余条目一字不动）→ 重生成 modsite/mods.json（与 build-mods-json.yml 同款逻辑）。
-#   2. 提交：mods/ + mods/index.json + modsite/mods.json 一个提交，**直推 master**（owner 的 fine-grained PAT
+#   2. 提交：mods/ + mods/index.json + modsite/mods.json 一个提交，**直推 master**（owner 的 fine-grained PAT；
+#      push 的 URL 形态必须是 `<user>:<PAT>@github.com/...` —— 实测 `x-access-token:<PAT>` 形态在本仓被拒
+#      （remote: Permission denied to github-actions[bot]，403），换形态即通）
 #      = admin，enforce_admins=false 放行；先例 a71c547）。
 #   3. 部署：master 一动，deploy-pages（GitHub Pages）与 CF Pages 两条腿自动跟上；build-mods-json 的
 #      push 触发会复核 mods.json —— 一致则「无变化 不推分支」。
@@ -97,4 +99,4 @@ jobs:
           fi
           TITLE="${TITLE:-workflow_dispatch}"
           git commit -m "auto-promote: incoming 合并自动上架（${TITLE}）"
-          git push "https://x-access-token:$PAT@github.com/${{ github.repository }}.git" HEAD:master
+          git push "https://jingjiangze:$PAT@github.com/${{ github.repository }}.git" HEAD:master
