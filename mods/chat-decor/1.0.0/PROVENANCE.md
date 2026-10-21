@@ -6,7 +6,7 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `chat-decor` · 1.0.0 |
-| ② 原作者 | 逆向自 wei.isomer319.xyz 的 _v024/js/ui/{roomChat,accounts,ownerName}.js · 打包 jingjiangze（来源：**未声明**） |
+| ② 原作者 | 逆向自 wei.isomer319.xyz 的 _v024/js/ui/{roomChat,accounts,ownerName}.js |
 | ③ 原件许可 | **未声明** |
 | ④ 兼容改写者 | Mo233 |
 | ⑤ 来源 | 站上记录 `74feb396bc63` · 由原件 `f29df7231718` 改写 |

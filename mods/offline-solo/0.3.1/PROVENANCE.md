@@ -6,7 +6,7 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `offline-solo` · 0.3.1 |
-| ② 原作者 | jingjiangze（引擎仓 PR #3 的 `plugins/offline-solo/`） |
+| ② 原作者 | 引擎仓 PR #3 的 `plugins/offline-solo/` |
 | ③ 原件许可 | GPL-3.0-or-later（与引擎仓 `LICENSE` 一致） |
 | ④ 兼容改写者 | **未声明** |
 | ⑤ 来源 | <https://github.com/jingjiangze/Stronghold-Protocol-Server-Deploy/pull/3> 的 `plugins/offline-solo/`（与基座 `public/js/offline/` 同一批文件） |

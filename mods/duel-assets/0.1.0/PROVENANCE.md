@@ -6,7 +6,7 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `duel-assets` · 0.1.0 |
-| ② 原作者 | jingjiangze（来源：pack.json） |
+| ② 原作者 | 未声明 |
 | ③ 原件许可 | AGPL-3.0-or-later |
 | ④ 兼容改写者 | **未声明** |
 | ⑤ 来源 | 站上记录 `05c6dd5c5844` · https://github.com/Cloudnyco/Duel-Channel |

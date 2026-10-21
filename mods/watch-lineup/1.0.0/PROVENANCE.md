@@ -3,9 +3,9 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `watch-lineup` · 1.0.0 |
-| ② 原作者 | jingjiangze |
+| ② 原作者 | 未声明 |
 | ③ 原件许可 | GPL-3.0-or-later（随游戏本体；本包无自有素材） |
-| ④ 兼容改写者 | jingjiangze |
+| ④ 兼容改写者 | 未声明 |
 | ⑤ 来源 | 本项目自建；走与外部作者相同的 `incoming/` 收件流程 |
 | ⑥ 改了什么 | 纯工坊包，未改引擎任何文件；全部行为走引擎既有挂载面（`prepFieldMeta` / `sendTo` / `bossGroupOf` / `this.mods`） |
 

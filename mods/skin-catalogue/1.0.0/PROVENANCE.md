@@ -6,7 +6,7 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `skin-catalogue` · 1.0.0 |
-| ② 原作者 | jingjiangze（来源：pack.json） |
+| ② 原作者 | 未声明 |
 | ③ 原件许可 | 代码 GPL-3.0-or-later；时装美术 © Hypergryph / Yostar，仅个人非商业使用，随包再分发由其分发者承担 |
 | ④ 兼容改写者 | Mo233 |
 | ⑤ 来源 | 站上记录 `b14d1ec72576` · 由原件 `381205b5e0db` 改写 |

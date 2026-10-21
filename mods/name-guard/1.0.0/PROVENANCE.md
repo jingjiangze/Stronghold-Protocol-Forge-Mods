@@ -6,7 +6,7 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `name-guard` · 1.0.0 |
-| ② 原作者 | jingjiangze（来源：pack.json） |
+| ② 原作者 | 未声明 |
 | ③ 原件许可 | GPL-3.0-or-later（代码与包本体）；词典数据另随包保留授权：英文/中文脏话 LDNOOBW（CC-BY-4.0），政治/成人/违法分类 fwwdn 与 houbb（Apache-2.0），见 NOTICE-来源说明.md |
 | ④ 兼容改写者 | Mo233 |
 | ⑤ 来源 | 站上记录 `a84e3a916517` · 由原件 `e7b3b3e1751f` 改写 |
