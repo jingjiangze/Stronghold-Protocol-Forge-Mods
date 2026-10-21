@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T09:40:30.505Z",
+ "generatedAt": "2026-10-21T10:04:44.244Z",
  "items": [
   {
    "id": "asset-cdn",
@@ -7,7 +7,7 @@
    "version": "0.2.5",
    "kind": "reference",
    "note": "server/http/asset-cdn.js 的源码快照。\n\n未拆成独立包的原因：闭包 2 个文件（还需 shared/ 或 http/config.js 中的 1 个）。",
-   "author": "jingjiangze",
+   "author": "未声明",
    "license": "GPL-3.0-or-later",
    "compatibility": {
     "verdict": "1-file-closure",
@@ -42,7 +42,7 @@
    "version": "0.2.5",
    "kind": "reference",
    "note": "server/cluster/rpc.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件；但属集群内部环（platform↔game-host↔lobby↔directory），单独拆意义不大。",
-   "author": "jingjiangze",
+   "author": "未声明",
    "license": "GPL-3.0-or-later",
    "compatibility": {
     "verdict": "self-contained",
@@ -77,7 +77,7 @@
    "version": "0.2.5-lineup",
    "kind": "reference",
    "note": "v1（ai.js + bot.js + botEmotes.js 源码快照）并入布阵学习库链（采集→落盘→检索，plugins/mota 原深度 + server/mods-lineup.js 桥）与 Hank 胜局种子 180 条（lineups_*.jsonl，布位为合成、阵容/胜负源自 HankDUMPLINGZhong/Stronghold-Protocol-AI@7d4e051b，GPL-3.0 署名见包内 NOTICE-SEEDS.md）。下载件已从 tar 伪 .zip 换成真 zip（PK）。澄清两个常见误读：ai.js 不是机器学习（确定性规则）；bot.js 不是训练模型（用真打一场 Battle 给布局打分）。检索接线现状：humanPlans 在主流部署树无调用点，需按包内 patch/bot-lineup-wiring.md 给 bot.js 打两行补丁、并设 SP_LINEUP_LIBRARY 才生效。",
-   "author": "jingjiangze",
+   "author": "未声明",
    "license": "GPL-3.0-or-later",
    "compatibility": {
     "verdict": "engine-layer-incompatible",
@@ -242,7 +242,7 @@
    "version": "0.2.5",
    "kind": "reference",
    "note": "server/mirrorProbe.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件：可以单独放回同版本 tree 使用。",
-   "author": "jingjiangze",
+   "author": "未声明",
    "license": "GPL-3.0-or-later",
    "compatibility": {
     "verdict": "self-contained",
@@ -277,7 +277,7 @@
    "version": "0.2.5",
    "kind": "reference",
    "note": "server/upstreamWatch.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件。",
-   "author": "jingjiangze",
+   "author": "未声明",
    "license": "GPL-3.0-or-later",
    "compatibility": {
     "verdict": "self-contained",
