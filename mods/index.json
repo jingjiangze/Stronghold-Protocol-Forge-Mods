@@ -1354,13 +1354,13 @@
     {
       "id": "mod-hubmusic",
       "name": "大厅音乐 · 在线平台（QQ音乐 / 网易云 / 酷我）",
-      "version": "1.9.0",
-      "sha256": "3c2d4d0601da941f2858a1ec5c18fd3be9b675f938aba59a26e6b939649959ae",
+      "version": "1.9.1",
+      "sha256": "b99943d0a9aebb760974dbb58023c7ace92f4fff0b935563ada1093c81646cfd",
       "category": "functional",
       "categoryWhy": "插件包（plugin.json），code.client 覆盖前端",
       "packId": "mod-hubmusic",
-      "path": "mods/mod-hubmusic/1.9.0/mod.zip",
-      "sizeBytes": 74681,
+      "path": "mods/mod-hubmusic/1.9.1/mod.zip",
+      "sizeBytes": 74962,
       "fileCount": 0,
       "unpackedBytes": 0,
       "assets": {
@@ -1373,7 +1373,8 @@
       "notes": [
         "**适配说明**：原件是 `install.mjs` 安装器（面向 0.2.5/0.3.0），本包把**前端部分**固化成 `code.client`。",
         "⚠️ 原件的服务端（`server/lobbyMusic.js` + `server/http/routes.js` 的 `/lobby-music/` 分支）**无法通过插件机制装载**，已放在包内 `manual-server/` 供手工安装 —— 不装它时搜索/在线解析会 404，本地文件播放仍可用。",
-        "⚠️ 与 `stronghold-ui` 都覆盖 `js/ui/lobbyMusic.js`；插件按 id 字典序覆盖，`stronghold-ui` 在后会盖掉本包，两者**二选一**。"
+        "⚠️ 与 `stronghold-ui` 都覆盖 `js/ui/lobbyMusic.js`；插件按 id 字典序覆盖，`stronghold-ui` 在后会盖掉本包，两者**二选一**。",
+        "**1.9.1（2026-10-21）**：插件清单新增 `csp` 声明 —— 服务端把封面（speedcdn / *.126.net）与歌词搜索接口（api.qijieya.cn / api.injahow.cn / www.ffapi.cn）并入站点 CSP；只放宽「从哪取」，script-src 不变。需服务端 ≥ 本次版本并重启一次。"
       ]
     },
     {
