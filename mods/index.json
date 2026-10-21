@@ -2424,6 +2424,32 @@
         "layer": "A",
         "combat": true
       }
+    },
+    {
+      "id": "trusted-autoconsent",
+      "name": "受信任插件自动同意（去掉红条）",
+      "version": "1.0.0",
+      "sha256": "c394de15b4e69f5e4b09ee340b4235ad3126b35f3eae4c3d48cf7b023a8f705c",
+      "category": "functional",
+      "categoryWhy": "覆盖 public/js/content.js 的 hasScriptConsent，令其恒真",
+      "packId": "trusted-autoconsent",
+      "path": "mods/trusted-autoconsent/1.0.0/mod.zip",
+      "sizeBytes": 14500,
+      "fileCount": 4,
+      "unpackedBytes": 0,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**它做什么**：覆盖 `public/js/content.js` 的 `hasScriptConsent(cs, storage)`，让它恒返 `true` → 房间页不再弹「受信任插件」红条。",
+        "**代价**：放弃那一道人工同意门。只在你自己完全信任所装插件时用。",
+        "**零冲突**：`content.js` 目前没有任何插件覆盖；与 `stronghold-ui`（覆盖 room.js/lobby.js 等）不重叠。",
+        "实测：`房间页含「受信任插件」: false`、`模态打开: false`、`hasScriptConsent(\"x\") = true`。"
+      ]
     }
   ],
   "rejected": [],
