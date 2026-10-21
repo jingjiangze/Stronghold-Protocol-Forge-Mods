@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T07:49:32.818Z",
+ "generatedAt": "2026-10-21T08:44:24.083Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -781,11 +781,11 @@
    "version": "0.1.19",
    "category": "functional",
    "note": "**适配说明**：原件 `原版增强安装.zip` 里带了两个 content 插件，本包是其中的 `vanilla-plus`（另一个 `feihuo-liuxing` 因 Spine 模型是压缩格式、pack 解析不了，单独走未兼容）。\ncontent 类插件不需要 owner pin。",
-   "author": "",
-   "license": "",
-   "compatAuthor": "",
-   "isCompat": false,
-   "from": "",
+   "author": "未署名（来源：用户提供的 `原版增强安装.zip`）",
+   "license": "CC0-1.0（取自 plugin.json）",
+   "compatAuthor": "未声明",
+   "isCompat": true,
+   "from": "用户提供的 `原版增强安装.zip`（2026-10-20 提交）",
    "sizeBytes": 299093,
    "fileCount": 8,
    "sha256": "b3cb6e3c35fea580e501794d7c1d3f478e73cb4c94d5e6c0d0f147f35bbab0a9",
@@ -844,7 +844,7 @@
    "fileCount": 4,
    "sha256": "1f3b40316fcce9217d1a21fb3028b4bcea0e3a2e960bc219ddf7ea6dc2760720",
    "packId": "",
-   "addedAt": 1791895127830,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ausevaywstr-chess-extras/1.0.0/mod.zip"
   },
   {
@@ -862,7 +862,7 @@
    "fileCount": 5,
    "sha256": "a5d9cc33581501e334d94ac3c1cc622b6b2ccf77087583665a187dc9ba605200",
    "packId": "",
-   "addedAt": 1791893139117,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/chat-decor/1.0.0/mod.zip"
   },
   {
@@ -880,7 +880,7 @@
    "fileCount": 4,
    "sha256": "27bd376666246be85f4f11582c38d17601be6252b13264085f8cc5430788f7a9",
    "packId": "",
-   "addedAt": 1791895130919,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/clemntia-bonds/1.0.0/mod.zip"
   },
   {
@@ -898,7 +898,7 @@
    "fileCount": 4,
    "sha256": "408610c7b3f1c774d6af900fcbd781c74c5972548a6013374bbb9a09b993a4d7",
    "packId": "",
-   "addedAt": 1791894549996,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/clemntia-chess/1.0.0/mod.zip"
   },
   {
@@ -916,7 +916,7 @@
    "fileCount": 4,
    "sha256": "3ceb05120724955dea6764c22404b220695b24c1794a0af34dd0ed0d8771f006",
    "packId": "",
-   "addedAt": 1791984999642,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/comms-pager-boost/1.0.0/mod.zip"
   },
   {
@@ -934,7 +934,7 @@
    "fileCount": 4,
    "sha256": "c436fa4b2c8bfe24dccb6df5fd9ae4bca15512b19470a587125dbd95425f915f",
    "packId": "",
-   "addedAt": 1792078441426,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/data-board/1.7.0/mod.zip"
   },
   {
@@ -952,7 +952,7 @@
    "fileCount": 8,
    "sha256": "333eb23e84d0f3d7d3e4569333b216b3d739fcf2ff43b9ee07d1cc33986feb1a",
    "packId": "",
-   "addedAt": 1792078441637,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/dev-ext/1.0.0/mod.zip"
   },
   {
@@ -970,7 +970,7 @@
    "fileCount": 11,
    "sha256": "eba2312b2195fca16cab196202758613045101a65294fb595f164cedd01c7249",
    "packId": "",
-   "addedAt": 1791997085227,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/fanpack-kazdel/1.0.0/mod.zip"
   },
   {
@@ -988,7 +988,7 @@
    "fileCount": 15,
    "sha256": "9c09b541abe19af2f749080b387977bd702705f0f69c8e2219ee39955067e9bb",
    "packId": "",
-   "addedAt": 1791996834362,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/fanpack-kazdel-rhodes/1.5.4/mod.zip"
   },
   {
@@ -1006,7 +1006,7 @@
    "fileCount": 11,
    "sha256": "c4a9a556876d1970728408ce26130eb0c97351b70a3748517a73ce4ac8e32a35",
    "packId": "",
-   "addedAt": 1791997090420,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/fanpack-rhodes/1.0.0/mod.zip"
   },
   {
@@ -1024,7 +1024,7 @@
    "fileCount": 4,
    "sha256": "8d420285a7bcd733639044367776fa1a7c3cbc5f0abba932132e91c153680370",
    "packId": "",
-   "addedAt": 1792078441500,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/hub-carousel/2.1.0/mod.zip"
   },
   {
@@ -1042,7 +1042,7 @@
    "fileCount": 6,
    "sha256": "bd919ec735bb4e7ee6531ed4c8edcaf67b4e031aeccec8587f9d5980fbe93186",
    "packId": "",
-   "addedAt": 1791894553456,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/i18n-online-gaps/1.0.0/mod.zip"
   },
   {
@@ -1060,7 +1060,7 @@
    "fileCount": 16,
    "sha256": "920d2b48ec4a924f759a2950fc67e380f6ea588e6df40f809b3ef5ee14b1d509",
    "packId": "",
-   "addedAt": 1791894551911,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/makoto-voice/1.0.0/mod.zip"
   },
   {
@@ -1078,7 +1078,7 @@
    "fileCount": 5,
    "sha256": "1816253b51924363f2d0b242b186c54ebac16952dca53a2506f30744f7c2e84e",
    "packId": "",
-   "addedAt": 1791893170191,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/mota-notice/1.0.0/mod.zip"
   },
   {
@@ -1096,7 +1096,7 @@
    "fileCount": 4,
    "sha256": "6c4446fd2301426cc1684bfaef57333f798e45f2900f169823717d3228a00a3d",
    "packId": "",
-   "addedAt": 1791893119501,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/node-metrics-healthz/1.0.0/mod.zip"
   },
   {
@@ -1114,7 +1114,7 @@
    "fileCount": 5,
    "sha256": "17f64fc8c5e8484ec3c4a4e00b070db25dbc1e87005e8c7dfae3b2fd5d5d74a8",
    "packId": "",
-   "addedAt": 1791893176798,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/notice-board-web/1.0.0/mod.zip"
   },
   {
@@ -1132,7 +1132,7 @@
    "fileCount": 4,
    "sha256": "7534b1f5455a6140be7aed6c4f54c9f5a128bb384a46ace55ef7eb8be4b36641",
    "packId": "",
-   "addedAt": 1791893219749,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/quality-tier/1.1.0/mod.zip"
   },
   {
@@ -1150,7 +1150,7 @@
    "fileCount": 4,
    "sha256": "35a5bf1ca6a9ebbf9f70b04a22fff2429890632d1154e02952ae5e0d882ac4e4",
    "packId": "",
-   "addedAt": 1791895124702,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/s11-chess-extras/1.0.0/mod.zip"
   },
   {
@@ -1168,7 +1168,7 @@
    "fileCount": 4,
    "sha256": "ca983a33fb781683e1be2797814b0f5d9647025fac99eb9711cb33ad03d8ca89",
    "packId": "",
-   "addedAt": 1791894559712,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/s7-zj-chess/1.0.0/mod.zip"
   },
   {
@@ -1186,7 +1186,7 @@
    "fileCount": 4,
    "sha256": "1840bb292ad8117b84a2219b3211e604917d1376a3e1b3df7551f32301f7867f",
    "packId": "",
-   "addedAt": 1791894558158,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/s8-chess-extras/1.0.0/mod.zip"
   },
   {
@@ -1204,7 +1204,7 @@
    "fileCount": 10,
    "sha256": "f76994bfc8a0e059dfc1c352fd41e0874ad82e9f3e36a9d6fe1f6a06e4320f24",
    "packId": "",
-   "addedAt": 1792078442227,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/side-story/1.1.0/mod.zip"
   },
   {
@@ -1222,7 +1222,7 @@
    "fileCount": 5,
    "sha256": "45b3aabdae6d7ea73f8f7e7fe3d8cd9bf91d4c267a42941a6c3151615929f5b8",
    "packId": "",
-   "addedAt": 1791895129371,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/sp-skins-index/1.0.0/mod.zip"
   },
   {
@@ -1240,7 +1240,7 @@
    "fileCount": 6,
    "sha256": "a2caf84564924504ce828158e3a46853ad04d322e81bf43bd3fc9d2cef2cf3d6",
    "packId": "",
-   "addedAt": 1791893145243,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/sticker-pack/1.0.0/mod.zip"
   },
   {
@@ -1258,7 +1258,7 @@
    "fileCount": 4,
    "sha256": "a6972ea9ae032170febc99e01155ee97315cce019caff9e77d1dd48c5e3735f6",
    "packId": "",
-   "addedAt": 1791893228891,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ui-hub-panel/0.2.0/mod.zip"
   },
   {
@@ -1276,7 +1276,7 @@
    "fileCount": 9,
    "sha256": "6f60c0a0e459dec9456060bb169b8db2c15f5a63972dd601abbbcde4665e7ec4",
    "packId": "",
-   "addedAt": 1792143444635,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ui-select-card/1.0.0/mod.zip"
   },
   {
@@ -1294,7 +1294,7 @@
    "fileCount": 5,
    "sha256": "e2e09c5a7674b6f789378d9ded1c6f732165a729a61583799c718a9260db82bd",
    "packId": "",
-   "addedAt": 1792143438550,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ui-select-i18n/1.0.0/mod.zip"
   },
   {
@@ -1312,7 +1312,7 @@
    "fileCount": 4,
    "sha256": "8d432f32dae30530fd2ad500afcb43d58dd05f614d089d92222b9b349e8f2aad",
    "packId": "",
-   "addedAt": 1791893183402,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/voice-lang/1.1.0/mod.zip"
   },
   {
@@ -1330,8 +1330,26 @@
    "fileCount": 4,
    "sha256": "3a71b16e3749f7991f0875e6393dd52c1f00d6e8a31a5adf1b32a17f072d31e4",
    "packId": "",
-   "addedAt": 1791895126290,
+   "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/xingkong-chess-extras/1.0.0/mod.zip"
+  },
+  {
+   "id": "trusted-autoconsent",
+   "name": "受信任插件自动同意（去掉红条）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": "**它做什么**：覆盖 `public/js/content.js` 的 `hasScriptConsent(cs, storage)`，让它恒返 `true` → 房间页不再弹「受信任插件」红条。\n**代价**：放弃那一道人工同意门。只在你自己完全信任所装插件时用。\n**零冲突**：`content.js` 目前没有任何插件覆盖；与 `stronghold-ui`（覆盖 room.js/lobby.js 等）不重叠。\n实测：`房间页含「受信任插件」: false`、`模态打开: false`、`hasScriptConsent(\"x\") = true`。",
+   "author": "",
+   "license": "",
+   "compatAuthor": "",
+   "isCompat": false,
+   "from": "",
+   "sizeBytes": 14500,
+   "fileCount": 4,
+   "sha256": "c394de15b4e69f5e4b09ee340b4235ad3126b35f3eae4c3d48cf7b023a8f705c",
+   "packId": "trusted-autoconsent",
+   "addedAt": 1792572229000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/trusted-autoconsent/1.0.0/mod.zip"
   }
  ]
 }
