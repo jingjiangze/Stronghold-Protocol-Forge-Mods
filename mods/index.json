@@ -1454,6 +1454,70 @@
         "⚠️ **需要基座修一行才能装**：`server/plugins/pack.js` 的 spine 收集条件从 `manifest.class === 'cosmetic' && manifest.parts.assets` 改成 `manifest.parts.assets`。原因：`shared/plugins/manifest.js` 的 `PARTS.assets.classes` 明确允许 content/script/trusted，但 pack 的实现只对 cosmetic 收集 clip，导致 content 类声明 spine 必然 `PLUGIN_LOCK_MISSING`。修完重打包得到 `18 files, 2 Spine models`。",
         "content 类不需要 owner pin。"
       ]
+    },
+    {
+      "id": "trade",
+      "name": "玩家间交易（前向兼容参考）",
+      "version": "0.1.0",
+      "sha256": "41b3e26c46761022c9dbc56267c3b04a81d027909ddda2144a1956a71c8c570d",
+      "packHash": "",
+      "category": "documentation",
+      "categoryWhy": "参考包：引擎缺 C2S 白名单/PlayerState 挂点/客户端面板挂点，装上不生效",
+      "stationId": "8743d41785e0",
+      "path": "mods/trade/0.1.0/mod.zip",
+      "sizeBytes": 120036,
+      "fileCount": 14,
+      "unpackedBytes": 346642,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "CC0-1.0，作者未署名。⚠ 当前为参考包：mod 管理器引擎缺 g.trade 等三键、PlayerState 注入点、客户端交易面板挂点，装上不会生效。源码片段在 src/，引擎补面后改 category 为 functional 即启用。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [],
+        "errors": [
+          "NOT_LOADED_REFERENCE"
+        ],
+        "layer": "B",
+        "combat": false
+      }
+    },
+    {
+      "id": "manual-item-merge",
+      "name": "手动合成与拖拽堆叠（前向兼容参考）",
+      "version": "0.1.0",
+      "sha256": "1209e24d6618d58ebacffcb6ed2432c03f1616d0ca05818d6b66e498283d5fe6",
+      "packHash": "",
+      "category": "documentation",
+      "categoryWhy": "参考包：引擎缺 manualItemMerge getter/g.itemStack/stackItem/客户端拖拽合成挂点，装上不生效",
+      "stationId": "5d360c956a40",
+      "path": "mods/manual-item-merge/0.1.0/mod.zip",
+      "sizeBytes": 166001,
+      "fileCount": 12,
+      "unpackedBytes": 475084,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "CC0-1.0，作者未署名。卸下装备已由引擎 rules.unequip 支持（vanilla-plus 已用）；但手动合成/拖拽堆叠所需 manualItemMerge getter、g.itemStack、stackItem()、客户端拖拽合成 UI 挂点缺失，装上不生效。源码片段在 src/，引擎补面后改 functional 即启用。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [],
+        "errors": [
+          "NOT_LOADED_REFERENCE"
+        ],
+        "layer": "B",
+        "combat": false
+      }
     }
   ],
   "rejected": [],
