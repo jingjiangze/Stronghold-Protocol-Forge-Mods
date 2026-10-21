@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-13T10:55:20.783Z",
+  "generatedAt": "2026-10-21T04:26:18.827Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\_up\\stage-new2\\modrepo-stage",
     "host": null,
@@ -1399,6 +1399,34 @@
       "notes": [
         "**适配说明**：原件 `原版增强安装.zip` 里带了两个 content 插件，本包是其中的 `vanilla-plus`（另一个 `feihuo-liuxing` 因 Spine 模型是压缩格式、pack 解析不了，单独走未兼容）。",
         "content 类插件不需要 owner pin。"
+      ]
+    },
+    {
+      "id": "watch-lineup",
+      "name": "观阵 · 战斗中查看队友布阵（只读透传）",
+      "version": "1.0.0",
+      "sha256": "8da58c0eeb0c3e3420ea35de9f18cf3b086b121a7f393199030dd55679386d8d",
+      "category": "functional",
+      "categoryWhy": "声明了 server / client / notices",
+      "packId": "watch-lineup",
+      "path": "mods/watch-lineup/1.0.0/mod.zip",
+      "sizeBytes": 15157,
+      "fileCount": 12,
+      "unpackedBytes": 31693,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "工坊包（pack.json）：目标线 game 0.15.1 || 0.16.x、api >=1 <2；modmgr 0.3.1 基座没有 pack.msg 机制，装了不生效。",
+        "纯只读透传：matchClass 收到查看请求后调引擎现成 prepFieldMeta 拼装读法并原样 sendTo 给观看者，不做模拟、不改对局数值。combat:true 是能力面声明（引擎硬闸门要求 matchClass 挂载点），不等于会改战斗结果。",
+        "开关是观看者自己的（仿 g.autoplay，默认关；关着时本包一个分支都不进）。",
+        "战斗中查看时主画面会临时切到该棋盘，点「返回自己」即恢复；clientCombat 战场 fieldId 恰为 n:<pid>，先查 fields 再进布阵板分支。",
+        "与引擎内置实现（Deploy#1/#2、Forge#8/#9）语义一致、互不依赖：没合引擎 PR 的树上独立生效，合了的树上共存。",
+        "不含任何图片 / 音频 / 字体 / Spine 素材，无第三方代码。"
       ]
     }
   ],
