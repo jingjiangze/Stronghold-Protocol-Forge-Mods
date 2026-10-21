@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-21T13:19:13.674Z",
+  "generatedAt": "2026-10-21T14:09:41.236Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\_up\\stage-new2\\modrepo-stage",
     "host": null,
@@ -2362,16 +2362,16 @@
     {
       "id": "watch-lineup",
       "name": "观阵 · 战斗中查看队友布阵（只读透传）",
-      "version": "1.0.1",
-      "sha256": "d149792997f3d740c5cc749199a158b8996f37fb3eab4c2976143961cf3b3b0c",
-      "packHash": "f8c8f5630ed78becc2f4cdb28840acf2c2e5122c1fec230246677026e6a9c4de",
+      "version": "1.0.2",
+      "sha256": "47718046614f2a249fce5d8ff73ef4b1be0bf11266745f5294e1d6d3aa080595",
+      "packHash": "ed3ea219d53fc6121c8f5f4a533c5a9fb6cedb1447f52866a94333222a7b95e2",
       "category": "functional",
       "categoryWhy": "声明了 client / server / notices",
-      "stationId": "autod1497929",
-      "path": "mods/watch-lineup/1.0.1/mod.zip",
-      "sizeBytes": 15677,
+      "stationId": "auto47718046",
+      "path": "mods/watch-lineup/1.0.2/mod.zip",
+      "sizeBytes": 16612,
       "fileCount": 7,
-      "unpackedBytes": 32394,
+      "unpackedBytes": 34579,
       "assets": {
         "assetFree": true,
         "count": 0,

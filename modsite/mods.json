@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T13:19:13.948Z",
+ "generatedAt": "2026-10-21T14:09:41.540Z",
  "mods": [
   {
    "id": "ausevaywstr-chess-extras",
@@ -1300,20 +1300,20 @@
   {
    "id": "watch-lineup",
    "name": "观阵 · 战斗中查看队友布阵（只读透传）",
-   "version": "1.0.1",
+   "version": "1.0.2",
    "category": "functional",
    "note": "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。",
    "author": "jingjiangze（来源：pack.json）",
    "license": "GPL-3.0-or-later（随游戏本体；本包无自有素材）",
    "compatAuthor": "**未声明**",
    "isCompat": false,
-   "from": "站上记录 `autod1497929` · incoming/watch-lineup（直接合并，维护者合并即审）",
-   "sizeBytes": 15677,
+   "from": "站上记录 `auto47718046` · incoming/watch-lineup（PR #49，维护者合并即审）",
+   "sizeBytes": 16612,
    "fileCount": 7,
-   "sha256": "d149792997f3d740c5cc749199a158b8996f37fb3eab4c2976143961cf3b3b0c",
+   "sha256": "47718046614f2a249fce5d8ff73ef4b1be0bf11266745f5294e1d6d3aa080595",
    "packId": "",
    "addedAt": 0,
-   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/watch-lineup/1.0.1/mod.zip"
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/watch-lineup/1.0.2/mod.zip"
   },
   {
    "id": "ws-compression-reference",
