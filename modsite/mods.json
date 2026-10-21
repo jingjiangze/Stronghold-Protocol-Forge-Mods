@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T08:44:24.083Z",
+ "generatedAt": "2026-10-21T09:40:30.403Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -1336,20 +1336,20 @@
   {
    "id": "trusted-autoconsent",
    "name": "受信任插件自动同意（去掉红条）",
-   "version": "1.0.0",
+   "version": "1.0.1",
    "category": "functional",
-   "note": "**它做什么**：覆盖 `public/js/content.js` 的 `hasScriptConsent(cs, storage)`，让它恒返 `true` → 房间页不再弹「受信任插件」红条。\n**代价**：放弃那一道人工同意门。只在你自己完全信任所装插件时用。\n**零冲突**：`content.js` 目前没有任何插件覆盖；与 `stronghold-ui`（覆盖 room.js/lobby.js 等）不重叠。\n实测：`房间页含「受信任插件」: false`、`模态打开: false`、`hasScriptConsent(\"x\") = true`。",
+   "note": "**两处覆盖**：① `public/js/content.js` 的 `hasScriptConsent()` 恒真（弹窗不再出现）；② `public/js/screens/room.js` 的 `TrustedNotice()` 直接 `return null`（顶部常驻横幅与弹窗一起消失）。**只改 content.js 不够** —— 红条是 `<aside class=\"trusted-banner\">` 常驻横幅，Modal 才是 consent 控制的。\n**代价**：放弃那一道人工同意门，只在你完全信任所装插件时用。\n**覆盖关系**：`room.js` 同时被 `stronghold-ui` 覆盖；按 id 字典序 `trusted-autoconsent` 在后，最终生效。\n实测：所有页面 `banner:false` / `text(受信任插件):false`。",
    "author": "",
    "license": "",
    "compatAuthor": "",
    "isCompat": false,
    "from": "",
-   "sizeBytes": 14500,
-   "fileCount": 4,
-   "sha256": "c394de15b4e69f5e4b09ee340b4235ad3126b35f3eae4c3d48cf7b023a8f705c",
+   "sizeBytes": 29520,
+   "fileCount": 5,
+   "sha256": "f4a4080e38e9519478d3e3e98b8c41bbdb3b58f996d79f5e9afe5471ceddf196",
    "packId": "trusted-autoconsent",
-   "addedAt": 1792572229000,
-   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/trusted-autoconsent/1.0.0/mod.zip"
+   "addedAt": 1792575619000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/trusted-autoconsent/1.0.1/mod.zip"
   }
  ]
 }
