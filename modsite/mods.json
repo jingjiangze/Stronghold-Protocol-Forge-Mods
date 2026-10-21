@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T04:01:36.123Z",
+ "generatedAt": "2026-10-21T05:00:11.694Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -724,20 +724,20 @@
   {
    "id": "csp-allow",
    "name": "跨域资源放行（CSP 声明）",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "category": "functional",
-   "note": "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。\n只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。\n装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。",
+   "note": "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。\n只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。\n装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。\n**1.1.0（2026-10-21）**：基座已内置 `csp` 字段解析与合并（`shared/plugins/manifest.js` / `server/http/csp.js` / `server/index.js`），本包现在装好、钉 lock、重启即可生效；同源的声明也已写进「大厅音乐 1.9.1」，只装音乐包时无需再装本包。",
    "author": "jingjiangze",
    "license": "GPL-3.0-or-later",
    "compatAuthor": "jingjiangze",
    "isCompat": true,
    "from": "本项目自建；配套基座改动见 SOURCE.md 第 4 节",
-   "sizeBytes": 1362,
+   "sizeBytes": 1433,
    "fileCount": 3,
-   "sha256": "f14d4b0de6c73644ffcaaf41d70cd696cfe89a79fde77ca6e832103ab44affdd",
+   "sha256": "2c82db6601157390cab95ae169e6df6f524d46f68643b1efce43774eb6e79701",
    "packId": "csp-allow",
-   "addedAt": 1792520061000,
-   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/csp-allow/1.0.0/mod.zip"
+   "addedAt": 1792558300000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/csp-allow/1.1.0/mod.zip"
   },
   {
    "id": "hub-sections",
@@ -792,6 +792,42 @@
    "packId": "vanilla-plus",
    "addedAt": 1792524491000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/vanilla-plus/0.1.19/mod.zip"
+  },
+  {
+   "id": "watch-lineup",
+   "name": "观阵 · 战斗中查看队友布阵（只读透传）",
+   "version": "1.0.0",
+   "category": "functional",
+   "note": "工坊包（pack.json）：目标线 game 0.15.1 || 0.16.x、api >=1 <2；modmgr 0.3.1 基座没有 pack.msg 机制，装了不生效。\n纯只读透传：matchClass 收到查看请求后调引擎现成 prepFieldMeta 拼装读法并原样 sendTo 给观看者，不做模拟、不改对局数值。combat:true 是能力面声明（引擎硬闸门要求 matchClass 挂载点），不等于会改战斗结果。\n开关是观看者自己的（仿 g.autoplay，默认关；关着时本包一个分支都不进）。\n战斗中查看时主画面会临时切到该棋盘，点「返回自己」即恢复；clientCombat 战场 fieldId 恰为 n:<pid>，先查 fields 再进布阵板分支。\n与引擎内置实现（Deploy#1/#2、Forge#8/#9）语义一致、互不依赖：没合引擎 PR 的树上独立生效，合了的树上共存。\n不含任何图片 / 音频 / 字体 / Spine 素材，无第三方代码。",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later（随游戏本体；本包无自有素材）",
+   "compatAuthor": "jingjiangze",
+   "isCompat": true,
+   "from": "本项目自建；走与外部作者相同的 `incoming/` 收件流程",
+   "sizeBytes": 15157,
+   "fileCount": 12,
+   "sha256": "8da58c0eeb0c3e3420ea35de9f18cf3b086b121a7f393199030dd55679386d8d",
+   "packId": "watch-lineup",
+   "addedAt": 1792556830000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/watch-lineup/1.0.0/mod.zip"
+  },
+  {
+   "id": "feihuo-liuxing",
+   "name": "原版增强 · 飞火流星（新干员 + 立绘 + Spine 模型）",
+   "version": "0.3.4",
+   "category": "functional",
+   "note": "**适配说明**：原件 `原版增强安装.zip` 里的 `feihuo/plugins/feihuo-liuxing/`，原样提取（去掉官方 0.3.1 打不出来的坏 lock）。\n⚠️ **需要基座修一行才能装**：`server/plugins/pack.js` 的 spine 收集条件从 `manifest.class === 'cosmetic' && manifest.parts.assets` 改成 `manifest.parts.assets`。原因：`shared/plugins/manifest.js` 的 `PARTS.assets.classes` 明确允许 content/script/trusted，但 pack 的实现只对 cosmetic 收集 clip，导致 content 类声明 spine 必然 `PLUGIN_LOCK_MISSING`。修完重打包得到 `18 files, 2 Spine models`。\ncontent 类不需要 owner pin。",
+   "author": "",
+   "license": "",
+   "compatAuthor": "",
+   "isCompat": false,
+   "from": "",
+   "sizeBytes": 1090046,
+   "fileCount": 19,
+   "sha256": "0794aaea9146b42f883aae2b0674381d169ba8b4755a15b1f810bc31f26dba01",
+   "packId": "feihuo-liuxing",
+   "addedAt": 1792558075000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/feihuo-liuxing/0.3.4/mod.zip"
   }
  ]
 }
