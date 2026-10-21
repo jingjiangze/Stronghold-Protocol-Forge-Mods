@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T05:24:38.103Z",
+ "generatedAt": "2026-10-21T05:31:49.677Z",
  "mods": [
   {
    "id": "ave-mujica",
@@ -781,11 +781,11 @@
    "version": "0.1.19",
    "category": "functional",
    "note": "**适配说明**：原件 `原版增强安装.zip` 里带了两个 content 插件，本包是其中的 `vanilla-plus`（另一个 `feihuo-liuxing` 因 Spine 模型是压缩格式、pack 解析不了，单独走未兼容）。\ncontent 类插件不需要 owner pin。",
-   "author": "",
-   "license": "",
-   "compatAuthor": "",
-   "isCompat": false,
-   "from": "",
+   "author": "未署名（来源：用户提供的 `原版增强安装.zip`）",
+   "license": "CC0-1.0（取自 plugin.json）",
+   "compatAuthor": "未声明",
+   "isCompat": true,
+   "from": "用户提供的 `原版增强安装.zip`（2026-10-20 提交）",
    "sizeBytes": 299093,
    "fileCount": 8,
    "sha256": "b3cb6e3c35fea580e501794d7c1d3f478e73cb4c94d5e6c0d0f147f35bbab0a9",
