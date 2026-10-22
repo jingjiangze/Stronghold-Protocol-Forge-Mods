@@ -1,0 +1,8 @@
+{
+ "decision": "approved",
+ "reason": "维护者合并即审（PR #49 由 jingjiangze 合并）；机器四闸门（sha256 / pack.json / category / 引擎装载）由 tools/build-index.mjs 实测，结论见 mods/index.json",
+ "at": "2026-10-21T14:09:41.054Z",
+ "by": "jingjiangze",
+ "displayName": "观阵 · 战斗中查看队友布阵（只读透传）",
+ "acknowledgedSuspected": false
+}

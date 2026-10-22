@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-21T04:26:18.827Z",
+  "generatedAt": "2026-10-21T14:09:41.236Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\_up\\stage-new2\\modrepo-stage",
     "host": null,
@@ -41,6 +41,38 @@
   "note": "本索引是 mod 仓库的唯一真相；每条字段都实测（sha256 重算、装载调用引擎那一份）。`fileCount` 是 ZIP 条目数，不等于包内实际文件数（`.spresources` 容器内部另有若干文件）。",
   "mods": [
     {
+      "id": "ausevaywstr-chess-extras",
+      "name": "ausevaywstr 棋子扩充（8 名干员）",
+      "version": "1.0.0",
+      "sha256": "1f3b40316fcce9217d1a21fb3028b4bcea0e3a2e960bc219ddf7ea6dc2760720",
+      "packHash": "1a16724b0a248d4654cd28b52f76e760153509ed39cdf785f2caf04ccdb30163",
+      "category": "functional",
+      "categoryWhy": "声明了 content",
+      "stationId": "b67de34e358f",
+      "path": "mods/ausevaywstr-chess-extras/1.0.0/mod.zip",
+      "sizeBytes": 11168,
+      "fileCount": 4,
+      "unpackedBytes": 83904,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "ausevaywstr-chess-extras"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": true
+      }
+    },
+    {
       "id": "ave-mujica",
       "name": "颂乐人偶",
       "version": "1.1.0",
@@ -75,6 +107,38 @@
         "layer": "B",
         "combat": true
       }
+    },
+    {
+      "id": "ave-mujica",
+      "name": "颂乐人偶（Ave Mujica）",
+      "version": "1.8.24",
+      "sha256": "a5adff9226983faef872d2a26f42079ec61160779647c25f832682446ce68c20",
+      "packHash": "d64c50c51e10bb8a3212a1d03b469ed7b13c8c3420fc958e7b575ba2b73bd85d",
+      "category": "functional",
+      "categoryWhy": "声明了 content（bonds/chess/operators）",
+      "packId": "ave-mujica",
+      "path": "mods/ave-mujica/1.8.24/mod.zip",
+      "sizeBytes": 18001810,
+      "fileCount": 1108,
+      "unpackedBytes": 31479202,
+      "assets": {
+        "assetFree": false,
+        "count": 839,
+        "bytes": 24233376,
+        "byKind": {
+          "png": 63,
+          "m4a": 1,
+          "mp3": 96,
+          "webp": 643,
+          "atlas": 18,
+          "skel": 18
+        },
+        "containers": []
+      },
+      "notes": [
+        "原件形态：唯一顶层目录 `ave-mujica/` + pack.json，已是规范工坊包。",
+        "站上已有旧版 ave-mujica 1.1.0；本条是 1.8.24 新版本，按新版本收录。"
+      ]
     },
     {
       "id": "boss-fixed-pool",
@@ -205,6 +269,224 @@
       }
     },
     {
+      "id": "chat-decor",
+      "name": "房内聊天增强（未读计数 · 悬浮入口 · 别名与房主标记）",
+      "version": "1.0.0",
+      "sha256": "a5d9cc33581501e334d94ac3c1cc622b6b2ccf77087583665a187dc9ba605200",
+      "packHash": "b047ccd17ab938d743e6b4cb2770da7ded43dedf7f7cd3c835512119cd7871cf",
+      "category": "functional",
+      "categoryWhy": "声明了 client",
+      "stationId": "74feb396bc63",
+      "path": "mods/chat-decor/1.0.0/mod.zip",
+      "sizeBytes": 9084,
+      "fileCount": 5,
+      "unpackedBytes": 16352,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "chat-decor"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "clemntia-bonds",
+      "name": "克莱门莎入盟约（三条盟约成员追加）",
+      "version": "1.0.0",
+      "sha256": "27bd376666246be85f4f11582c38d17601be6252b13264085f8cc5430788f7a9",
+      "packHash": "459834e99af4f077904596d7ebd431d8ea80645a3555728c457b7fc4d2cd902d",
+      "category": "functional",
+      "categoryWhy": "声明了 content / overrides",
+      "stationId": "5f43d46a3b37",
+      "path": "mods/clemntia-bonds/1.0.0/mod.zip",
+      "sizeBytes": 2721,
+      "fileCount": 4,
+      "unpackedBytes": 4733,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "clemntia-bonds"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": false
+      }
+    },
+    {
+      "id": "clemntia-chess",
+      "name": "克莱门莎（棋子增量）",
+      "version": "1.0.0",
+      "sha256": "408610c7b3f1c774d6af900fcbd781c74c5972548a6013374bbb9a09b993a4d7",
+      "packHash": "8d62d6bc89fdf65053a32fa1b8276f020055f54ff756a99482159fcde779c9bf",
+      "category": "functional",
+      "categoryWhy": "声明了 content / overrides",
+      "stationId": "46ba71648658",
+      "path": "mods/clemntia-chess/1.0.0/mod.zip",
+      "sizeBytes": 6284,
+      "fileCount": 4,
+      "unpackedBytes": 27114,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "clemntia-chess"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": false
+      }
+    },
+    {
+      "id": "comms-pager-boost",
+      "name": "简易通讯机与寻呼模块：优先核心盟约",
+      "version": "1.0.0",
+      "sha256": "3ceb05120724955dea6764c22404b220695b24c1794a0af34dd0ed0d8771f006",
+      "packHash": "e401ee290451c483706ea29791249d95452b8c228b9d95d9d37417cb6a8ac6bd",
+      "category": "functional",
+      "categoryWhy": "声明了 server",
+      "stationId": "cd9536726a94",
+      "path": "mods/comms-pager-boost/1.0.0/mod.zip",
+      "sizeBytes": 10591,
+      "fileCount": 4,
+      "unpackedBytes": 18713,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "comms-pager-boost"
+        ],
+        "errors": [],
+        "layer": "B",
+        "combat": true
+      }
+    },
+    {
+      "id": "csp-allow",
+      "name": "跨域资源放行（CSP 声明）",
+      "version": "1.1.0",
+      "sha256": "2c82db6601157390cab95ae169e6df6f524d46f68643b1efce43774eb6e79701",
+      "category": "functional",
+      "categoryWhy": "声明了 csp 白名单；需要基座支持 plugin.json 的 csp 字段",
+      "packId": "csp-allow",
+      "path": "mods/csp-allow/1.1.0/mod.zip",
+      "sizeBytes": 1433,
+      "fileCount": 3,
+      "unpackedBytes": 1854,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。",
+        "只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。",
+        "装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。",
+        "**1.1.0（2026-10-21）**：基座已内置 `csp` 字段解析与合并（`shared/plugins/manifest.js` / `server/http/csp.js` / `server/index.js`），本包现在装好、钉 lock、重启即可生效；同源的声明也已写进「大厅音乐 1.9.1」，只装音乐包时无需再装本包。"
+      ]
+    },
+    {
+      "id": "data-board",
+      "name": "数据显示",
+      "version": "1.7.0",
+      "sha256": "c436fa4b2c8bfe24dccb6df5fd9ae4bca15512b19470a587125dbd95425f915f",
+      "packHash": "0ead57dec52785ac66af20a4700f74ef95c44c70008c25ef91773f64e5369a06",
+      "category": "functional",
+      "categoryWhy": "声明了 client",
+      "stationId": "379932e0fe3e",
+      "path": "mods/data-board/1.7.0/mod.zip",
+      "sizeBytes": 60579,
+      "fileCount": 4,
+      "unpackedBytes": 161263,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "data-board"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "dev-ext",
+      "name": "开发者功能扩展",
+      "version": "1.0.0",
+      "sha256": "333eb23e84d0f3d7d3e4569333b216b3d739fcf2ff43b9ee07d1cc33986feb1a",
+      "packHash": "58dd75bfb07b938b88f6e4617c31f619eae8e6a676b777acdea7cbf172116569",
+      "category": "functional",
+      "categoryWhy": "声明了 content / client / server",
+      "stationId": "de2766f2ccf9",
+      "path": "mods/dev-ext/1.0.0/mod.zip",
+      "sizeBytes": 17005,
+      "fileCount": 8,
+      "unpackedBytes": 56087,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "dev-ext"
+        ],
+        "errors": [],
+        "layer": "B",
+        "combat": true
+      }
+    },
+    {
       "id": "dmg-board",
       "name": "伤害看板（结算页）",
       "version": "1.0.0",
@@ -235,6 +517,32 @@
         "layer": "C",
         "combat": false
       }
+    },
+    {
+      "id": "drag-facing-wheel",
+      "name": "干员自由拖放与朝向轮盘（服务端兼容移植）",
+      "version": "1.0.0",
+      "sha256": "c4f26777260a495eead3bcd47845eef59e3abaa197e2ed5a1868a9cde6c2555b",
+      "packHash": "bac1af5f78536b4135ee703ee2314fa7cbd8e0f94ba93ee1158467af0256859d",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件无清单，只有 manifest/安装器）",
+      "packId": "drag-facing-wheel",
+      "path": "mods/drag-facing-wheel/1.0.0/mod.zip",
+      "sizeBytes": 156718,
+      "fileCount": 37,
+      "unpackedBytes": 397217,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件是「源码片段集」——`portable/`（可独立运行的兼容模块）+ `integration-fragments/`（接入片段），没有 pack.json。",
+        "本次补写 pack.json（id=drag-facing-wheel, game=0.3.x），只收 `portable/` 与 `integration-fragments/`，**不收** `.ps1/.bat` 安装器与 demo/tests。",
+        "`integration-fragments/` 依赖原闭包变量，不能当独立 ES 模块直接跑；它们是对接参考，实际接入要按 agent.md 手工合入。"
+      ]
     },
     {
       "id": "duel-assets",
@@ -440,6 +748,163 @@
       }
     },
     {
+      "id": "egir-buff",
+      "name": "阿戈尔盟约加强（新加入克莱门莎）",
+      "version": "1.0.0",
+      "sha256": "1b3ae1822d6e502e23f637297c17629e0e8672d4ce3105d987246f7809d3ddde",
+      "packHash": "d21211938340399c00d7f21d4910ce061d3cd90489e265e5e9f9306bfd61bfcc",
+      "category": "functional",
+      "categoryWhy": "声明了 content（bonds/garrisons/chess）",
+      "packId": "egir-buff",
+      "path": "mods/egir-buff/1.0.0/mod.zip",
+      "sizeBytes": 1956111,
+      "fileCount": 23,
+      "unpackedBytes": 2840010,
+      "assets": {
+        "assetFree": false,
+        "count": 19,
+        "bytes": 2727207,
+        "byKind": {
+          "png": 17,
+          "atlas": 1,
+          "skel": 1
+        },
+        "containers": []
+      },
+      "notes": [
+        "原件形态：唯一顶层目录 `egir-buff/` + pack.json，已是规范工坊包。",
+        "站上已存在同名兼容改写版（stationId e409e2ee750f）；本条是**原件**。"
+      ]
+    },
+    {
+      "id": "fanpack-kazdel",
+      "name": "卡兹戴尔盟约（兼容改写 · 标准包）",
+      "version": "1.0.0",
+      "sha256": "eba2312b2195fca16cab196202758613045101a65294fb595f164cedd01c7249",
+      "packHash": "e95abffa3f23ea900451b7e0fcf0d0d186fcc0f9459b2aec7aff76575bfdfed2",
+      "category": "functional",
+      "categoryWhy": "声明了 content / overrides / variants",
+      "stationId": "1820c9b571c8",
+      "path": "mods/fanpack-kazdel/1.0.0/mod.zip",
+      "sizeBytes": 1349049,
+      "fileCount": 11,
+      "unpackedBytes": 1543153,
+      "assets": {
+        "assetFree": false,
+        "count": 3,
+        "bytes": 1329261,
+        "byKind": {
+          "image": 3
+        },
+        "containers": []
+      },
+      "notes": [
+        "⚠️ **含素材**：3 个文件 / 1329261 B（{\"image\":3}）⇒ 须在页面上标注来源与授权。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "fanpack-kazdel"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": true
+      }
+    },
+    {
+      "id": "fanpack-kazdel-mod",
+      "name": "卡兹戴尔同人内容包（立绘修复版）",
+      "version": "1.2.1",
+      "sha256": "27044ac283a351a6deed60a881296c072fa71a1c2ecb72712255b842a1374c9f",
+      "packHash": "2130421bf1fa2fc72f79ccdae8e21d849ac0646a3de6b527250043d642602618",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件是 install.mjs + manifest.json 形态）",
+      "packId": "fanpack-kazdel-mod",
+      "path": "mods/fanpack-kazdel-mod/1.2.1/mod.zip",
+      "sizeBytes": 614891,
+      "fileCount": 48,
+      "unpackedBytes": 3301218,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件以 `install.mjs` + `files.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
+        "修复立绘引用：payload/data 下的 chess.json / config.json 与立绘登记。",
+        "站上已存在同名兼容改写版（stationId 1820c9b571c8）；本条是**原件（修复版）**。"
+      ]
+    },
+    {
+      "id": "fanpack-kazdel-rhodes",
+      "name": "卡兹戴尔罗德岛盟约多功能（标准包 v1.5.4）",
+      "version": "1.5.4",
+      "sha256": "9c09b541abe19af2f749080b387977bd702705f0f69c8e2219ee39955067e9bb",
+      "packHash": "f2988c5006c52415aa8ec57bbe3f7eddecb08c4395e570ac24673ad260240a5c",
+      "category": "functional",
+      "categoryWhy": "声明了 content / overrides / variants",
+      "stationId": "9e23f07151b8",
+      "path": "mods/fanpack-kazdel-rhodes/1.5.4/mod.zip",
+      "sizeBytes": 3259753,
+      "fileCount": 15,
+      "unpackedBytes": 3779749,
+      "assets": {
+        "assetFree": false,
+        "count": 7,
+        "bytes": 3205189,
+        "byKind": {
+          "image": 7
+        },
+        "containers": []
+      },
+      "notes": [
+        "⚠️ **含素材**：7 个文件 / 3205189 B（{\"image\":7}）⇒ 须在页面上标注来源与授权。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "fanpack-kazdel-rhodes"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": true
+      }
+    },
+    {
+      "id": "fanpack-rhodes",
+      "name": "罗德岛盟约（兼容改写 · 标准包）",
+      "version": "1.0.0",
+      "sha256": "c4a9a556876d1970728408ce26130eb0c97351b70a3748517a73ce4ac8e32a35",
+      "packHash": "dc0b79329e4b6f119f601aad4115690a85e9855fec7580e135e7e30e6a4d6723",
+      "category": "functional",
+      "categoryWhy": "声明了 content / overrides / variants",
+      "stationId": "ceae73a72c49",
+      "path": "mods/fanpack-rhodes/1.0.0/mod.zip",
+      "sizeBytes": 1741975,
+      "fileCount": 11,
+      "unpackedBytes": 2041930,
+      "assets": {
+        "assetFree": false,
+        "count": 3,
+        "bytes": 1700841,
+        "byKind": {
+          "image": 3
+        },
+        "containers": []
+      },
+      "notes": [
+        "⚠️ **含素材**：3 个文件 / 1700841 B（{\"image\":3}）⇒ 须在页面上标注来源与授权。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "fanpack-rhodes"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": true
+      }
+    },
+    {
       "id": "fanpack-skillful-items",
       "name": "灵巧盟约装备",
       "version": "1.0.0",
@@ -474,6 +939,31 @@
       }
     },
     {
+      "id": "feihuo-liuxing",
+      "name": "原版增强 · 飞火流星（新干员 + 立绘 + Spine 模型）",
+      "version": "0.3.4",
+      "sha256": "0794aaea9146b42f883aae2b0674381d169ba8b4755a15b1f810bc31f26dba01",
+      "category": "functional",
+      "categoryWhy": "content 类插件（新干员记录 + 数据 + 素材）",
+      "packId": "feihuo-liuxing",
+      "path": "mods/feihuo-liuxing/0.3.4/mod.zip",
+      "sizeBytes": 1090046,
+      "fileCount": 19,
+      "unpackedBytes": 0,
+      "assets": {
+        "assetFree": false,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件 `原版增强安装.zip` 里的 `feihuo/plugins/feihuo-liuxing/`，原样提取（去掉官方 0.3.1 打不出来的坏 lock）。",
+        "⚠️ **需要基座修一行才能装**：`server/plugins/pack.js` 的 spine 收集条件从 `manifest.class === 'cosmetic' && manifest.parts.assets` 改成 `manifest.parts.assets`。原因：`shared/plugins/manifest.js` 的 `PARTS.assets.classes` 明确允许 content/script/trusted，但 pack 的实现只对 cosmetic 收集 clip，导致 content 类声明 spine 必然 `PLUGIN_LOCK_MISSING`。修完重打包得到 `18 files, 2 Spine models`。",
+        "content 类不需要 owner pin。"
+      ]
+    },
+    {
       "id": "healthz-ext",
       "name": "健康与构建只读接口（/healthz 扩展 + /client-build 字段契约）",
       "version": "1.0.0",
@@ -499,6 +989,155 @@
       "engineLoad": {
         "packsLoaded": [
           "healthz-ext"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "hub-carousel",
+      "name": "大厅轮播图",
+      "version": "2.1.0",
+      "sha256": "8d420285a7bcd733639044367776fa1a7c3cbc5f0abba932132e91c153680370",
+      "packHash": "993e8fb71658ab4d658777b0a5d7fe1abacf97cf6b5c29b50e921525c09d6904",
+      "category": "functional",
+      "categoryWhy": "声明了 client",
+      "stationId": "4afe35bf670c",
+      "path": "mods/hub-carousel/2.1.0/mod.zip",
+      "sizeBytes": 30946,
+      "fileCount": 4,
+      "unpackedBytes": 81842,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "hub-carousel"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "hub-sections",
+      "name": "大厅栏位开关（设置里 5 个开关 + 折叠把手）",
+      "version": "1.3.2",
+      "sha256": "8c8d12bbd874d69701b0fbc642e042493c3990fe0408cb5c6be121cefbe83d7b",
+      "category": "functional",
+      "categoryWhy": "插件包（plugin.json），code.client 覆盖前端",
+      "packId": "hub-sections",
+      "path": "mods/hub-sections/1.3.2/mod.zip",
+      "sizeBytes": 24829,
+      "fileCount": 0,
+      "unpackedBytes": 0,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件是 `install.mjs` 安装器（新增 2 个模块 + 改 `public/js/ui/settings.js` 一行 import 一行挂载）。本包把安装结果固化成 `code.client` 覆盖层，安装器与 `.bat` 未收。",
+        "纯前端，不需要服务端改动。"
+      ]
+    },
+    {
+      "id": "hubvideo",
+      "name": "大厅视频背景（独立 mod）",
+      "version": "1.2.0",
+      "sha256": "88ecc546247c4caecb77ae918202bd2ff3305fdc3edc2377db8c914fd287f3c3",
+      "packHash": "b1476449510907d8abc92ec6b34577c0861e883a7448244a1d0b3d4bd77cc7e4",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件是 install.mjs + manifest.json 形态）",
+      "packId": "hubvideo",
+      "path": "mods/hubvideo/1.2.0/mod.zip",
+      "sizeBytes": 1599901,
+      "fileCount": 9,
+      "unpackedBytes": 1664122,
+      "assets": {
+        "assetFree": false,
+        "count": 2,
+        "bytes": 1563310,
+        "byKind": {
+          "png": 2
+        },
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件以 `install.mjs` + `manifest.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
+        "大厅背景面板新增第三个页签，支持 MP4 / WebM 视频背景（客户端 CSS/JS + 服务端转发 + 对话框改造）。"
+      ]
+    },
+    {
+      "id": "i18n-online-gaps",
+      "name": "界面文案缺口（线上有、引擎翻译表里没有的 56 条）",
+      "version": "1.0.0",
+      "sha256": "bd919ec735bb4e7ee6531ed4c8edcaf67b4e031aeccec8587f9d5980fbe93186",
+      "packHash": "e1ba8ea72408ef118d4894640b283b6bd87efbbfa76f1e1a37ce305e22f0c3da",
+      "category": "unknown",
+      "categoryWhy": "没有生效面、也没有自述为说明包",
+      "stationId": "3b4529362339",
+      "path": "mods/i18n-online-gaps/1.0.0/mod.zip",
+      "sizeBytes": 5019,
+      "fileCount": 6,
+      "unpackedBytes": 6956,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "i18n-online-gaps"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": false
+      }
+    },
+    {
+      "id": "makoto-voice",
+      "name": "结城理（Persona 3 Reload 联动）· 日语语音 14 条",
+      "version": "1.0.0",
+      "sha256": "920d2b48ec4a924f759a2950fc67e380f6ea588e6df40f809b3ef5ee14b1d509",
+      "packHash": "d77eddf484a9090604384626abf9255654779826f1473cedeae26003639966f3",
+      "category": "unknown",
+      "categoryWhy": "没有生效面、也没有自述为说明包",
+      "stationId": "235d21956917",
+      "path": "mods/makoto-voice/1.0.0/mod.zip",
+      "sizeBytes": 275708,
+      "fileCount": 16,
+      "unpackedBytes": 299738,
+      "assets": {
+        "assetFree": false,
+        "count": 14,
+        "bytes": 296371,
+        "byKind": {
+          "audio": 14
+        },
+        "containers": []
+      },
+      "notes": [
+        "⚠️ **含素材**：14 个文件 / 296371 B（{\"audio\":14}）⇒ 须在页面上标注来源与授权。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "makoto-voice"
         ],
         "errors": [],
         "layer": "C",
@@ -539,6 +1178,64 @@
         "layer": "A",
         "combat": false
       }
+    },
+    {
+      "id": "manual-item-merge",
+      "name": "手动合成与拖拽堆叠（前向兼容参考）",
+      "version": "0.1.0",
+      "sha256": "1209e24d6618d58ebacffcb6ed2432c03f1616d0ca05818d6b66e498283d5fe6",
+      "packHash": "",
+      "category": "documentation",
+      "categoryWhy": "参考包：引擎缺 manualItemMerge getter/g.itemStack/stackItem/客户端拖拽合成挂点，装上不生效",
+      "stationId": "5d360c956a40",
+      "path": "mods/manual-item-merge/0.1.0/mod.zip",
+      "sizeBytes": 166001,
+      "fileCount": 12,
+      "unpackedBytes": 475084,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "CC0-1.0，作者未署名。卸下装备已由引擎 rules.unequip 支持（vanilla-plus 已用）；但手动合成/拖拽堆叠所需 manualItemMerge getter、g.itemStack、stackItem()、客户端拖拽合成 UI 挂点缺失，装上不生效。源码片段在 src/，引擎补面后改 functional 即启用。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [],
+        "errors": [
+          "NOT_LOADED_REFERENCE"
+        ],
+        "layer": "B",
+        "combat": false
+      }
+    },
+    {
+      "id": "mod-hubmusic",
+      "name": "大厅音乐 · 在线平台（QQ音乐 / 网易云 / 酷我）",
+      "version": "1.9.1",
+      "sha256": "b99943d0a9aebb760974dbb58023c7ace92f4fff0b935563ada1093c81646cfd",
+      "category": "functional",
+      "categoryWhy": "插件包（plugin.json），code.client 覆盖前端",
+      "packId": "mod-hubmusic",
+      "path": "mods/mod-hubmusic/1.9.1/mod.zip",
+      "sizeBytes": 74962,
+      "fileCount": 0,
+      "unpackedBytes": 0,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件是 `install.mjs` 安装器（面向 0.2.5/0.3.0），本包把**前端部分**固化成 `code.client`。",
+        "⚠️ 原件的服务端（`server/lobbyMusic.js` + `server/http/routes.js` 的 `/lobby-music/` 分支）**无法通过插件机制装载**，已放在包内 `manual-server/` 供手工安装 —— 不装它时搜索/在线解析会 404，本地文件播放仍可用。",
+        "⚠️ 与 `stronghold-ui` 都覆盖 `js/ui/lobbyMusic.js`；插件按 id 字典序覆盖，`stronghold-ui` 在后会盖掉本包，两者**二选一**。",
+        "**1.9.1（2026-10-21）**：插件清单新增 `csp` 声明 —— 服务端把封面（speedcdn / *.126.net）与歌词搜索接口（api.qijieya.cn / api.injahow.cn / www.ffapi.cn）并入站点 CSP；只放宽「从哪取」，script-src 不变。需服务端 ≥ 本次版本并重启一次。"
+      ]
     },
     {
       "id": "mod-xie",
@@ -602,6 +1299,38 @@
         "errors": [],
         "layer": "A",
         "combat": true
+      }
+    },
+    {
+      "id": "mota-notice",
+      "name": "魔塔公告",
+      "version": "1.0.0",
+      "sha256": "1816253b51924363f2d0b242b186c54ebac16952dca53a2506f30744f7c2e84e",
+      "packHash": "fea86930d20e010971c8eee9fe1b5af64557ff9e47f9aa4c9b8c6d1fa0a85b08",
+      "category": "functional",
+      "categoryWhy": "声明了 notices",
+      "stationId": "3894d3ae4bc4",
+      "path": "mods/mota-notice/1.0.0/mod.zip",
+      "sizeBytes": 8000,
+      "fileCount": 5,
+      "unpackedBytes": 12771,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "mota-notice"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": false
       }
     },
     {
@@ -669,6 +1398,69 @@
       }
     },
     {
+      "id": "nlc-skins",
+      "name": "国家图书馆联动皮肤（NLC 三款 + 追忆回合修复）",
+      "version": "1.0.0",
+      "sha256": "9dd82dc4e98c735005363fbf4f979e25fe3d443f29a5be3ea388e7536af20417",
+      "packHash": "98c51fa49dcaece095288e3582310ca182851d4c1e66a1adb281837733701bc6",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件是 .ps1 安装器形态）",
+      "packId": "nlc-skins",
+      "path": "mods/nlc-skins/1.0.0/mod.zip",
+      "sizeBytes": 5154715,
+      "fileCount": 39,
+      "unpackedBytes": 10604468,
+      "assets": {
+        "assetFree": false,
+        "count": 30,
+        "bytes": 7325735,
+        "byKind": {
+          "png": 18,
+          "atlas": 6,
+          "skel": 6
+        },
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件是 PowerShell 安装器（`Install-NLC-Skins.ps1`）+ 整文件覆盖；本次补写 pack.json 并**去掉 .ps1**，按工坊包形态交付。",
+        "含三款 2026-10-16 官方皮肤：黍·源远流长、烛煌·夜行烛火、琳琅诗怀雅·盛世之象（头像 / 商店立绘 / 战斗模型 Spine 三件套）。",
+        "⚠️ **含官方素材**：全部从国服客户端用 UnityPy 解包，版权归鹰角网络 / Yostar，仅供非商业个人使用。",
+        "另附 jibian_zhuiji（追忆）卡牌引擎修复：`_engine-fix-zhuiji/server/match/match/phases.js`，修「回到第 10 回合不出怪/卡死」。"
+      ]
+    },
+    {
+      "id": "node-metrics-healthz",
+      "name": "节点负载读数（/healthz 加 node 节 + 只读指标端点）",
+      "version": "1.0.0",
+      "sha256": "6c4446fd2301426cc1684bfaef57333f798e45f2900f169823717d3228a00a3d",
+      "packHash": "721d56e5be347abd1fb55a9877fc0eadd3c427ace697bd838d2ff83b72a79f64",
+      "category": "functional",
+      "categoryWhy": "声明了 server",
+      "stationId": "d2db0e73965f",
+      "path": "mods/node-metrics-healthz/1.0.0/mod.zip",
+      "sizeBytes": 6447,
+      "fileCount": 4,
+      "unpackedBytes": 10301,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "node-metrics-healthz"
+        ],
+        "errors": [],
+        "layer": "B",
+        "combat": false
+      }
+    },
+    {
       "id": "notice-board",
       "name": "服务器公告板（notices）",
       "version": "1.0.0",
@@ -694,6 +1486,38 @@
       "engineLoad": {
         "packsLoaded": [
           "notice-board"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": false
+      }
+    },
+    {
+      "id": "notice-board-web",
+      "name": "公告改由网站发布 · 读取与对接说明（附示范站）",
+      "version": "1.0.0",
+      "sha256": "17f64fc8c5e8484ec3c4a4e00b070db25dbc1e87005e8c7dfae3b2fd5d5d74a8",
+      "packHash": "869889266145c68ee755e55ea0eed6e90e800993090230bb03d43dd0f5f5c762",
+      "category": "functional",
+      "categoryWhy": "声明了 notices",
+      "stationId": "5e379325149a",
+      "path": "mods/notice-board-web/1.0.0/mod.zip",
+      "sizeBytes": 7215,
+      "fileCount": 5,
+      "unpackedBytes": 11502,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "notice-board-web"
         ],
         "errors": [],
         "layer": "A",
@@ -792,6 +1616,163 @@
       }
     },
     {
+      "id": "quality-tier",
+      "name": "画质档位（备注：引擎不开放渲染常量，本包只能做锐化补偿样式）",
+      "version": "1.1.0",
+      "sha256": "7534b1f5455a6140be7aed6c4f54c9f5a128bb384a46ace55ef7eb8be4b36641",
+      "packHash": "46b0694c3c14ee22b6d0b0dc3128079162d322c6629ddffd7cc7c13aea7da32c",
+      "category": "functional",
+      "categoryWhy": "声明了 client",
+      "stationId": "4a120190bf8f",
+      "path": "mods/quality-tier/1.1.0/mod.zip",
+      "sizeBytes": 6499,
+      "fileCount": 4,
+      "unpackedBytes": 9780,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "quality-tier"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "rhodes-ship",
+      "name": "罗德岛盟约（源石弧修复）",
+      "version": "1.1.1",
+      "sha256": "ba068be73204d46945110691f07f2c8c2b75cb0ffad8975cac76a6f7a2a92506",
+      "packHash": "9b1fe56a9540678be46b85d19c0b2a93d3452b2dcc510544568449077e24fd59",
+      "category": "functional",
+      "categoryWhy": "声明了 content（bonds/records）",
+      "packId": "rhodes-ship",
+      "path": "mods/rhodes-ship/1.1.1/mod.zip",
+      "sizeBytes": 3503245,
+      "fileCount": 56,
+      "unpackedBytes": 4408165,
+      "assets": {
+        "assetFree": false,
+        "count": 38,
+        "bytes": 4015483,
+        "byKind": {
+          "png": 26,
+          "atlas": 6,
+          "skel": 6
+        },
+        "containers": []
+      },
+      "notes": [
+        "原件形态：根级 pack.json（id/version 完整），已是规范工坊包，未做任何改动。",
+        "站上已存在同名兼容改写版（stationId ceae73a72c49）；本条是**原件**，不是改写版。"
+      ]
+    },
+    {
+      "id": "s11-chess-extras",
+      "name": "十一服棋子扩充（24 名干员）",
+      "version": "1.0.0",
+      "sha256": "35a5bf1ca6a9ebbf9f70b04a22fff2429890632d1154e02952ae5e0d882ac4e4",
+      "packHash": "3379348a5ac6fd081134a8d029f77183f8bc15068f8db1ebca8905c47d29228a",
+      "category": "functional",
+      "categoryWhy": "声明了 content",
+      "stationId": "bc0a817f1eb3",
+      "path": "mods/s11-chess-extras/1.0.0/mod.zip",
+      "sizeBytes": 22095,
+      "fileCount": 4,
+      "unpackedBytes": 214308,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "s11-chess-extras"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": true
+      }
+    },
+    {
+      "id": "s7-zj-chess",
+      "name": "七服炸惊模式棋子（184 名干员）",
+      "version": "1.0.0",
+      "sha256": "ca983a33fb781683e1be2797814b0f5d9647025fac99eb9711cb33ad03d8ca89",
+      "packHash": "5cf4561f18cc2fc35f93200517128bfcc3f773e52042230af7dcf69ad691e96e",
+      "category": "functional",
+      "categoryWhy": "声明了 content",
+      "stationId": "e2ef235218f9",
+      "path": "mods/s7-zj-chess/1.0.0/mod.zip",
+      "sizeBytes": 166399,
+      "fileCount": 4,
+      "unpackedBytes": 2037110,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "s7-zj-chess"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": true
+      }
+    },
+    {
+      "id": "s8-chess-extras",
+      "name": "八服棋子扩充（122 名干员的新形态）",
+      "version": "1.0.0",
+      "sha256": "1840bb292ad8117b84a2219b3211e604917d1376a3e1b3df7551f32301f7867f",
+      "packHash": "60068f2639597983b262f082e1727da59b92fb994be81394c4517be704ac6b11",
+      "category": "functional",
+      "categoryWhy": "声明了 content",
+      "stationId": "d68d6a2ee60e",
+      "path": "mods/s8-chess-extras/1.0.0/mod.zip",
+      "sizeBytes": 96337,
+      "fileCount": 4,
+      "unpackedBytes": 1103110,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "s8-chess-extras"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": true
+      }
+    },
+    {
       "id": "shop-bond-bias",
       "name": "商店刷新盟约装备几率提升mod",
       "version": "1.0.0",
@@ -820,6 +1801,40 @@
         ],
         "errors": [],
         "layer": "A",
+        "combat": true
+      }
+    },
+    {
+      "id": "side-story",
+      "name": "故事集",
+      "version": "1.1.0",
+      "sha256": "f76994bfc8a0e059dfc1c352fd41e0874ad82e9f3e36a9d6fe1f6a06e4320f24",
+      "packHash": "be3a598413bb227cf4fadd228176a6a89315c9ee2f5f68a175cc798dc0dd1a3a",
+      "category": "functional",
+      "categoryWhy": "声明了 client / server / notices",
+      "stationId": "30348b757389",
+      "path": "mods/side-story/1.1.0/mod.zip",
+      "sizeBytes": 53785,
+      "fileCount": 10,
+      "unpackedBytes": 82678,
+      "assets": {
+        "assetFree": false,
+        "count": 1,
+        "bytes": 26222,
+        "byKind": {
+          "image": 1
+        },
+        "containers": []
+      },
+      "notes": [
+        "⚠️ **含素材**：1 个文件 / 26222 B（{\"image\":1}）⇒ 须在页面上标注来源与授权。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "side-story"
+        ],
+        "errors": [],
+        "layer": "B",
         "combat": true
       }
     },
@@ -890,6 +1905,38 @@
       }
     },
     {
+      "id": "sp-skins-index",
+      "name": "时装美术交接索引（272 套 · 字节在我 CDN · 附不兼容清单）",
+      "version": "1.0.0",
+      "sha256": "45b3aabdae6d7ea73f8f7e7fe3d8cd9bf91d4c267a42941a6c3151615929f5b8",
+      "packHash": "3d87811f87a8433605a52e35d5ed99bafb27a58a655b21b376c638992845703b",
+      "category": "functional",
+      "categoryWhy": "声明了 notices / routes",
+      "stationId": "4e96097dfb6e",
+      "path": "mods/sp-skins-index/1.0.0/mod.zip",
+      "sizeBytes": 11197,
+      "fileCount": 5,
+      "unpackedBytes": 21819,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "sp-skins-index"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": false
+      }
+    },
+    {
       "id": "srv-notice",
       "name": "服务器公告",
       "version": "1.0.0",
@@ -918,6 +1965,38 @@
         ],
         "errors": [],
         "layer": "A",
+        "combat": false
+      }
+    },
+    {
+      "id": "sticker-pack",
+      "name": "房间贴纸包（62 枚社区表情清单）",
+      "version": "1.0.0",
+      "sha256": "a2caf84564924504ce828158e3a46853ad04d322e81bf43bd3fc9d2cef2cf3d6",
+      "packHash": "07c13959933742d46996030b54bf1616977e3aa2405d8be4a64626591c679b8b",
+      "category": "functional",
+      "categoryWhy": "声明了 client / routes",
+      "stationId": "81bf8a15aced",
+      "path": "mods/sticker-pack/1.0.0/mod.zip",
+      "sizeBytes": 9759,
+      "fileCount": 6,
+      "unpackedBytes": 20698,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "sticker-pack"
+        ],
+        "errors": [],
+        "layer": "C",
         "combat": false
       }
     },
@@ -954,6 +2033,59 @@
       }
     },
     {
+      "id": "stronghold-ui",
+      "name": "盟约界面增强（大厅音乐）",
+      "version": "0.3.1",
+      "sha256": "5c2ef28eab7d95d3446ac04ce089cff84bb1040b2d736879433299f344492574",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.client 客户端覆盖与 trusted.server",
+      "stationId": "d11dbaf5a6c4",
+      "packId": "stronghold-ui",
+      "path": "mods/stronghold-ui/0.3.1/mod.zip",
+      "sizeBytes": 323634,
+      "fileCount": 37,
+      "unpackedBytes": 1133997,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json，不是 pack.json）：需要支持 code.client 客户端覆盖的基座；装好后在 plugins/config.json 的 trusted 里钉 plugin.lock.json 的 sha256。",
+        "官方 0.3.1 原版不支持 code.client，装上不生效。",
+        "大厅音乐的搜索/解析依赖第三方接口（ffapi.cn 优先、Meting 回退）。"
+      ]
+    },
+    {
+      "id": "test-sim",
+      "name": "测试模拟（Forge 工坊包样例）",
+      "version": "1.0.0",
+      "sha256": "dc3755a5082dba67fdc5920a6a618e530ec3850abeaf97dd842957dd5c7d4dc2",
+      "packHash": "db2a9d75692cf7a6308e21d5ad161ccc8a1dd28f5b6ea6590db7077f25dc0297",
+      "category": "functional",
+      "categoryWhy": "声明了 server/content",
+      "packId": "test-sim",
+      "path": "mods/test-sim/1.0.0/mod.zip",
+      "sizeBytes": 2031144,
+      "fileCount": 9,
+      "unpackedBytes": 2141164,
+      "assets": {
+        "assetFree": false,
+        "count": 2,
+        "bytes": 1977128,
+        "byKind": {
+          "png": 2
+        },
+        "containers": []
+      },
+      "notes": [
+        "原件形态：`pack/pack.json`（唯一顶层目录），已是规范工坊包。"
+      ]
+    },
+    {
       "id": "theme-night",
       "name": "夜间高对比主题",
       "version": "1.0.0",
@@ -982,6 +2114,160 @@
         ],
         "errors": [],
         "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "trade",
+      "name": "玩家间交易（前向兼容参考）",
+      "version": "0.1.0",
+      "sha256": "41b3e26c46761022c9dbc56267c3b04a81d027909ddda2144a1956a71c8c570d",
+      "packHash": "",
+      "category": "documentation",
+      "categoryWhy": "参考包：引擎缺 C2S 白名单/PlayerState 挂点/客户端面板挂点，装上不生效",
+      "stationId": "8743d41785e0",
+      "path": "mods/trade/0.1.0/mod.zip",
+      "sizeBytes": 120036,
+      "fileCount": 14,
+      "unpackedBytes": 346642,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "CC0-1.0，作者未署名。⚠ 当前为参考包：mod 管理器引擎缺 g.trade 等三键、PlayerState 注入点、客户端交易面板挂点，装上不会生效。源码片段在 src/，引擎补面后改 category 为 functional 即启用。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [],
+        "errors": [
+          "NOT_LOADED_REFERENCE"
+        ],
+        "layer": "B",
+        "combat": false
+      }
+    },
+    {
+      "id": "trusted-autoconsent",
+      "name": "受信任插件自动同意（去掉红条）",
+      "version": "1.0.1",
+      "sha256": "f4a4080e38e9519478d3e3e98b8c41bbdb3b58f996d79f5e9afe5471ceddf196",
+      "category": "functional",
+      "categoryWhy": "覆盖 public/js/content.js 的 hasScriptConsent，令其恒真",
+      "packId": "trusted-autoconsent",
+      "path": "mods/trusted-autoconsent/1.0.1/mod.zip",
+      "sizeBytes": 29520,
+      "fileCount": 5,
+      "unpackedBytes": 0,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**两处覆盖**：① `public/js/content.js` 的 `hasScriptConsent()` 恒真（弹窗不再出现）；② `public/js/screens/room.js` 的 `TrustedNotice()` 直接 `return null`（顶部常驻横幅与弹窗一起消失）。**只改 content.js 不够** —— 红条是 `<aside class=\"trusted-banner\">` 常驻横幅，Modal 才是 consent 控制的。",
+        "**代价**：放弃那一道人工同意门，只在你完全信任所装插件时用。",
+        "**覆盖关系**：`room.js` 同时被 `stronghold-ui` 覆盖；按 id 字典序 `trusted-autoconsent` 在后，最终生效。",
+        "实测：所有页面 `banner:false` / `text(受信任插件):false`。"
+      ]
+    },
+    {
+      "id": "ui-hub-panel",
+      "name": "盟约中枢 · 独立浮层面板",
+      "version": "0.2.0",
+      "sha256": "a6972ea9ae032170febc99e01155ee97315cce019caff9e77d1dd48c5e3735f6",
+      "packHash": "39534c3e02ee0af7d4117444c5c9a46fa9850c24b28be045e7d44b788d98906d",
+      "category": "functional",
+      "categoryWhy": "声明了 client",
+      "stationId": "e560c4b62a2b",
+      "path": "mods/ui-hub-panel/0.2.0/mod.zip",
+      "sizeBytes": 9578,
+      "fileCount": 4,
+      "unpackedBytes": 22919,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "ui-hub-panel"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "ui-select-card",
+      "name": "卫戍协议UI·选择性安装包 · 收录说明卡",
+      "version": "1.0.0",
+      "sha256": "6f60c0a0e459dec9456060bb169b8db2c15f5a63972dd601abbbcde4665e7ec4",
+      "packHash": "911d15d9f3c2c8861817e409ce3f27cfc5a50380425aee85b33b8237fc7bb1ba",
+      "category": "functional",
+      "categoryWhy": "声明了 client / notices",
+      "stationId": "53528e5210e8",
+      "path": "mods/ui-select-card/1.0.0/mod.zip",
+      "sizeBytes": 9682,
+      "fileCount": 9,
+      "unpackedBytes": 15440,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "ui-select-card"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "ui-select-i18n",
+      "name": "卫戍协议UI·选择性安装包 · 多语言词条",
+      "version": "1.0.0",
+      "sha256": "e2e09c5a7674b6f789378d9ded1c6f732165a729a61583799c718a9260db82bd",
+      "packHash": "52fff64d82777e057f6b117399e5cec01bd7bdc9ec35644df36afd6eac9747bc",
+      "category": "unknown",
+      "categoryWhy": "没有生效面、也没有自述为说明包",
+      "stationId": "96d9b3964cef",
+      "path": "mods/ui-select-i18n/1.0.0/mod.zip",
+      "sizeBytes": 10551,
+      "fileCount": 5,
+      "unpackedBytes": 25027,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "ui-select-i18n"
+        ],
+        "errors": [],
+        "layer": "A",
         "combat": false
       }
     },
@@ -1018,6 +2304,94 @@
       }
     },
     {
+      "id": "vanilla-plus",
+      "name": "原版增强（vanilla-plus）",
+      "version": "0.1.19",
+      "sha256": "b3cb6e3c35fea580e501794d7c1d3f478e73cb4c94d5e6c0d0f147f35bbab0a9",
+      "category": "functional",
+      "categoryWhy": "content 类插件（数据补丁 + 新记录）",
+      "packId": "vanilla-plus",
+      "path": "mods/vanilla-plus/0.1.19/mod.zip",
+      "sizeBytes": 299093,
+      "fileCount": 8,
+      "unpackedBytes": 0,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "**适配说明**：原件 `原版增强安装.zip` 里带了两个 content 插件，本包是其中的 `vanilla-plus`（另一个 `feihuo-liuxing` 因 Spine 模型是压缩格式、pack 解析不了，单独走未兼容）。",
+        "content 类插件不需要 owner pin。"
+      ]
+    },
+    {
+      "id": "voice-lang",
+      "name": "语音语种（更正：Forge 已原生支持，这一项不需要 mod）",
+      "version": "1.1.0",
+      "sha256": "8d432f32dae30530fd2ad500afcb43d58dd05f614d089d92222b9b349e8f2aad",
+      "packHash": "89d32f8ccb3ea9c9e150d5adc879cbf08e837b8f09bd7292a6ed932024883f2a",
+      "category": "functional",
+      "categoryWhy": "声明了 client",
+      "stationId": "243dabcc581f",
+      "path": "mods/voice-lang/1.1.0/mod.zip",
+      "sizeBytes": 5430,
+      "fileCount": 4,
+      "unpackedBytes": 8305,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "voice-lang"
+        ],
+        "errors": [],
+        "layer": "C",
+        "combat": false
+      }
+    },
+    {
+      "id": "watch-lineup",
+      "name": "观阵 · 战斗中查看队友布阵（只读透传）",
+      "version": "1.0.2",
+      "sha256": "47718046614f2a249fce5d8ff73ef4b1be0bf11266745f5294e1d6d3aa080595",
+      "packHash": "ed3ea219d53fc6121c8f5f4a533c5a9fb6cedb1447f52866a94333222a7b95e2",
+      "category": "functional",
+      "categoryWhy": "声明了 client / server / notices",
+      "stationId": "auto47718046",
+      "path": "mods/watch-lineup/1.0.2/mod.zip",
+      "sizeBytes": 16612,
+      "fileCount": 7,
+      "unpackedBytes": 34579,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "watch-lineup"
+        ],
+        "errors": [],
+        "layer": "B",
+        "combat": true
+      }
+    },
+    {
       "id": "ws-compression-reference",
       "name": "WS 压缩参考（协商参数 / 档位 / 实测）",
       "version": "1.2.0",
@@ -1050,129 +2424,18 @@
       }
     },
     {
-      "id": "stronghold-ui",
-      "name": "盟约界面增强（大厅音乐）",
-      "version": "0.3.1",
-      "sha256": "5c2ef28eab7d95d3446ac04ce089cff84bb1040b2d736879433299f344492574",
-      "packHash": "",
-      "category": "functional",
-      "categoryWhy": "声明了 code.client 客户端覆盖与 trusted.server",
-      "stationId": "d11dbaf5a6c4",
-      "packId": "stronghold-ui",
-      "path": "mods/stronghold-ui/0.3.1/mod.zip",
-      "sizeBytes": 323634,
-      "fileCount": 37,
-      "unpackedBytes": 1133997,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "插件包（plugin.json，不是 pack.json）：需要支持 code.client 客户端覆盖的基座；装好后在 plugins/config.json 的 trusted 里钉 plugin.lock.json 的 sha256。",
-        "官方 0.3.1 原版不支持 code.client，装上不生效。",
-        "大厅音乐的搜索/解析依赖第三方接口（ffapi.cn 优先、Meting 回退）。"
-      ]
-    },
-    {
-      "id": "rhodes-ship",
-      "name": "罗德岛盟约（源石弧修复）",
-      "version": "1.1.1",
-      "sha256": "ba068be73204d46945110691f07f2c8c2b75cb0ffad8975cac76a6f7a2a92506",
-      "packHash": "9b1fe56a9540678be46b85d19c0b2a93d3452b2dcc510544568449077e24fd59",
-      "category": "functional",
-      "categoryWhy": "声明了 content（bonds/records）",
-      "packId": "rhodes-ship",
-      "path": "mods/rhodes-ship/1.1.1/mod.zip",
-      "sizeBytes": 3503245,
-      "fileCount": 56,
-      "unpackedBytes": 4408165,
-      "assets": {
-        "assetFree": false,
-        "count": 38,
-        "bytes": 4015483,
-        "byKind": {
-          "png": 26,
-          "atlas": 6,
-          "skel": 6
-        },
-        "containers": []
-      },
-      "notes": [
-        "原件形态：根级 pack.json（id/version 完整），已是规范工坊包，未做任何改动。",
-        "站上已存在同名兼容改写版（stationId ceae73a72c49）；本条是**原件**，不是改写版。"
-      ]
-    },
-    {
-      "id": "egir-buff",
-      "name": "阿戈尔盟约加强（新加入克莱门莎）",
+      "id": "xingkong-chess-extras",
+      "name": "星空之下棋子扩充（12 名干员）",
       "version": "1.0.0",
-      "sha256": "1b3ae1822d6e502e23f637297c17629e0e8672d4ce3105d987246f7809d3ddde",
-      "packHash": "d21211938340399c00d7f21d4910ce061d3cd90489e265e5e9f9306bfd61bfcc",
+      "sha256": "3a71b16e3749f7991f0875e6393dd52c1f00d6e8a31a5adf1b32a17f072d31e4",
+      "packHash": "307d9bb2bfcc795df6643c95ce15598b49ab81a6354f4698c942a59e27336216",
       "category": "functional",
-      "categoryWhy": "声明了 content（bonds/garrisons/chess）",
-      "packId": "egir-buff",
-      "path": "mods/egir-buff/1.0.0/mod.zip",
-      "sizeBytes": 1956111,
-      "fileCount": 23,
-      "unpackedBytes": 2840010,
-      "assets": {
-        "assetFree": false,
-        "count": 19,
-        "bytes": 2727207,
-        "byKind": {
-          "png": 17,
-          "atlas": 1,
-          "skel": 1
-        },
-        "containers": []
-      },
-      "notes": [
-        "原件形态：唯一顶层目录 `egir-buff/` + pack.json，已是规范工坊包。",
-        "站上已存在同名兼容改写版（stationId e409e2ee750f）；本条是**原件**。"
-      ]
-    },
-    {
-      "id": "test-sim",
-      "name": "测试模拟（Forge 工坊包样例）",
-      "version": "1.0.0",
-      "sha256": "dc3755a5082dba67fdc5920a6a618e530ec3850abeaf97dd842957dd5c7d4dc2",
-      "packHash": "db2a9d75692cf7a6308e21d5ad161ccc8a1dd28f5b6ea6590db7077f25dc0297",
-      "category": "functional",
-      "categoryWhy": "声明了 server/content",
-      "packId": "test-sim",
-      "path": "mods/test-sim/1.0.0/mod.zip",
-      "sizeBytes": 2031144,
-      "fileCount": 9,
-      "unpackedBytes": 2141164,
-      "assets": {
-        "assetFree": false,
-        "count": 2,
-        "bytes": 1977128,
-        "byKind": {
-          "png": 2
-        },
-        "containers": []
-      },
-      "notes": [
-        "原件形态：`pack/pack.json`（唯一顶层目录），已是规范工坊包。"
-      ]
-    },
-    {
-      "id": "drag-facing-wheel",
-      "name": "干员自由拖放与朝向轮盘（服务端兼容移植）",
-      "version": "1.0.0",
-      "sha256": "c4f26777260a495eead3bcd47845eef59e3abaa197e2ed5a1868a9cde6c2555b",
-      "packHash": "bac1af5f78536b4135ee703ee2314fa7cbd8e0f94ba93ee1158467af0256859d",
-      "category": "functional",
-      "categoryWhy": "补写了 pack.json（原件无清单，只有 manifest/安装器）",
-      "packId": "drag-facing-wheel",
-      "path": "mods/drag-facing-wheel/1.0.0/mod.zip",
-      "sizeBytes": 156718,
-      "fileCount": 37,
-      "unpackedBytes": 397217,
+      "categoryWhy": "声明了 content",
+      "stationId": "f8315e788908",
+      "path": "mods/xingkong-chess-extras/1.0.0/mod.zip",
+      "sizeBytes": 15400,
+      "fileCount": 4,
+      "unpackedBytes": 148357,
       "assets": {
         "assetFree": true,
         "count": 0,
@@ -1181,279 +2444,16 @@
         "containers": []
       },
       "notes": [
-        "**适配说明**：原件是「源码片段集」——`portable/`（可独立运行的兼容模块）+ `integration-fragments/`（接入片段），没有 pack.json。",
-        "本次补写 pack.json（id=drag-facing-wheel, game=0.3.x），只收 `portable/` 与 `integration-fragments/`，**不收** `.ps1/.bat` 安装器与 demo/tests。",
-        "`integration-fragments/` 依赖原闭包变量，不能当独立 ES 模块直接跑；它们是对接参考，实际接入要按 agent.md 手工合入。"
-      ]
-    },
-    {
-      "id": "fanpack-kazdel-mod",
-      "name": "卡兹戴尔同人内容包（立绘修复版）",
-      "version": "1.2.1",
-      "sha256": "27044ac283a351a6deed60a881296c072fa71a1c2ecb72712255b842a1374c9f",
-      "packHash": "2130421bf1fa2fc72f79ccdae8e21d849ac0646a3de6b527250043d642602618",
-      "category": "functional",
-      "categoryWhy": "补写了 pack.json（原件是 install.mjs + manifest.json 形态）",
-      "packId": "fanpack-kazdel-mod",
-      "path": "mods/fanpack-kazdel-mod/1.2.1/mod.zip",
-      "sizeBytes": 614891,
-      "fileCount": 48,
-      "unpackedBytes": 3301218,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "**适配说明**：原件以 `install.mjs` + `files.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
-        "修复立绘引用：payload/data 下的 chess.json / config.json 与立绘登记。",
-        "站上已存在同名兼容改写版（stationId 1820c9b571c8）；本条是**原件（修复版）**。"
-      ]
-    },
-    {
-      "id": "hubvideo",
-      "name": "大厅视频背景（独立 mod）",
-      "version": "1.2.0",
-      "sha256": "88ecc546247c4caecb77ae918202bd2ff3305fdc3edc2377db8c914fd287f3c3",
-      "packHash": "b1476449510907d8abc92ec6b34577c0861e883a7448244a1d0b3d4bd77cc7e4",
-      "category": "functional",
-      "categoryWhy": "补写了 pack.json（原件是 install.mjs + manifest.json 形态）",
-      "packId": "hubvideo",
-      "path": "mods/hubvideo/1.2.0/mod.zip",
-      "sizeBytes": 1599901,
-      "fileCount": 9,
-      "unpackedBytes": 1664122,
-      "assets": {
-        "assetFree": false,
-        "count": 2,
-        "bytes": 1563310,
-        "byKind": {
-          "png": 2
-        },
-        "containers": []
-      },
-      "notes": [
-        "**适配说明**：原件以 `install.mjs` + `manifest.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
-        "大厅背景面板新增第三个页签，支持 MP4 / WebM 视频背景（客户端 CSS/JS + 服务端转发 + 对话框改造）。"
-      ]
-    },
-    {
-      "id": "ave-mujica",
-      "name": "颂乐人偶（Ave Mujica）",
-      "version": "1.8.24",
-      "sha256": "a5adff9226983faef872d2a26f42079ec61160779647c25f832682446ce68c20",
-      "packHash": "d64c50c51e10bb8a3212a1d03b469ed7b13c8c3420fc958e7b575ba2b73bd85d",
-      "category": "functional",
-      "categoryWhy": "声明了 content（bonds/chess/operators）",
-      "packId": "ave-mujica",
-      "path": "mods/ave-mujica/1.8.24/mod.zip",
-      "sizeBytes": 18001810,
-      "fileCount": 1108,
-      "unpackedBytes": 31479202,
-      "assets": {
-        "assetFree": false,
-        "count": 839,
-        "bytes": 24233376,
-        "byKind": {
-          "png": 63,
-          "m4a": 1,
-          "mp3": 96,
-          "webp": 643,
-          "atlas": 18,
-          "skel": 18
-        },
-        "containers": []
-      },
-      "notes": [
-        "原件形态：唯一顶层目录 `ave-mujica/` + pack.json，已是规范工坊包。",
-        "站上已有旧版 ave-mujica 1.1.0；本条是 1.8.24 新版本，按新版本收录。"
-      ]
-    },
-    {
-      "id": "nlc-skins",
-      "name": "国家图书馆联动皮肤（NLC 三款 + 追忆回合修复）",
-      "version": "1.0.0",
-      "sha256": "9dd82dc4e98c735005363fbf4f979e25fe3d443f29a5be3ea388e7536af20417",
-      "packHash": "98c51fa49dcaece095288e3582310ca182851d4c1e66a1adb281837733701bc6",
-      "category": "functional",
-      "categoryWhy": "补写了 pack.json（原件是 .ps1 安装器形态）",
-      "packId": "nlc-skins",
-      "path": "mods/nlc-skins/1.0.0/mod.zip",
-      "sizeBytes": 5154715,
-      "fileCount": 39,
-      "unpackedBytes": 10604468,
-      "assets": {
-        "assetFree": false,
-        "count": 30,
-        "bytes": 7325735,
-        "byKind": {
-          "png": 18,
-          "atlas": 6,
-          "skel": 6
-        },
-        "containers": []
-      },
-      "notes": [
-        "**适配说明**：原件是 PowerShell 安装器（`Install-NLC-Skins.ps1`）+ 整文件覆盖；本次补写 pack.json 并**去掉 .ps1**，按工坊包形态交付。",
-        "含三款 2026-10-16 官方皮肤：黍·源远流长、烛煌·夜行烛火、琳琅诗怀雅·盛世之象（头像 / 商店立绘 / 战斗模型 Spine 三件套）。",
-        "⚠️ **含官方素材**：全部从国服客户端用 UnityPy 解包，版权归鹰角网络 / Yostar，仅供非商业个人使用。",
-        "另附 jibian_zhuiji（追忆）卡牌引擎修复：`_engine-fix-zhuiji/server/match/match/phases.js`，修「回到第 10 回合不出怪/卡死」。"
-      ]
-    },
-    {
-      "id": "csp-allow",
-      "name": "跨域资源放行（CSP 声明）",
-      "version": "1.1.0",
-      "sha256": "2c82db6601157390cab95ae169e6df6f524d46f68643b1efce43774eb6e79701",
-      "category": "functional",
-      "categoryWhy": "声明了 csp 白名单；需要基座支持 plugin.json 的 csp 字段",
-      "packId": "csp-allow",
-      "path": "mods/csp-allow/1.1.0/mod.zip",
-      "sizeBytes": 1433,
-      "fileCount": 3,
-      "unpackedBytes": 1854,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "插件包（plugin.json）：需要基座支持 `csp` 字段（server/http/csp.js + server/index.js + shared/plugins/manifest.js 三处改动），否则装了不生效。",
-        "只接受明确的 https 源，拒绝 `*` / `unsafe-inline` / `unsafe-eval`；`\"csp\": \"off\"` 完全关闭 CSP。",
-        "装好后要在 plugins/config.json 的 trusted 里钉 lock sha256，并重启服务端。",
-        "**1.1.0（2026-10-21）**：基座已内置 `csp` 字段解析与合并（`shared/plugins/manifest.js` / `server/http/csp.js` / `server/index.js`），本包现在装好、钉 lock、重启即可生效；同源的声明也已写进「大厅音乐 1.9.1」，只装音乐包时无需再装本包。"
-      ]
-    },
-    {
-      "id": "hub-sections",
-      "name": "大厅栏位开关（设置里 5 个开关 + 折叠把手）",
-      "version": "1.3.2",
-      "sha256": "8c8d12bbd874d69701b0fbc642e042493c3990fe0408cb5c6be121cefbe83d7b",
-      "category": "functional",
-      "categoryWhy": "插件包（plugin.json），code.client 覆盖前端",
-      "packId": "hub-sections",
-      "path": "mods/hub-sections/1.3.2/mod.zip",
-      "sizeBytes": 24829,
-      "fileCount": 0,
-      "unpackedBytes": 0,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "**适配说明**：原件是 `install.mjs` 安装器（新增 2 个模块 + 改 `public/js/ui/settings.js` 一行 import 一行挂载）。本包把安装结果固化成 `code.client` 覆盖层，安装器与 `.bat` 未收。",
-        "纯前端，不需要服务端改动。"
-      ]
-    },
-    {
-      "id": "mod-hubmusic",
-      "name": "大厅音乐 · 在线平台（QQ音乐 / 网易云 / 酷我）",
-      "version": "1.9.1",
-      "sha256": "b99943d0a9aebb760974dbb58023c7ace92f4fff0b935563ada1093c81646cfd",
-      "category": "functional",
-      "categoryWhy": "插件包（plugin.json），code.client 覆盖前端",
-      "packId": "mod-hubmusic",
-      "path": "mods/mod-hubmusic/1.9.1/mod.zip",
-      "sizeBytes": 74962,
-      "fileCount": 0,
-      "unpackedBytes": 0,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "**适配说明**：原件是 `install.mjs` 安装器（面向 0.2.5/0.3.0），本包把**前端部分**固化成 `code.client`。",
-        "⚠️ 原件的服务端（`server/lobbyMusic.js` + `server/http/routes.js` 的 `/lobby-music/` 分支）**无法通过插件机制装载**，已放在包内 `manual-server/` 供手工安装 —— 不装它时搜索/在线解析会 404，本地文件播放仍可用。",
-        "⚠️ 与 `stronghold-ui` 都覆盖 `js/ui/lobbyMusic.js`；插件按 id 字典序覆盖，`stronghold-ui` 在后会盖掉本包，两者**二选一**。",
-        "**1.9.1（2026-10-21）**：插件清单新增 `csp` 声明 —— 服务端把封面（speedcdn / *.126.net）与歌词搜索接口（api.qijieya.cn / api.injahow.cn / www.ffapi.cn）并入站点 CSP；只放宽「从哪取」，script-src 不变。需服务端 ≥ 本次版本并重启一次。"
-      ]
-    },
-    {
-      "id": "vanilla-plus",
-      "name": "原版增强（vanilla-plus）",
-      "version": "0.1.19",
-      "sha256": "b3cb6e3c35fea580e501794d7c1d3f478e73cb4c94d5e6c0d0f147f35bbab0a9",
-      "category": "functional",
-      "categoryWhy": "content 类插件（数据补丁 + 新记录）",
-      "packId": "vanilla-plus",
-      "path": "mods/vanilla-plus/0.1.19/mod.zip",
-      "sizeBytes": 299093,
-      "fileCount": 8,
-      "unpackedBytes": 0,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "**适配说明**：原件 `原版增强安装.zip` 里带了两个 content 插件，本包是其中的 `vanilla-plus`（另一个 `feihuo-liuxing` 因 Spine 模型是压缩格式、pack 解析不了，单独走未兼容）。",
-        "content 类插件不需要 owner pin。"
-      ]
-    },
-    {
-      "id": "watch-lineup",
-      "name": "观阵 · 战斗中查看队友布阵（只读透传）",
-      "version": "1.0.0",
-      "sha256": "8da58c0eeb0c3e3420ea35de9f18cf3b086b121a7f393199030dd55679386d8d",
-      "category": "functional",
-      "categoryWhy": "声明了 server / client / notices",
-      "packId": "watch-lineup",
-      "path": "mods/watch-lineup/1.0.0/mod.zip",
-      "sizeBytes": 15157,
-      "fileCount": 12,
-      "unpackedBytes": 31693,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "工坊包（pack.json）：目标线 game 0.15.1 || 0.16.x、api >=1 <2；modmgr 0.3.1 基座没有 pack.msg 机制，装了不生效。",
-        "纯只读透传：matchClass 收到查看请求后调引擎现成 prepFieldMeta 拼装读法并原样 sendTo 给观看者，不做模拟、不改对局数值。combat:true 是能力面声明（引擎硬闸门要求 matchClass 挂载点），不等于会改战斗结果。",
-        "开关是观看者自己的（仿 g.autoplay，默认关；关着时本包一个分支都不进）。",
-        "战斗中查看时主画面会临时切到该棋盘，点「返回自己」即恢复；clientCombat 战场 fieldId 恰为 n:<pid>，先查 fields 再进布阵板分支。",
-        "与引擎内置实现（Deploy#1/#2、Forge#8/#9）语义一致、互不依赖：没合引擎 PR 的树上独立生效，合了的树上共存。",
-        "不含任何图片 / 音频 / 字体 / Spine 素材，无第三方代码。"
-      ]
-    },
-    {
-      "id": "feihuo-liuxing",
-      "name": "原版增强 · 飞火流星（新干员 + 立绘 + Spine 模型）",
-      "version": "0.3.4",
-      "sha256": "0794aaea9146b42f883aae2b0674381d169ba8b4755a15b1f810bc31f26dba01",
-      "category": "functional",
-      "categoryWhy": "content 类插件（新干员记录 + 数据 + 素材）",
-      "packId": "feihuo-liuxing",
-      "path": "mods/feihuo-liuxing/0.3.4/mod.zip",
-      "sizeBytes": 1090046,
-      "fileCount": 19,
-      "unpackedBytes": 0,
-      "assets": {
-        "assetFree": false,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "**适配说明**：原件 `原版增强安装.zip` 里的 `feihuo/plugins/feihuo-liuxing/`，原样提取（去掉官方 0.3.1 打不出来的坏 lock）。",
-        "⚠️ **需要基座修一行才能装**：`server/plugins/pack.js` 的 spine 收集条件从 `manifest.class === 'cosmetic' && manifest.parts.assets` 改成 `manifest.parts.assets`。原因：`shared/plugins/manifest.js` 的 `PARTS.assets.classes` 明确允许 content/script/trusted，但 pack 的实现只对 cosmetic 收集 clip，导致 content 类声明 spine 必然 `PLUGIN_LOCK_MISSING`。修完重打包得到 `18 files, 2 Spine models`。",
-        "content 类不需要 owner pin。"
-      ]
+        "素材清点：zip 内与容器内部都没有图片 / 音频 / 字体 / Spine。"
+      ],
+      "engineLoad": {
+        "packsLoaded": [
+          "xingkong-chess-extras"
+        ],
+        "errors": [],
+        "layer": "A",
+        "combat": true
+      }
     }
   ],
   "rejected": [],
