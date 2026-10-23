@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-21T14:09:41.540Z",
+ "generatedAt": "2026-10-23T17:12:12.801Z",
  "mods": [
   {
    "id": "ai-scoring",
@@ -9,14 +9,14 @@
    "note": "插件包（plugin.json，不是 pack.json）：需要基座支持 `code` 字段与 clientOverlay（manifest 认字段 + server/index.js 建表 + static.js 命中；引擎仓 PR 分支 gpt/plugin-client-overlay），否则插件文件不下发、装了静默无效果。\n装好后在 plugins/config.json 的 trusted 里钉 plugin.lock.json 整份原文的 sha256（54c6598cff1af9f6e6d605978c005b0a5db8ac230f3ce5b67d089e515d14d550），并设 SP_PLUGIN_SCRIPTS=trusted 或 trusted-force（仅本机），重启生效；缺任一条被 PLUGIN_TRUST_PIN / PLUGIN_SCRIPTS_DISABLED 静默禁用。\n功能：玩家点「准备就绪」采集本机布阵进本地库（localStorage，400 条上限）→ 浏览器空闲时自带 Worker 跑确定性标准场景彩排（固定第 1 回合模板波次 + 固定 seed，官方 sim/rehearsal.js 同式：-1000×漏怪+击杀）→ 最优分回写并 POST /api/lineup-score（fail-open）。分数=布阵库排序用的标准场景分，不是真实回合预测。2026-10-21 部署树 3015 本机全链实测通过。",
    "author": "引擎部署树 `plugins/ai-scoring/`（jingjiangze）",
    "license": "GPL-3.0-or-later（与引擎仓 `LICENSE` 一致）",
-   "compatAuthor": "",
+   "compatAuthor": "**未声明**",
    "isCompat": false,
    "from": "`jingjiangze/Stronghold-Protocol-Server-Deploy` 分支 `ms` 的 `plugins/ai-scoring/`（2026-10-21 评分闭环修复后形态：自带 scoringWorker + 信号兜底，lockHash `54c6598c…`）",
    "sizeBytes": 14444,
    "fileCount": 8,
    "sha256": "e63e9e539a51e053b6173ded1fd5cb0d94ce18485d43083f8fb25a5ede9c679a",
    "packId": "ai-scoring",
-   "addedAt": 1792656000000,
+   "addedAt": 1792737523000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ai-scoring/0.3.1/mod.zip"
   },
   {
@@ -1330,7 +1330,7 @@
    "fileCount": 7,
    "sha256": "47718046614f2a249fce5d8ff73ef4b1be0bf11266745f5294e1d6d3aa080595",
    "packId": "",
-   "addedAt": 0,
+   "addedAt": 1792591781000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/watch-lineup/1.0.2/mod.zip"
   },
   {
