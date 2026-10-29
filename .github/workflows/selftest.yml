@@ -40,7 +40,8 @@ jobs:
           fail=0
           for t in selftest.mjs selftest-admin.mjs selftest-compat.mjs selftest-publisher.mjs selftest-feedback.mjs; do
             printf '%-26s ' "$t"
-            node "site/$t" > "/tmp/$t.log" 2>&1; rc=$?
+            rc=0
+            node "site/$t" > "/tmp/$t.log" 2>&1 || rc=$?
             printf 'rc=%s pass=%s fail=%s\n' "$rc" "$(grep -ac '  ✓' /tmp/$t.log)" "$(grep -ac '✗' /tmp/$t.log)"
             if [ "$rc" != 0 ]; then
               echo "::group::$t 的完整输出"
