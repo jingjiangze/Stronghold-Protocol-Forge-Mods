@@ -87,11 +87,28 @@ jobs:
         with:
           node-version: 22
 
+      - name: 算出本 PR 改了哪些包（决定「拦」还是「只报」）
+        id: scope
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -uo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/files?per_page=100" --jq '.[].filename' > /tmp/changed.txt || true
+          CHANGED=$(grep -E '^(mods|incoming)/' /tmp/changed.txt || true)
+          echo "本 PR 动的包相关文件：${CHANGED:-（无）}"
+          { echo "files<<__EOF__"; echo "$CHANGED"; echo "__EOF__"; } >> "$GITHUB_OUTPUT"
+
       - name: 跑契约检查
+        env:
+          CHANGED: ${{ steps.scope.outputs.files }}
         run: |
           set -uo pipefail
           ARGS=(--repo src --engine engine)
           if [ -d engine-prod/shared/plugins ]; then ARGS+=(--engine2 engine-prod); else echo "::warning::第二引擎没检出，跳过对照"; fi
+          # 有改动清单 ⇒ 只对这些包判硬失败；历史遗留只报（理由见脚本头部注释）
+          if [ -n "$CHANGED" ]; then ARGS+=(--fail-on $CHANGED); fi
           node ci/.github/ci/engine-contract.mjs "${ARGS[@]}"
 
   upstream-freshness:
