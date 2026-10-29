@@ -139,9 +139,12 @@ if (!fs.existsSync(sitePath)) {
   const onlyIndex = [...indexSet].filter((k) => !siteSet.has(k));
   const onlySite = [...siteSet].filter((k) => !indexSet.has(k));
   const msgOf = (arr) => `${arr.slice(0, 8).join(', ')}${arr.length > 8 ? ` …（共 ${arr.length}）` : ''}`;
-  // 站点数据陈旧就是 2026-10-29 那样的病（索引换了、mods.json 没重生成）⇒ 一律硬失败
-  if (onlyIndex.length) bad(`索引里有、mods.json 里没有：${msgOf(onlyIndex)} —— mods.json 是旧的，站点看不到这些包`);
-  if (onlySite.length) bad(`mods.json 里有、索引里没有：${msgOf(onlySite)} —— mods.json 停在旧状态，站点会提供已经不存在的下载`);
+  // 索引本身在这次 PR 里被改过 ⇒ mods.json 必然暂时落后（它由合并后的 build-mods-json 重新生成），
+  // 这时只报不拦；否则（只改 mods.json 或谁手改了其中一份）就是真问题，硬拦。
+  const indexChanged = failOn.includes('mods/index.json');
+  const drift = indexChanged ? warn : bad;
+  if (onlyIndex.length) drift(`索引里有、mods.json 里没有：${msgOf(onlyIndex)} —— mods.json 是旧的${indexChanged ? '（本 PR 改了索引，合并后 build-mods-json 会重生成）' : '，站点看不到这些包'}`);
+  if (onlySite.length) drift(`mods.json 里有、索引里没有：${msgOf(onlySite)} —— mods.json 停在旧状态${indexChanged ? '（同上，等待重生成）' : '，站点会提供已经不存在的下载'}`);
   if (!onlyIndex.length && !onlySite.length) note(`  两侧一致：${siteSet.size} 条（已排除 ${entries.length - listed.length} 条 documentation）`);
   note(`  mods.json generatedAt=${site.generatedAt ?? '无'} / sig=${site.sig ? '有' : '无'} / keyId=${site.keyId ?? '无'}`);
   if (!site.sig) warn('modsite/mods.json 没有签名（客户端要求签名时会拒绝载入）');
