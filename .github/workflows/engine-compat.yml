@@ -1,0 +1,163 @@
+name: 门 — 引擎兼容（清单契约 / 索引↔目录 / 上游新鲜度）
+
+# 这条门补的是 mod-gate 测不到的三类东西：
+#   ① 引擎侧清单契约 —— 一个「能过 mod-gate 静态四项、但引擎会拒」的包（api 越界 / class 不认识 /
+#      app 不覆盖 / manifest 不是 2），今天要等**合并之后**的 auto-promote 才会红，那时 PR 已经进去了。
+#      这里在 PR 上就调引擎自己那份解析器（不执行插件代码）把它判出来。
+#   ② 索引 ↔ 目录 ↔ 站点数据三者一致 —— 索引指向的 mod.zip 在不在、sha256 对不对、
+#      盘上有没有「传了但索引里没有」的孤儿包、mods.json 与索引的 (id, version) 集合是否相等。
+#   ③ 上游新鲜度 —— main 必须仍是上游的纯镜像（2026-10-20 有人往 main 直推了 2 个 workflow 提交，
+#      之后 sync-upstream-mods 每 6 小时红一次、连续 3 天没人发现，站点因此少了 9 个上游 mod）。
+#
+# 安全口径：PR 事件下**用 base 分支那一份检查脚本**（checkout 到 ci/），只把 PR 的检出当数据读。
+# 检查脚本本身只解析清单 JSON、不 import 也不执行任何包内代码。
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'mods/**'
+      - 'incoming/**'
+      - 'modsite/mods.json'
+      - 'tools/promote-incoming.mjs'
+      - '.github/ci/**'
+      - '.github/workflows/engine-compat.yml'
+  workflow_dispatch:
+    inputs:
+      engine_ref:
+        description: '引擎 ref（默认取仓库变量 MODSITE_ENGINE_REF，再默认 main）'
+        required: false
+        type: string
+  schedule:
+    - cron: '23 6 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engine-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: 引擎侧清单契约 + 索引一致
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 检出本仓（PR 的内容，只当数据读）
+        uses: actions/checkout@v4
+        with:
+          path: src
+          fetch-depth: 1
+
+      - name: 检出检查脚本（PR 事件用 base，防 PR 自己改检查器）
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: ci
+          fetch-depth: 1
+
+      - name: 检出检查脚本（非 PR 事件用本次 ref）
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: ci
+          fetch-depth: 1
+
+      - name: 检出闸门引擎（与 auto-promote 同一条线）
+        uses: actions/checkout@v4
+        with:
+          repository: jingjiangze/Stronghold-Protocol-Forge
+          ref: ${{ github.event.inputs.engine_ref || vars.MODSITE_ENGINE_REF || 'main' }}
+          path: engine
+          fetch-depth: 1
+
+      - name: 检出第二引擎（产品线 master，只做对照不参与判定）
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: jingjiangze/Stronghold-Protocol-Forge
+          ref: master
+          path: engine-prod
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 跑契约检查
+        run: |
+          set -uo pipefail
+          ARGS=(--repo src --engine engine)
+          if [ -d engine-prod/shared/plugins ]; then ARGS+=(--engine2 engine-prod); else echo "::warning::第二引擎没检出，跳过对照"; fi
+          node ci/.github/ci/engine-contract.mjs "${ARGS[@]}"
+
+  upstream-freshness:
+    name: 上游新鲜度（main 必须是纯镜像）
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # PR 上只报告、不拦合并（上游落后不是这次 PR 的错）；定时跑才拦。
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: main 是否仍是上游纯镜像
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          UPSTREAM_URL="https://github.com/XiaMo233M/Stronghold-Protocol-Forge-Mods.git"
+          git remote add upstream "$UPSTREAM_URL" 2>/dev/null || git remote set-url upstream "$UPSTREAM_URL"
+          git fetch -q --no-tags --filter=blob:none origin main master
+          git fetch -q --no-tags --filter=blob:none upstream main
+          UP=$(git rev-parse refs/remotes/upstream/main)
+          MIRROR=$(git rev-parse refs/remotes/origin/main)
+          echo "上游 main = $UP"
+          echo "我们的 main = $MIRROR"
+          if git merge-base --is-ancestor "$MIRROR" "$UP"; then
+            echo "✓ main 是上游的祖先（纯镜像成立）"
+          else
+            echo "::error::main 上有上游没有的提交（$MIRROR）—— sync-upstream-mods 的 mirror-main 会一直红，master 收不到上游。处置：把 main 复位成上游 head（先给自有提交打 tag 留档）。"
+            exit 1
+          fi
+          BEHIND=$(git rev-list --count refs/remotes/origin/master.."$UP" 2>/dev/null || echo 0)
+          echo "master 落后上游 $BEHIND 个提交"
+          {
+            echo "### 上游新鲜度"
+            echo
+            echo "| 项 | 值 |"
+            echo "|---|---|"
+            echo "| 上游 main | \`$UP\` |"
+            echo "| 我们的 main | \`$MIRROR\`（纯镜像成立） |"
+            echo "| master 落后上游 | $BEHIND 个提交 |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          STRICT="${{ vars.MODSITE_UPSTREAM_STRICT }}"
+          LIMIT="${{ vars.MODSITE_UPSTREAM_MAX_BEHIND || 60 }}"
+          if [ "$STRICT" = "1" ] && [ "$BEHIND" -gt "$LIMIT" ]; then
+            echo "::error::master 落后上游 $BEHIND 个提交（阈值 $LIMIT，MODSITE_UPSTREAM_STRICT=1）"
+            exit 1
+          fi
+
+      - name: 上游有、本站没有的 mod id
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          node --input-type=module -e '
+            const [ours, theirs] = await Promise.all([
+              fetch(`https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/master/mods/index.json`).then((r) => r.json()),
+              fetch("https://raw.githubusercontent.com/XiaMo233M/Stronghold-Protocol-Forge-Mods/main/mods/index.json").then((r) => r.json()),
+            ]);
+            const ids = (d) => new Set((d.mods ?? []).map((m) => m.id));
+            const a = ids(ours);
+            const b = ids(theirs);
+            const missing = [...b].filter((x) => !a.has(x));
+            const extra = [...a].filter((x) => !b.has(x));
+            console.log(`本站 ${a.size} 个 id / 上游 ${b.size} 个 id`);
+            console.log(`上游有、本站没有（${missing.length}）：${missing.join(", ") || "无"}`);
+            console.log(`本站有、上游没有（${extra.length}）：${extra.join(", ") || "无"}`);
+          '

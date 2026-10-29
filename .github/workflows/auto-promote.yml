@@ -72,18 +72,51 @@ jobs:
           path: engine
           fetch-depth: 1
 
+      - name: 算出本 PR 动了哪些 incoming/<名>/
+        id: scope
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -uo pipefail
+          # 只晋升**本 PR 动过**的 incoming/<名>/。
+          # 旧的实现是 PR 事件下 `INCOMING` 为空 ⇒ 走 `--all` ⇒ 把整个收件区重跑一遍，
+          # 撞上一个历史遗留的坏候选（incoming/versus 的 zip 里没有 pack.json）就整批红，
+          # 于是**任何** incoming PR 合进来都上架不了（实测 2026-10-29 run 40910770508）。
+          DIRS=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/files?per_page=100" --jq '[.[].filename | capture("^incoming/(?<d>[^/]+)/").d] | unique | .[]' 2>/dev/null || true)
+          DIRS=$(printf '%s\n' "$DIRS" | grep -v '^$' || true)
+          echo "本 PR 动过的 incoming 子目录：${DIRS:-（无）}"
+          { echo "dirs<<__EOF__"; echo "$DIRS"; echo "__EOF__"; } >> "$GITHUB_OUTPUT"
+
       - name: 晋升（四道闸门不过就红，绝不带伤上架）
         env:
           INCOMING: ${{ github.event.inputs.incoming }}
           PR: ${{ github.event.pull_request.number }}
           ACTOR: ${{ github.event.pull_request.merged_by.login || github.actor }}
+          DIRS: ${{ steps.scope.outputs.dirs }}
+          EVENT: ${{ github.event_name }}
         run: |
           set -uo pipefail
-          ARGS=(--engine ./engine)
-          if [ -n "$INCOMING" ]; then ARGS+=(--incoming "incoming/$INCOMING"); else ARGS+=(--all); fi
-          if [ -n "$PR" ]; then ARGS+=(--pr "$PR"); fi
-          if [ -n "$ACTOR" ]; then ARGS+=(--actor "$ACTOR"); fi
-          node tools/promote-incoming.mjs "${ARGS[@]}" --write
+          COMMON=(--engine ./engine)
+          if [ -n "$PR" ]; then COMMON+=(--pr "$PR"); fi
+          if [ -n "$ACTOR" ]; then COMMON+=(--actor "$ACTOR"); fi
+          if [ -n "$INCOMING" ]; then
+            # workflow_dispatch 指名一个目录
+            node tools/promote-incoming.mjs --incoming "incoming/$INCOMING" "${COMMON[@]}" --write
+          elif [ -n "$DIRS" ]; then
+            # PR 合并：只跑本 PR 动过的目录
+            for d in $DIRS; do
+              echo "::group::晋升 incoming/$d"
+              node tools/promote-incoming.mjs --incoming "incoming/$d" "${COMMON[@]}" --write
+              echo "::endgroup::"
+            done
+          elif [ "$EVENT" = "pull_request" ]; then
+            echo "本 PR 没有动 incoming/ —— 不需要上架"
+          else
+            # 手动全量：保留 --all（坏候选现在只会被逐个报出来，不再整批卡死）
+            node tools/promote-incoming.mjs --all "${COMMON[@]}" --write
+          fi
 
       - name: 提交并直推 master
         env:

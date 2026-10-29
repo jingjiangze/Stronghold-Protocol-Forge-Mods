@@ -50,11 +50,21 @@ function candidates() {
     return readdirSync(incRoot, { withFileTypes: true })
       .filter((e) => e.isDirectory())
       .map((e) => join(incRoot, e.name))
-      .filter((d) => existsSync(join(d, 'mod.zip')));
+      .filter((d) => Boolean(zipOf(d)));
   }
   const d = resolve(String(incomingArg));
-  if (!existsSync(join(d, 'mod.zip'))) { console.error(`✖ ${d} 里没有 mod.zip`); process.exit(2); }
+  if (!zipOf(d)) { console.error(`✖ ${d} 里没有 mod.zip，也没有唯一的 *.zip`); process.exit(2); }
   return [d];
+}
+
+// 一个收件目录里的包：优先 `mod.zip`；否则取目录里**唯一**的那个 `.zip`。
+// 历史上有把包命名成 `thanks-0.1.0.zip` 的 —— 旧版只认 mod.zip，这类包永远不会被晋升。
+function zipOf(dir) {
+  const exact = join(dir, 'mod.zip');
+  if (existsSync(exact)) return exact;
+  let names = [];
+  try { names = readdirSync(dir).filter((n) => n.toLowerCase().endsWith('.zip')); } catch { return null; }
+  return names.length === 1 ? join(dir, names[0]) : null;
 }
 
 // 已在 index 且同 sha 的包跳过（幂等：重跑不产生任何 diff）
@@ -74,9 +84,12 @@ if (!dirs.length) { console.log('没有候选（incoming/ 为空或没有 mod.zi
 
 const promoted = [];
 const skipped = [];
+// 单个坏候选不再让整批 exit 1（run 40910770508 就是被 incoming/versus 卡死的）：
+// 收集 → 继续处理其余 → 结束时汇总并置退出码 1。坏包照样报出来、照样不入库。
+const failed = [];
 for (const dir of dirs) {
   const dirName = basename(dir);
-  const zipPath = join(dir, 'mod.zip');
+  const zipPath = zipOf(dir);
   const buf = readFileSync(zipPath);
   const sha = createHash('sha256').update(buf).digest('hex');
   // 粗判 id：先解 zip 找 pack.json（借 build-index 的闸门统一做，这里只为幂等跳过与命名）
@@ -97,7 +110,7 @@ for (const dir of dirs) {
   // 解 zip 读 pack.json（与 build-index 相同的放宽上限；仅读不执行）
   const engineZip = await import(('file://' + join(engine, 'shared/zip.js')).replace(/\\/g, '/'));
   const read = engineZip.zipRead(buf, { maxEntries: 8192, maxTotalBytes: 512 * 1024 * 1024, maxFileBytes: 256 * 1024 * 1024 });
-  if (!read?.ok) { console.error(`✖ ${dirName}: zip 读取失败 ${read?.error ?? ''}`); process.exit(1); }
+  if (!read?.ok) { failed.push(`${dirName}：zip 读取失败 ${read?.error ?? ''}`); continue; }
   const norm = (n) => n.split('\\').join('/').replace(/^\.\//, '');
   let packEntry = read.entries.find((e) => norm(e.name) === 'pack.json');
   let prefix = '';
@@ -105,7 +118,7 @@ for (const dir of dirs) {
     const dirs1 = new Set(read.entries.map((e) => norm(e.name)).filter((n) => n.includes('/')).map((n) => n.split('/')[0]));
     if (dirs1.size === 1) { prefix = [...dirs1][0] + '/'; packEntry = read.entries.find((e) => norm(e.name) === prefix + 'pack.json'); }
   }
-  if (!packEntry) { console.error(`✖ ${dirName}: zip 根与唯一顶层目录里都没有 pack.json`); process.exit(1); }
+  if (!packEntry) { failed.push(`${dirName}：zip 根与唯一顶层目录里都没有 pack.json`); continue; }
   const packJson = JSON.parse(packEntry.data.toString('utf8'));
   const fileCount = read.entries.filter((e) => norm(e.name) && !norm(e.name).endsWith('/')).length;
   const unpackedBytes = read.entries.reduce((a, e) => a + (e.data?.length ?? 0), 0);
@@ -177,22 +190,28 @@ for (const dir of dirs) {
     if (!rejected.length) console.error(out || e.message);
     rmSync(stage, { recursive: true, force: true });
     rmSync(tmpModsRoot, { recursive: true, force: true });
-    process.exit(1);
+    failed.push(`${dirName}：闸门未过（build-index 退出码 ${e.status}）`);
+    continue;
   }
   const result = JSON.parse(child);
   const acc = (result.mods ?? []).find((m) => m.sha256 === sha);
-  if (!acc) { console.error(`✖ ${dirName}: 闸门通过但索引里找不到本条（异常）`); process.exit(1); }
+  if (!acc) { failed.push(`${dirName}：闸门通过但索引里找不到本条（异常）`); continue; }
   const newEntry = acc;
   const newDir = join(tmpModsRoot, newEntry.id, newEntry.version ?? '0.0.0');
-  if (!existsSync(join(newDir, 'mod.zip'))) { console.error(`✖ ${dirName}: 临时副本缺四件套（异常）`); process.exit(1); }
+  if (!existsSync(join(newDir, 'mod.zip'))) { failed.push(`${dirName}：临时副本缺四件套（异常）`); continue; }
 
   promoted.push({ dirName, stationId, newEntry, newDir, stage, tmpModsRoot });
   console.log(`✓ ${dirName} → ${newEntry.id} v${newEntry.version}（${newEntry.category}，层 ${newEntry.engineLoad?.layer ?? '?'}，${buf.length} B）`);
 }
 
+if (failed.length) {
+  console.error(`
+✖ ${failed.length} 个候选没通过（不阻塞其余候选，但本轮仍算红）：`);
+  for (const f of failed) console.error(`  - ${f}`);
+}
 if (!promoted.length) {
   console.log(skipped.length ? `全部跳过：\n  - ${skipped.join('\n  - ')}` : '没有可晋升的包。');
-  process.exit(0);
+  process.exit(failed.length ? 1 : 0);
 }
 
 // ── 外科手术式并进真 mods/（--write 才动）──────────────────────────────────
@@ -265,3 +284,4 @@ if (write) {
   console.log('）');
 }
 for (const s of skipped) console.log(`  跳过：${s}`);
+if (failed.length) process.exitCode = 1;
