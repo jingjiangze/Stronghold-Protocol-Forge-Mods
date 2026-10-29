@@ -166,6 +166,20 @@ details.note summary:hover,details.sha summary:hover{color:var(--mint-400)}
   border:1px solid var(--mint-700);background:var(--bg-2);color:var(--mint-400);
   font-size:13px;white-space:nowrap}
 .dl:hover{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
+.dl[data-busy]{opacity:.65;pointer-events:none}
+
+/* 下载线路 + 进度：线路只决定「从哪儿取」，字节仍按目录里的 SHA256 在浏览器内校验后才落盘 */
+#line{max-width:200px}
+#dlstat{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;display:none;
+  min-width:min(340px,92vw);max-width:min(560px,92vw);padding:12px 16px;border-radius:var(--radius);
+  border:1px solid var(--mint-700);background:var(--bg-2);box-shadow:0 10px 30px #0008;
+  font-size:13px;line-height:1.6}
+#dlstat.on{display:block}
+#dlstat b{color:var(--mint-400);font-weight:600}
+#dlstat b.bad{color:#f88}
+#dlstat .dim{color:var(--text-lo);font-size:12px}
+#dlstat .bar{height:4px;margin-top:8px;border-radius:2px;background:var(--line);overflow:hidden}
+#dlstat .bar i{display:block;height:100%;width:0;background:var(--mint-600);transition:width .15s}
 
 /* 「不兼容 / 参考件」分组：虚线 + 琥珀边，视觉上就与能装的 mod 区分开 */
 .refsec{margin:26px 0 0}
@@ -249,6 +263,10 @@ footer{margin:44px 0 0;padding-top:20px;border-top:1px solid var(--line);display
       <option value="size-desc">按体积 ↓</option>
       <option value="new">按版本</option>
     </select>
+    <select id="line" title="下载线路：直连 GitHub 或经镜像。无论走哪条，字节都要对得上目录里的 SHA256 才会保存。">
+      <option value="auto">下载线路：自动</option>
+      <option value="">直连 GitHub</option>
+    </select>
     <span class="count" id="count"></span>
   </div>
 
@@ -268,6 +286,8 @@ footer{margin:44px 0 0;padding-top:20px;border-top:1px solid var(--line);display
     <div id="refsList"></div>
   </section>
 
+  <div id="dlstat" role="status" aria-live="polite"></div>
+
   <footer>
     <div class="fblock">
       <b>上传投稿</b>
@@ -282,8 +302,10 @@ footer{margin:44px 0 0;padding-top:20px;border-top:1px solid var(--line);display
     <div class="fblock">
       <b>关于这份索引</b>
       由 GitHub Actions 从 <code>mods/index.json</code> + 各包 <code>PROVENANCE.md</code> 预生成
-      （<code>mods.json</code>）。本页是静态的：不查接口、不跑脚本、不碰 Cloudflare。
-      下载直链由 <span id="store"></span> 提供。
+      （<code>mods.json</code>）。本页不查第三方接口：列表只读同源静态文件。
+      下载直链由 <span id="store"></span> 提供；点「下载」时才按上面的「下载线路」依次取
+      （直连 GitHub / 镜像），拿到的字节要与目录里的 <code>SHA256</code> 一致才会保存 ——
+      镜像只换线路，不换内容。
     </div>
   </footer>
 </div>
@@ -384,7 +406,9 @@ function card(m) {
     + '    <div class="card__foot">\n'
     + '      <span class="size">' + (m.fileCount ? esc(m.fileCount) + ' 个文件' : '') + '</span>\n'
     + (m.download
-      ? '      <a class="dl" href="' + esc(m.download) + '" rel="noopener">下载</a>\n'
+      ? '      <a class="dl" href="' + esc(m.download) + '" rel="noopener"'
+        + ' data-dl="' + esc(m.id + (m.version ? '-v' + m.version : '')) + '"'
+        + (m.sha256 ? ' data-sha="' + esc(m.sha256) + '"' : '') + '>下载</a>\n'
       : '      <span class="size">无下载直链</span>\n')
     + '    </div>\n'
     + '  </article>';
@@ -447,7 +471,11 @@ function refCard(m) {
       + esc(String(m.note)) + '</div></details>\n' : '')
     + '    <div class="card__foot">\n'
     + '      <span class="size">' + (m.zip && m.zip.bytes ? (m.zip.bytes / 1024).toFixed(0) + ' KB' : '') + '</span>\n'
-    + (m.download ? '      <a class="dl" href="' + esc(m.download) + '" rel="noopener">下载源码</a>\n' : '')
+    + (m.download
+      ? '      <a class="dl" href="' + esc(m.download) + '" rel="noopener"'
+        + ' data-dl="' + esc((m.id || 'source') + '-source') + '"'
+        + (m.sha256 ? ' data-sha="' + esc(m.sha256) + '"' : '') + '>下载源码</a>\n'
+      : '')
     + '    </div>\n'
     + '  </article>';
 }
@@ -524,6 +552,208 @@ $('funcbar').addEventListener('click', (e) => {
   ACTIVE_FUNC = btn.dataset.f || '';
   renderFuncBar();
   render();
+});
+
+// ---- 下载线路（2026-10-30）--------------------------------------------------------------------
+// 为什么：所有下载直链都指向 raw.githubusercontent.com，而它在不少网络上**整段不通**（实测裸连
+// 25 s 直接 000，同域名给显式 IPv4 却 1.1 s 就回）。旧实现是一个裸 <a href> —— 线路一挂，点「下载」
+// 只换来一张浏览器错误页，连「换条路」的余地都没有。
+//
+// 现在：点下载才按线路依次取（fetch 的失败是可捕获的，<a> 的失败不可捕获），拿到的字节在**浏览器里**
+// 按目录里的 sha256 验过才保存；验不过就拒存并换下一条线路。镜像只换线路、不换内容 —— 这与客户端
+// /mod 管理器里的口径完全一致（那边是 sha256 强制 + 主机白名单）。
+//
+// 只接管 raw.githubusercontent.com 的直链；同源文件（extras/）仍由浏览器直接下载。
+// 没开 CORS 的镜像读不到字节（无法校验），选中它时明确交回浏览器并说清「这条不校验」。
+const LINE_KEY = 'sp-modsite-line';
+const RAW_RE = /^https:\/\/raw\.githubusercontent\.com\//;
+const LINE_PER_TRY_MS = 90000;
+const DIRECT_LINE = { id: '', name: '直连', prefix: '', cors: true };
+let MIRRORS = [];     // [{id,name,prefix,cors}] ← mirrors.json（与 MOD 管理器下载页同一份清单）
+let LINE = 'auto';    // 'auto' | ''（直连） | 某个镜像 id
+
+try { LINE = localStorage.getItem(LINE_KEY) || 'auto'; } catch (e) { /* 隐私模式下拿不到就按自动 */ }
+
+/** 每行一条线路。自动模式只把**能跨域读字节**的排在前面 —— 读不到就没法校验 sha256。 */
+function linesFor(auto) {
+  const usable = MIRRORS.filter((m) => m.cors !== false);
+  if (auto) return [DIRECT_LINE].concat(usable);
+  if (LINE === '') return [DIRECT_LINE];
+  const one = MIRRORS.find((m) => m.id === LINE);
+  return one ? [one] : [DIRECT_LINE];
+}
+const routeOf = (url, line) => (line && line.prefix ? line.prefix + url : url);
+
+// 状态条：用递增序号防「上一轮的隐藏定时器」把新一轮的进度条掐掉。
+let STAT_SEQ = 0;
+function showStat(html) {
+  const el = $('dlstat');
+  el.dataset.seq = String(++STAT_SEQ);
+  el.innerHTML = html;
+  el.classList.add('on');
+  return el;
+}
+function hideStat(ms) {
+  const el = $('dlstat');
+  const mine = el.dataset.seq;
+  setTimeout(() => {
+    if (el.dataset.seq === mine) { el.classList.remove('on'); el.innerHTML = ''; }
+  }, ms || 0);
+}
+const fmtMB = (n) => (n / 1048576).toFixed(1) + ' MB';
+const barOf = (pct) => '<div class="bar"><i style="width:' + Math.max(0, Math.min(100, pct)).toFixed(1) + '%"></i></div>';
+
+/** 取一条线路的字节；失败要能区分「HTTP 错 / 超时 / 跨域读不到」。 */
+async function fetchLine(rawUrl, line, onProgress) {
+  const target = routeOf(rawUrl, line);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), LINE_PER_TRY_MS);
+  try {
+    const r = await fetch(target, { cache: 'no-store', signal: ctrl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const total = Number(r.headers.get('content-length') || 0);
+    if (!r.body || !r.body.getReader) {           // 极老的浏览器：整体读
+      const buf = new Uint8Array(await r.arrayBuffer());
+      onProgress(buf.length, total || buf.length);
+      return buf;
+    }
+    const reader = r.body.getReader();
+    const chunks = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      onProgress(got, total);
+    }
+    const out = new Uint8Array(got);
+    let off = 0;
+    for (const c of chunks) { out.set(c, off); off += c.length; }
+    return out;
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error('超时 ' + (LINE_PER_TRY_MS / 1000) + 's');
+    if (e && e.name === 'TypeError') throw new Error('连不上或被跨域拦下');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** 浏览器内 SHA-256。非安全上下文（http 页面）没有 WebCrypto —— 返回空串，调用方如实说「没验」。 */
+async function sha256Hex(bytes) {
+  if (!(window.crypto && window.crypto.subtle && window.crypto.subtle.digest)) return '';
+  const d = await window.crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function saveBytes(bytes, name) {
+  const blob = new Blob([bytes], { type: 'application/zip' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/** 交给浏览器自己下载（不可校验的镜像只能用这条）。用临时 <a>，不改卡片上原本的 href。 */
+function handToBrowser(url) {
+  const a = document.createElement('a');
+  a.href = url; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// 线路清单：与 MOD 管理器下载页共用 mirrors.json。拿不到就只走直连，不影响列表。
+fetch('mirrors.json', { cache: 'no-store' })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((j) => {
+    MIRRORS = ((j && j.mirrors) || []).filter((m) => m && m.prefix);
+    const sel = $('line');
+    for (const m of MIRRORS) {
+      const o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = '经 ' + (m.name || m.id) + (m.cors === false ? '（不校验）' : '');
+      sel.appendChild(o);
+    }
+    sel.value = LINE;
+    if (sel.value !== LINE) { sel.value = 'auto'; LINE = 'auto'; }   // 记住的镜像已下架 ⇒ 回落自动
+  })
+  .catch(() => {});
+
+$('line').addEventListener('change', () => {
+  LINE = $('line').value;
+  try { localStorage.setItem(LINE_KEY, LINE); } catch (e) { /* 存不了就只在本页生效 */ }
+  const one = LINE === 'auto' ? '' : (LINE === '' ? '直连 GitHub' : ((MIRRORS.find((m) => m.id === LINE) || {}).name || LINE));
+  showStat('<b>下载线路：' + esc(LINE === 'auto' ? '自动（依次试直连与镜像）' : one) + '</b>'
+    + '<br><span class="dim">无论走哪条，字节都要对得上目录里的 SHA256 才会保存。</span>');
+  hideStat(5000);
+});
+
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('a.dl');
+  if (!a) return;
+  const raw = a.getAttribute('href') || '';
+  if (!RAW_RE.test(raw)) return;                 // 同源参考件 / 别的 CDN：浏览器照旧直连
+  e.preventDefault();
+  if (a.dataset.busy) return;
+
+  const name = (a.dataset.dl || 'mod') + '.zip';
+  const want = String(a.dataset.sha || '').trim().toLowerCase();
+  const chosen = MIRRORS.find((m) => m.id === LINE);
+  // 显式选了「不回 ACAO」的镜像：读不到字节也就没法校验 —— 交回浏览器，但必须说清楚。
+  if (LINE !== 'auto' && chosen && chosen.cors === false) {
+    showStat('<b>交给浏览器：经 ' + esc(chosen.name) + '</b>'
+      + '<br><span class="dim">该镜像不允许跨域读字节，页面内无法核对 SHA256。请下载后自行比对：'
+      + (want ? '<br>' + esc(want) : '（该条没有 SHA256）') + '</span>');
+    hideStat(9000);
+    handToBrowser(routeOf(raw, chosen));
+    return;
+  }
+
+  const lines = linesFor(LINE === 'auto');
+  const fails = [];
+  const label = a.textContent;
+  a.dataset.busy = '1'; a.textContent = '下载中…';
+  try {
+    for (const line of lines) {
+      const t0 = Date.now();
+      let lastPaint = 0;
+      showStat('<b>' + esc(name) + '</b> · 线路 ' + esc(line.name)
+        + '<br><span class="dim">正在连接…</span>' + barOf(0));
+      try {
+        const bytes = await fetchLine(raw, line, (got, total) => {
+          const now = Date.now();
+          if (now - lastPaint < 120 && (!total || got < total)) return;
+          lastPaint = now;
+          const pct = total ? (got / total) * 100 : 0;
+          showStat('<b>' + esc(name) + '</b> · 线路 ' + esc(line.name)
+            + '<br><span class="dim">' + fmtMB(got) + (total ? ' / ' + fmtMB(total) : '')
+            + ' · ' + ((now - t0) / 1000).toFixed(1) + 's</span>' + barOf(pct));
+        });
+        const got = await sha256Hex(bytes);
+        if (want && got && got !== want) {
+          // 内容对不上 = 这条线路喂了错的字节。拒绝保存，换下一条（也别把半个坏包留给用户）。
+          fails.push(line.name + '→SHA256 不符');
+          continue;
+        }
+        saveBytes(bytes, name);
+        const secs = ((Date.now() - t0) / 1000).toFixed(1);
+        showStat('<b>✓ 已保存 ' + esc(name) + '</b>'
+          + '<br><span class="dim">线路 ' + esc(line.name) + ' · ' + fmtMB(bytes.length) + ' · ' + secs + 's · '
+          + (want ? (got ? 'SHA256 校验通过' : '未校验（当前不是 https 安全上下文）') : '目录未提供 SHA256') + '</span>');
+        hideStat(12000);
+        return;
+      } catch (err) {
+        fails.push(line.name + '→' + String((err && err.message) || err).slice(0, 40));
+      }
+    }
+    showStat('<b class="bad">所有线路都没取到这份文件</b>'
+      + '<br><span class="dim">' + esc(fails.join('；')) + '</span>'
+      + '<br><span class="dim">可以换个线路再试；或用上面的 SHA256 自行核对后直连下载。</span>');
+    hideStat(20000);
+  } finally {
+    delete a.dataset.busy;
+    a.textContent = label;
+  }
 });
 </script>
 </body>
