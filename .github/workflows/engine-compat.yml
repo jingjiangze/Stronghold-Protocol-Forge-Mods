@@ -109,7 +109,13 @@ jobs:
           if [ -d engine-prod/shared/plugins ]; then ARGS+=(--engine2 engine-prod); else echo "::warning::第二引擎没检出，跳过对照"; fi
           # 有改动清单 ⇒ 只对这些包判硬失败；历史遗留只报（理由见脚本头部注释）
           if [ -n "$CHANGED" ]; then ARGS+=(--fail-on $CHANGED); fi
-          node ci/.github/ci/engine-contract.mjs "${ARGS[@]}"
+          # 首个引入本脚本的 PR 里，base 分支上还没有它 ⇒ 退回用本 PR 那一份（并明确告警）
+          SCRIPT=ci/.github/ci/engine-contract.mjs
+          if [ ! -f "$SCRIPT" ]; then
+            echo "::warning::base 分支还没有 .github/ci/engine-contract.mjs（首个引入它的 PR），本次用本 PR 那一份"
+            SCRIPT=src/.github/ci/engine-contract.mjs
+          fi
+          node "$SCRIPT" "${ARGS[@]}"
 
   upstream-freshness:
     name: 上游新鲜度（main 必须是纯镜像）
