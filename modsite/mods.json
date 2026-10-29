@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-29T17:48:30.134Z",
+ "generatedAt": "2026-10-29T18:27:19.990Z",
  "mods": [
   {
    "id": "ai-scoring",
@@ -18,6 +18,24 @@
    "packId": "ai-scoring",
    "addedAt": 1792737523000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ai-scoring/0.3.1/mod.zip"
+  },
+  {
+   "id": "alliance-20",
+   "name": "同盟模拟 · 20 人分队",
+   "version": "1.1.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.client, code.data；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（5511330fa98c391f7d523453d39474aabe7f1002ea4f78bdfe201ce96e96e2d4）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/alliance-20/，收录即原样。2026-10-30",
+   "author": "（未声明）",
+   "license": "未声明",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/alliance-20/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 137888,
+   "fileCount": 7,
+   "sha256": "e2b776a284faa189235fe6bdd2b5dafd18aa0a1fff77ee550086706ece2f59a9",
+   "packId": "alliance-20",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/alliance-20/1.1.0/mod.zip"
   },
   {
    "id": "ausevaywstr-chess-extras",
@@ -108,6 +126,24 @@
    "packId": "",
    "addedAt": 1791788018000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/capacity-panel/1.0.1/mod.zip"
+  },
+  {
+   "id": "cdn-local",
+   "name": "素材门牌（CDN 指向）",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.static；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（a1f2686b6aaa5a6c3e0ec2847f5fad237140bbc542901240d0344de4da94309a）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/cdn-local/，收录即原样。2026-10-30",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/cdn-local/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 27189,
+   "fileCount": 6,
+   "sha256": "4a2469c33df88d9921ae3d9aebb52ef9cfaaec2866fbd015c4a2ea3a21c4e46a",
+   "packId": "cdn-local",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/cdn-local/0.1.0/mod.zip"
   },
   {
    "id": "cdn-source",
@@ -722,6 +758,24 @@
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/i18n-online-gaps/1.0.0/mod.zip"
   },
   {
+   "id": "loan-pledge",
+   "name": "魔塔·借贷抵押",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.match；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（693f37e1f20c441b01eaf043884147ce57cd9a0b356e12ed90dc209bdb3427a1）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/loan-pledge/，收录即原样。2026-10-30",
+   "author": "（未声明）",
+   "license": "未声明",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/loan-pledge/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 5844,
+   "fileCount": 5,
+   "sha256": "be0cd190adca50eb8eb72c748344ada50befbb5a32c6864d49a8bbcf5297994a",
+   "packId": "loan-pledge",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/loan-pledge/0.1.0/mod.zip"
+  },
+  {
    "id": "makoto-voice",
    "name": "结城理（Persona 3 Reload 联动）· 日语语音 14 条",
    "version": "1.0.0",
@@ -828,6 +882,24 @@
    "packId": "",
    "addedAt": 1791805663000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/morph-plus/1.1.0/mod.zip"
+  },
+  {
+   "id": "mota",
+   "name": "魔塔（无损挂载）",
+   "version": "0.3.1",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.lobby, code.match, code.client, code.data；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（32c3fdc87bc0e12c61e8f69d4a582882403b8c7dfc10501f920c5a70fc1fe145）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/mota/，收录即原样。2026-10-30\n整树 fork（689 文件 / 16.8 MB）：client 59 个与宿主同路径覆盖、server 469 个同名。装前备份宿主 public/ 与 server/。",
+   "author": "（未声明）",
+   "license": "未声明",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/mota/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 4469660,
+   "fileCount": 689,
+   "sha256": "7d7f9248a5e867c679c07d70cf91d1a7142e9ad696fa067777d6dc6b2559ec06",
+   "packId": "mota",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/mota/0.3.1/mod.zip"
   },
   {
    "id": "mota-notice",
@@ -1010,6 +1082,24 @@
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/operator-conflict/1.0.0/mod.zip"
   },
   {
+   "id": "operator-skins",
+   "name": "干员皮肤",
+   "version": "0.3.1",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.client, code.data；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（2eb1ca051335634ef81a809d6c81bf2afda7e9c7315dd40c0e3e087aa4dbde7f）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/operator-skins/，收录即原样。2026-10-30",
+   "author": "（未声明）",
+   "license": "未声明",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/operator-skins/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 20857,
+   "fileCount": 9,
+   "sha256": "bc4284caf57a4225a9db32f6663beb0f34367ad1b0a2f2274313666cfd3b646c",
+   "packId": "operator-skins",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/operator-skins/0.3.1/mod.zip"
+  },
+  {
    "id": "perf-lite",
    "name": "低配优化（关动画与过渡）",
    "version": "1.0.0",
@@ -1082,6 +1172,24 @@
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/quality-tier/1.1.0/mod.zip"
   },
   {
+   "id": "relics-87",
+   "name": "湮灭藏品合集",
+   "version": "3.0.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=content）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.data, code.client；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（a130e6c8cb20e2488fe1373e5c03c3058fb0382c3aadb19649ddf62b7bf8d553）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/relics-87/，收录即原样。2026-10-30\ncontent 类，靠 code.data + 87 张藏品图供数据；单独安装不给对局加内容，是给 mota 藏品系统供料的。",
+   "author": "（未声明）",
+   "license": "未声明",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/relics-87/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 3438886,
+   "fileCount": 90,
+   "sha256": "8c8b24f9bdb75735a801039dfd3bb3e88e836ad94fe719ffeaaa444c5cf7dba9",
+   "packId": "relics-87",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/relics-87/3.0.0/mod.zip"
+  },
+  {
    "id": "rhodes-ship",
    "name": "罗德岛盟约（源石弧修复）",
    "version": "1.1.1",
@@ -1116,6 +1224,24 @@
    "packId": "",
    "addedAt": 1792847402000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/rimbilliton/1.3.0/mod.zip"
+  },
+  {
+   "id": "room-chat",
+   "name": "同盟通讯",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.lobby, code.client；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（56decf1951bbc97fba07991ac97c3e81db225e249bf4151265ad07aabb0ccefa）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/room-chat/，收录即原样。2026-10-30\n含 76 个 .webp 表情素材（community-emotes/）。",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/room-chat/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 218956,
+   "fileCount": 88,
+   "sha256": "f33ddba8a30e4d648b51cb2a2c36103954596edb6ade1ddf85d43a8582de4f42",
+   "packId": "room-chat",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/room-chat/0.1.0/mod.zip"
   },
   {
    "id": "s11-chess-extras",
@@ -1260,6 +1386,24 @@
    "packId": "",
    "addedAt": 1792569152000,
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/sp-skins-index/1.0.0/mod.zip"
+  },
+  {
+   "id": "spectate",
+   "name": "实时观战",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.client；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（72dd5c58bc3e046c64f62f74ca6e914ccb825f1b40df107acf9858c800cebe3b）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/spectate/，收录即原样。2026-10-30",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/spectate/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 9323,
+   "fileCount": 5,
+   "sha256": "93c5e817917727165ee8e02298386a119e5761eb518baf7a83ccbe05dc47780b",
+   "packId": "spectate",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/spectate/0.1.0/mod.zip"
   },
   {
    "id": "srv-notice",
@@ -1496,6 +1640,24 @@
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/vanilla-plus/0.1.19/mod.zip"
   },
   {
+   "id": "versus-room",
+   "name": "对抗房（房间层）",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.lobby；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（819febfc39a8e5fd47988dc7051229f962724ef0467b8041b845856d552352fa）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/versus-room/，收录即原样。2026-10-30",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/versus-room/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 3289,
+   "fileCount": 4,
+   "sha256": "2159316453b1ef8d6f2d739596f0335cbe0e69addea83eaeb67bd2b8a545100b",
+   "packId": "versus-room",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/versus-room/0.1.0/mod.zip"
+  },
+  {
    "id": "voice-lang",
    "name": "语音语种（更正：Forge 已原生支持，这一项不需要 mod）",
    "version": "1.1.0",
@@ -1568,6 +1730,24 @@
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/ws-compression-reference/1.2.0/mod.zip"
   },
   {
+   "id": "xie-room",
+   "name": "协同共竞（房间层）",
+   "version": "0.1.0",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。\n装载面：code.lobby；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。\ntrusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（813c01bfd8c518732c1fa0486799a984f7dc463983be40429fd423b4ecef0a9a）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/xie-room/，收录即原样。2026-10-30",
+   "author": "jingjiangze",
+   "license": "GPL-3.0-or-later",
+   "compatAuthor": "**未声明**",
+   "isCompat": false,
+   "from": "`jingjiangze/stronghold-server` 分支 `baidu` 的 `plugins/xie-room/`（盒子 `/opt/stronghold` 上实际在跑的同一份）",
+   "sizeBytes": 2365,
+   "fileCount": 4,
+   "sha256": "aafd26fffa57025f8e877cbac39e22a8e9540b23e87fdf8f27427259dde1aea2",
+   "packId": "xie-room",
+   "addedAt": 1793298277000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/xie-room/0.1.0/mod.zip"
+  },
+  {
    "id": "xingkong-chess-extras",
    "name": "星空之下棋子扩充（12 名干员）",
    "version": "1.0.0",
@@ -1587,5 +1767,5 @@
   }
  ],
  "keyId": "sp-workshop-2026-10",
- "sig": "/KYFnWRXoKa6gyCZEfVDrULFqpDuZUFi27n9RHLMLUTtea1IDVhHDKNvOXQ9xMo0+jUKw2PpmBeq3w1Yk6FhCA=="
+ "sig": "5c5QOkb3RjAMqMQfnlAxikE+StE3TrGCqxecf71mHFSVrQpBaOCtTrVkGirIfvgKhjpER80Vi8PxrBu3jSceCQ=="
 }
