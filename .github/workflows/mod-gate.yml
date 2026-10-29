@@ -60,7 +60,9 @@ jobs:
           [ -n "$BASE" ] || BASE="$(git rev-parse HEAD~1)"
           echo "base=$BASE"
           # 只关心 mods/** 下的改动：新增/修改的 zip 与 index.json
-          git diff --name-only "$BASE" HEAD > /tmp/changed.txt || true
+          # --diff-filter=ACMR：**排除删除项**。删掉一个 zip（例如上游判定 superseded 的旧版本）
+          # 是合法改动，把它当"文件不在工作树里"判失败是误报；删除留没留悬空索引由 J5 兜。
+          git diff --name-only --diff-filter=ACMR "$BASE" HEAD > /tmp/changed.txt || true
           echo "--- 本 PR 改动文件 ---"; cat /tmp/changed.txt
           # 收 mod.zip（新增或修改的）
           grep -E '^mods/.*/mod\.zip$' /tmp/changed.txt > /tmp/zips.txt || true
