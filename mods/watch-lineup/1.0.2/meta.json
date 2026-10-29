@@ -1,0 +1,12 @@
+{
+ "id": "auto47718046",
+ "area": "auto",
+ "name": "观阵 · 战斗中查看队友布阵（只读透传）",
+ "note": "自动上架（PR #49 合并即审，来自 incoming/watch-lineup）：zip 7 文件 · 16612 B · sha256 47718046614f2a249fce5d8ff73ef4b1be0bf11266745f5294e1d6d3aa080595。",
+ "size": 16612,
+ "sha256": "47718046614f2a249fce5d8ff73ef4b1be0bf11266745f5294e1d6d3aa080595",
+ "uploadedAt": "2026-10-21T14:09:41.054Z",
+ "entries": 7,
+ "unpackedBytes": 34579,
+ "packKind": "functional"
+}

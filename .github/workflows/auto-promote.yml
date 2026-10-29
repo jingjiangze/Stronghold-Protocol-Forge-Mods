@@ -4,7 +4,9 @@
 #   1. 晋升：tools/promote-incoming.mjs —— 合成 staging → 调 build-index.mjs（引擎那一份装载器，四道闸门：
 #      sha256 / pack.json / category / 引擎装载 packsLoaded 恰好 [packId] errors=0）→ 外科手术式并进 mods/index.json
 #      （同 id 旧版本条目替换，其余条目一字不动）→ 重生成 modsite/mods.json（与 build-mods-json.yml 同款逻辑）。
-#   2. 提交：mods/ + mods/index.json + modsite/mods.json 一个提交，**直推 master**（owner 的 fine-grained PAT
+#   2. 提交：mods/ + mods/index.json + modsite/mods.json 一个提交，**直推 master**（owner 的 fine-grained PAT；
+#      push 的 URL 形态必须是 `<user>:<PAT>@github.com/...` —— 实测 `x-access-token:<PAT>` 形态在本仓被拒
+#      （remote: Permission denied to github-actions[bot]，403），换形态即通）
 #      = admin，enforce_admins=false 放行；先例 a71c547）。
 #   3. 部署：master 一动，deploy-pages（GitHub Pages）与 CF Pages 两条腿自动跟上；build-mods-json 的
 #      push 触发会复核 mods.json —— 一致则「无变化 不推分支」。
@@ -50,6 +52,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # mods.json 的 addedAt 要 mod.zip 的首次提交时间（完整历史）
+          # ⚠ 不要持久化 GITHUB_TOKEN：checkout 会把它写成 http.https://github.com/.extraheader，
+          # 而 git push 时该 header 的优先级高于 URL 里的 user:PAT ⇒ GitHub 看到的是只读的
+          # github-actions[bot]（本 workflow permissions: contents: read），push 403 且报
+          # "denied to github-actions[bot]"（实测 2026-10-21 run 39602934525）。
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -97,4 +104,7 @@ jobs:
           fi
           TITLE="${TITLE:-workflow_dispatch}"
           git commit -m "auto-promote: incoming 合并自动上架（${TITLE}）"
-          git push "https://x-access-token:$PAT@github.com/${{ github.repository }}.git" HEAD:master
+          # 双保险：即便某个 checkout 版本又写回了 extraheader，这里也把它摘掉 ——
+          # 否则 GITHUB_TOKEN 的只读身份会盖过 URL 里的 PAT（实测 403 denied to github-actions[bot]）。
+          git config --local --unset-all "http.https://github.com/.extraheader" 2>/dev/null || true
+          git push "https://jingjiangze:$PAT@github.com/${{ github.repository }}.git" HEAD:master

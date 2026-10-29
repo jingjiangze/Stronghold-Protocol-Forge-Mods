@@ -165,7 +165,7 @@ mods/
 
    > 上面这条是**本地安装 / 仓库收录**的形状。**要投到审核站（上传）时反过来**：站点只读 **zip 根**的
    > `pack.json`，套了顶层目录即 400 —— 见 [`SKILL.md`](SKILL.md) §3 与 [`AGENTS.md`](AGENTS.md) §6 ⑧。
-3. 装好后包落在 `app/workshop/<包 id>/`。⚠ **游戏里没有「工坊界面」**（`public/js/screens/` 的 24 个屏里没有
+3. 装好后包落在 `app/workshop/<包 id>/`。⚠ **游戏里没有「工坊界面」**（`public/js/screens/` 下没有
    这样一个屏），所以它**不会**出现在任何界面上；要确认装上了，看启动日志那一行
    `[workshop] applied <n> pack(s): …`，以及游戏内容本身变没变（换的立绘、加的内容）。
    **改完包必须重启服务器** —— 引擎没有热重载。
@@ -184,7 +184,7 @@ mods/
 
 | 文件 | 给谁 | 讲什么 |
 |---|---|---|
-| [SKILL.md](SKILL.md) | **包作者** | 包格式、层、`api` 与 `game`、四个沉默的坑（未知顶层键 / `api` 写成数字 / `content` 没声明 `chess` / 未声明的通道）、`notices` 公告与鸣谢、「有更好的逻辑就用我们的」、面板 `ctx`、署名纪律（含「哪份文件归谁」）、工作流、做不成包的情形、术语约定；**§19 引擎这一版新加的接口面**（`behaviour` 四格 / `target` / `dependencies`·`conflicts` / 宿主 lane / mod 登记册 / **`trait.grantsBonds`（§19.7，已合入）**，**含「还没有」的那几条**）与 **§20 今天就能用的老面**（`server.meta` 条件叠层等） |
+| [SKILL.md](SKILL.md) | **包作者** | 包格式、层、`api` 与 `game`、四个沉默的坑（未知顶层键 / `api` 写成数字 / `content` 没声明 `chess` / 未声明的通道）、`notices` 公告与鸣谢、「有更好的逻辑就用我们的」、面板 `ctx`、署名纪律（含「哪份文件归谁」）、工作流、做不成包的情形、术语约定；**§19 引擎这一版新加的接口面**（`behaviour` **五格** / `target` / `dependencies`·`conflicts` / 宿主 lane / mod 登记册 / **`trait.grantsBonds`（§19.7，已合入）** / **`pack.json.callBudget`（§19.10）** / **房间级 mod 集合与同意（§19.11）** / **第 10 个挂载点 `screen.room.aside`（§19.12）** / **kit 白名单 22 条（§19.13）** / **`stripDiyOverlaps` 投稿口径（§19.14）** / **`globalThis` 回到禁止名单（§19.15）** / **`pack.json.matchKinds`（§19.16）** / **`client.screens` 整屏替换（§19.17）** / **`server.modules[].lane`（§19.18）** / **`server.room.hold`（§19.19）**，**含「还没有」的那几条**）与 **§20 今天就能用的老面**（`server.meta` 条件叠层等） |
 | [AGENTS.md](AGENTS.md) | **维护者 / AI agent** | 五条收录闸门（含「带上真实功能」「`combat` 要标注清楚」）、审核站与兼容包发布流程、操作纪律（批准类端点绝不批量调、绝不打印凭据…） |
 
 两份**不重叠**：一份讲怎么写，一份讲怎么审与怎么发。都读的话，先读 SKILL.md。
@@ -281,6 +281,23 @@ node tools/build-index.mjs --stage /tmp/modrepo-stage --engine <引擎检出> --
 | **`trait.grantsBonds`（特质 → 视为某几个盟约的成员 ⇒ 叠层）** | ✅ 引擎 **`0.17.0`** 起已合入（设计稿 §28.49）：一条 `chess` 记录写 `trait.grantsBonds = ["<盟约 id>", …]`，**一格数据、不用写代码**。盟约 id 不存在或形状写歪 **点名但不拒包**（`TRAIT_GRANT_UNKNOWN_BOND` / `TRAIT_GRANT_BAD_SHAPE` / `TRAIT_GRANT_EMPTY`），作者侧在 `npm run workshop:validate` 时就能看到；不写这一格 ⇒ 逐字节不变、不需要 `golden:update`。想**按条件算**层数（不是固定映射）仍走 `server.meta` —— 两条路的分工见 [SKILL.md](SKILL.md) §19.7 与 §20.1。 |
 | **`server.modules[].channels`（包通道的服务端那一半）** | ✅ 引擎**有**这一格（设计稿 §28.23）：`server.modules[]` 的字段是 `id` / `entry` / `uses` / `write` / **`channels`**。规则四条 —— 每模块 **≤ 8 条**、名字形状同 `client.panels[].messages`、**必须同时声明 `matchClass`**（`MODULES_CHANNELS_NEED_MATCH`）、且每一条都要**被本包某个面板声明过**（`MODULES_UNKNOWN_CHANNEL` 整包拒）。写法与边界见 [SKILL.md](SKILL.md) §19.8。 |
 | **`pack.json.enabled`（装好 ≠ 生效）** | ✅ 引擎**有**这一格（设计稿 §28.50）：**只有布尔**；`true` 与不写**逐字节相同**，`false` 的包**留在原处但不参与**、进装载结论的 `errors`（`ENABLED_FALSE`）并**逐条点名**。见 [SKILL.md](SKILL.md) §19.9。 |
+| **`behaviour` 第 5 格 `diyPoolOverlap`（自选池重叠）** | ✅ 引擎**有**这一格（`shared/behaviour.js:203`）：`report`（缺省）＝逐条点名、池子不动；`strip`＝把**本包**做成棋子的那几名干员从自选池摘出名单。⚠️ 它是全表**第一格「按包读取」**的开关（**刻意不走** `mergeBehaviourDecls`）。三件投稿 `columbia` / `rimbilliton` / `rainbow-squad` 带的就是它 —— 投稿里那个 `stripDiyOverlaps` 顶层键**必须删**并改成这条声明（口径见 [SKILL.md](SKILL.md) §19.1 与 §19.14）。 |
+| **`pack.json.callBudget`（每局每插件的调用次数上限）** | ✅ 引擎**有**这一格（设计稿 §28.52，沙箱档的运行时保护）：`{ max? }`，缺省 **8000**，⭐ **只许收紧不许放宽**（调高 ⇒ `CALL_BUDGET_TOO_HIGH`）。耗尽 ⇒ 回滚该包的 hook / 计时器 / 标记 buff ＋记一笔 `plugin:<包 id>` 的错。`kits/*.js` 的逐单位回调**也归账**，只带 `kits/` 没有 `server.battle` 的包也建账。见 [SKILL.md](SKILL.md) §19.10。 |
+| **房间级 mod 集合与同意（`room.mods` / `MOD_SET_LOCKED` / `MOD_CONSENT_REQUIRED`）** | ✅ 引擎**有**（设计稿 §28.53）：房主可以在房间里改集合（已开局或有人 ready ⇒ `MOD_SET_LOCKED`）；真人进一个声明了模组的房间要在 `room.join` 里带 `consent: true`，否则 `MOD_CONSENT_REQUIRED` —— 同意的是**一份字节指纹**，集合一变就自动作废。见 [SKILL.md](SKILL.md) §19.11。 |
+| **第 10 个界面挂载点 `screen.room.aside`** | ✅ 引擎**有**（设计稿 §28.8）：房间屏（等待开局那一屏）的**旁栏**，由**组件渲染**（不是引擎按需造的浮层）。`PANEL_SEND_TYPES` 同时变成**两条**（`room.appearance` ＋ `room.mods`）；⚠️ `room.create` **永远不在**里面。见 [SKILL.md](SKILL.md) §7 与 §19.12。 |
+| **`pack.json.matchKinds`（第二种对局的声明面）** | ✅ 引擎**有**这一格（设计稿 §28.54）：`matchKinds = [{ id, seats?: { min, max }, label? }]`，每包 **≤ 4 种**、座位 **1..12**、id 形状与包通道同一条。**必须有接收人** —— 本包要有一个挂了 `matchClass` 的 `server.modules` 条目，否则 `MATCHKINDS_NEED_MATCH_CLASS` **整包拒**。它是**声明与协商面，不是分派表**：管理器**不认玩法名**，判定住在包自己的模块里。不写 ⇒ 不进摘要。见 [SKILL.md](SKILL.md) §19.16。 |
+| **`client.screens`（整屏替换）** | ✅ 引擎**有**这一格（设计稿 §28.55）：`client.screens[] = { id, route, module, order?, styles?, data?, messages? }`，路由是**闭枚举**且只有引擎真有的那四条（`title` / `lobby` / `room` / `game`）—— 写 `result` 或 `loadout` 是永远不会命中的死声明。屏 id 与面板**共用**一个包内命名空间。**移动端可用**：路由是语义名、全屏用 `inset: 0`，没有像素或桌面视口假设。见 [SKILL.md](SKILL.md) §19.17。 |
+| **`server.modules[].lane`（包自带一条 WebSocket 通道）** | ✅ 引擎**有**这一格（设计稿 §28.56）：`lane = { path, summary? }`，路径必须落在 `/mod-ws/<本包 id>` 之下。`SERVER_MODULE_USES` 6 → **7**、`SERVER_MODULE_FIELDS` 5 → **6**。⚠️ **结构性保证一个字没改**：包仍然拿不到监听套接字 / 新端口 / 定时器 / 子进程 —— 开与不开、怎么记账都归宿主。`MOD_API_VERSION` **不动**。见 [SKILL.md](SKILL.md) §19.18。 |
+| **`server.room.hold`（空席房间的回收裁决）** | ✅ 引擎**有**这一格（设计稿 §28.57）：只有 `pack.json.server.room.hold = true` 的包才能调 `room.canHold(fn)`（没声明就调 ⇒ `ROOM_HOLD_UNDECLARED` 点名）。**它要 `combat: true`**（`ROOM_HOLD_NEEDS_COMBAT`）—— 它能决定一局会不会因为「没真人了」而被回收。**包决定「留不留」，宿主决定「留多久」**：硬时限 **15 分钟**；多包是 **OR**，时限取**最早**那一票。见 [SKILL.md](SKILL.md) §19.19。 |
 
-> **底座（源码口径）**：本仓库的包对着引擎**源码当前状态**核过 —— `APP_VERSION = 0.18.3`、`UPSTREAM_VERSION = 0.2.6`（`shared/constants.js` 的实值），对齐的提交是引擎 `main` 的 `c0988645`。⚠️ 这里说的是**引擎仓库 `main` 上的源码**，**不是**某个已发布的整合包 —— 可下载的发行版以引擎仓库的 Releases 页为准。上一版文档里写「底座 0.2.4 / 0.2.5」的地方一律以这一行为准。
+> **底座（源码口径）**：本仓库的包对着引擎**源码当前状态**核过 —— `APP_VERSION = 0.19.0`、`UPSTREAM_VERSION = 0.3.0`（`shared/constants.js` 的实值），对齐的提交是引擎 `main` 的 `37e16197e2c73d19e6e554f8bae7ebb32efd2bb8`（发行 tag `v0.19.0-0.3.0`）。⚠️ 这里说的是**引擎仓库 `main` 上的源码**，**不是**某个已发布的整合包 —— 可下载的发行版以引擎仓库的 Releases 页为准。上一版文档里写「底座 0.2.4 / 0.2.5 / 0.2.6」的地方一律以这一行为准。
+> ⚠️ **上游 0.3.0 已合入**（合并提交 `0bfe3727`，落在引擎 `main` 上）⇒ [SKILL.md](SKILL.md) §19 已按合入后的树重核；**§19.16–§19.19 就是这次合入新落的四条面**。
+>
+> ⭐ **引擎 `v0.19.0-0.3.0` 已经发版**（2026-10-16，tag `v0.19.0-0.3.0` → `37e16197`）。这一版的作者可见变化：
+> **§28.54 `matchKinds` / §28.55 `client.screens` / §28.56 `server.modules[].lane` / §28.57 `server.room.hold`** 四格声明面；
+> **kit 白名单 20 → 22**（新开 `@sim/body.js`、`@sim/professions.js`）；**`PACK_FIELDS` 37 → 38**；
+> **`SERVER_MODULE_USES` 6 → 7**（尾巴是 `lane`）；四语 i18n 各补 540 条至 **100 %**（2096/2096）。
+> ⚠️ **`PROTOCOL_VERSION`（2）与 `MOD_API_VERSION`（1）都没动** ⇒ 老包不受影响。
+> 完整包还补进了**官方战斗特效素材**（`public/assets/local/fx/`，12534 个文件）—— 那是**引擎侧发行包**的事，
+> 与本仓库的包无关，但作者若在自己的包里引用这批特效，请以引擎 `v0.19.0-0.3.0` 的完整包为准。
 

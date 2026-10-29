@@ -149,6 +149,67 @@ jobs:
             console.log(`✓ 自检通过：${a.length} 条，全部有下载直链，无说明包`);
           '
 
+      # ---- 目录签名（2026-10-29）-----------------------------------------------------------------
+      # 为什么在源站签：客户端 sp-modmgr.mjs 的 verifyCatalogue() 用内嵌公钥验 `sig`。目录是裸 JSON、
+      # sha256 与 download 同源 ⇒ 站点/DNS 被控时可把一次正常点击变成「装任意主机的包」。签名把
+      # 「这份目录是谁生成的」锚到一把只有本仓密钥的私钥上，改任何一个字节都验不过。
+      #
+      # 用**专用**工坊密钥（keyId sp-workshop-2026-10），不是 App 热更新那把（sp-2026-10）：
+      # 热更新私钥能改写每台设备的客户端包，把它放进一个接受第三方 PR 的仓库只会白白放大暴露面。
+      #
+      # 没配 secret ⇒ 保持未签名 + warning（fork 的定时任务不该因此变红）；配了
+      # vars.MODSITE_REQUIRE_SIG=1 ⇒ 没密钥直接红，绝不产出「看着签了其实没签」的目录。
+      - name: 签名 mods.json（Ed25519）
+        env:
+          SIGN_KEY: ${{ secrets.SP_CATALOG_SIGN_KEY }}
+          SIGN_KEY_ID: ${{ vars.MODSITE_SIGN_KEY_ID || 'sp-workshop-2026-10' }}
+          REQUIRE_SIG: ${{ vars.MODSITE_REQUIRE_SIG }}
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs"), crypto = require("crypto");
+            const PKCS8 = Buffer.from("302e020100300506032b657004220420", "hex");
+            const SPKI  = Buffer.from("302a300506032b6570032100", "hex");
+            const hex = String(process.env.SIGN_KEY || "").trim();
+            const p = "modsite/mods.json";
+            if (!hex) {
+              const msg = "SP_CATALOG_SIGN_KEY 未配置 —— 目录保持未签名";
+              if (String(process.env.REQUIRE_SIG || "") === "1") { console.error("::error::" + msg + "（MODSITE_REQUIRE_SIG=1：拒绝产出未签名目录）"); process.exit(1); }
+              console.log("::warning::" + msg + "（客户端要求签名时会拒绝载入）");
+              process.exit(0);
+            }
+            const seed = Buffer.from(hex, "hex");
+            if (seed.length !== 32) { console.error("::error::SP_CATALOG_SIGN_KEY 必须是 32 字节十六进制"); process.exit(1); }
+            // 规范化：键递归排序、无空白、去掉 sig。必须与客户端 canonicalize() 逐字节一致，
+            // 改这里就等于改协议（tools/apk/canonical.mjs 是同一套规则的权威实现）。
+            const canonicalize = (v) => {
+              if (v === null || v === undefined) return "null";
+              const t = typeof v;
+              if (t === "number") { if (!Number.isFinite(v) || !Number.isInteger(v)) throw new Error("non-integer number in payload"); return String(v); }
+              if (t === "boolean") return v ? "true" : "false";
+              if (t === "string") return JSON.stringify(v);
+              if (Array.isArray(v)) return "[" + v.map(canonicalize).join(",") + "]";
+              if (t === "object") { const ks = Object.keys(v).filter((k) => v[k] !== undefined).sort(); return "{" + ks.map((k) => JSON.stringify(k) + ":" + canonicalize(v[k])).join(",") + "}"; }
+              throw new Error("unsupported value type: " + t);
+            };
+            const key = crypto.createPrivateKey({ key: Buffer.concat([PKCS8, seed]), format: "der", type: "pkcs8" });
+            const pubDer = crypto.createPublicKey(key).export({ format: "der", type: "spki" });
+            const pub = pubDer.subarray(pubDer.length - 32);
+            const doc = JSON.parse(fs.readFileSync(p, "utf8"));
+            const { sig: _old, ...rest } = doc;
+            const payload = Object.assign({}, rest, { keyId: String(process.env.SIGN_KEY_ID || "sp-workshop-2026-10") });
+            const bytes = Buffer.from(canonicalize(payload), "utf8");
+            const sig = crypto.sign(null, bytes, key);
+            // 自验：签完立刻用公钥验一遍，不过就红 —— 绝不产出坏签名
+            const pubKey = crypto.createPublicKey({ key: Buffer.concat([SPKI, pub]), format: "der", type: "spki" });
+            if (!crypto.verify(null, bytes, pubKey, sig)) { console.error("::error::签名自验失败"); process.exit(1); }
+            doc.keyId = payload.keyId;
+            doc.sig = sig.toString("base64");
+            fs.writeFileSync(p, JSON.stringify(doc, null, 1) + "\n");
+            console.log("已签名 mods.json：payload " + bytes.length + " B, sig " + sig.length + " B, keyId " + payload.keyId);
+            console.log("公钥（客户端须内嵌这个）: " + pub.toString("hex"));
+          '
+
       - name: 生成 extras.json（不兼容 / 参考件，不经闸门）
         run: |
           set -uo pipefail
