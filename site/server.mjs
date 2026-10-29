@@ -69,6 +69,7 @@
 //   GET  /mods?kind=…  与  GET /api/mods?kind=…   ← 技术维度筛选，**不传 = 现状**（一字未改）
 //   GET  /mods?func=…  与  GET /api/mods?func=…   ← 功能类目筛选（6 类；可与 kind 叠加）
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, createReadStream, statSync, renameSync, copyFileSync, unlinkSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -1398,9 +1399,56 @@ const allSubs = () => {
 
 // ---------------------------------------------------------------- HTTP 小工具
 
+/** res → 本次请求的 req（每个 res 只属于一个请求，并发下也不会串）。 */
+const REQ_OF = new WeakMap();
+/** 小于这个字节数不压：省 CPU，也免得为几十字节白加一层头。 */
+const GZIP_MIN_BYTES = 1024;
+/** 可压缩的类型（全是文本）。`text/event-stream` 排除：流式响应压了就吐不出来。 */
+const COMPRESSIBLE_TYPE = /^(?:text\/(?!event-stream)|application\/(?:json|javascript|xml|manifest\+json|ld\+json)|image\/svg\+xml)/i;
+
+/** 客户端收不收 gzip：`gzip;q=0` 是明确不收；`*` 算「别的都收」。 */
+const acceptsGzip = (req) => {
+  const ae = String((req && req.headers && req.headers['accept-encoding']) || '');
+  if (!ae) return false;
+  let star = null;
+  for (const part of ae.split(',')) {
+    const segs = part.trim().split(';');
+    const name = segs[0].trim().toLowerCase();
+    if (name !== 'gzip' && name !== 'x-gzip' && name !== '*') continue;
+    let q = 1;
+    for (const prm of segs.slice(1)) {
+      const m = /^\s*q\s*=\s*([0-9.]+)\s*$/i.exec(prm);
+      if (m) q = Number(m[1]);
+    }
+    if (name === '*') { star = q; continue; }
+    return q > 0;                       // 显式写出来的 gzip 以它自己为准
+  }
+  return star !== null && star > 0;
+};
+
+/** 按需压一层：**就地**改 headers（vary / content-encoding / content-length），返回真正要发的实体。
+ *  ⚠️ `sendFile`（/api/file/* 的 zip 下载）走的是另一个出口、自己写 content-length 再 pipe，
+ *  不经过这里 —— 那条路一个字节都不能压，否则下载下来的字节与 sha256 对不上。 */
+const encodeBody = (req, body, headers) => {
+  if (!COMPRESSIBLE_TYPE.test(String(headers['content-type'] || ''))) return body;
+  // Vary 与「这一次压没压」无关：它声明的是「这个地址的响应随这个头而变」，缓存必须按它分桶。
+  headers.vary = headers.vary ? `${headers.vary}, Accept-Encoding` : 'Accept-Encoding';
+  if (body.length < GZIP_MIN_BYTES) return body;
+  if (!acceptsGzip(req)) return body;
+  const gz = gzipSync(body);
+  if (gz.length >= body.length) return body;
+  headers['content-encoding'] = 'gzip';
+  headers['content-length'] = String(gz.length);   // 压缩**后**的长度
+  return gz;
+};
+
 const send = (res, code, body, headers = {}) => {
-  res.writeHead(code, { 'cache-control': 'no-store', ...headers });
-  res.end(body);
+  const out = { 'cache-control': 'no-store', ...headers };
+  const buf = Buffer.isBuffer(body) ? body : Buffer.from(body == null ? '' : String(body));
+  // ⚠️ 顺序：先定实体（encodeBody 会改 out），再 writeHead，最后 end。
+  const wire = encodeBody(REQ_OF.get(res), buf, out);
+  res.writeHead(code, out);
+  res.end(wire);
 };
 const sendJson = (res, code, obj, headers = {}) =>
   send(res, code, JSON.stringify(obj, null, 2), { 'content-type': 'application/json; charset=utf-8', ...headers });
@@ -1588,6 +1636,7 @@ const readBody = (req, limit) =>
 // ---------------------------------------------------------------- 路由
 
 const server = createServer(async (req, res) => {
+  REQ_OF.set(res, req);
   const url = new URL(req.url, BASE_URL);
   const p = url.pathname;
   const ip = ipOf(req);
@@ -4660,7 +4709,15 @@ function queryFilterOf(url) {
   if (raw == null) return { q: null };
   const q = String(raw).trim();
   if (!q) return { q: null };
-  return { q };
+  return { q }
+/** 一条记录是否命中关键字。⚠️ 这是**本地那份** collectPublicMods 依赖的函数：
+ *  它在 `mods/index.json` 之外自带一份 helper 副本，副本里调了 matchesQuery，但文件里一直没定义
+ *  ⇒ 谁把 /api/mods 接到 collectPublicMods 就会 ReferenceError。判据按本地口径（7 字段）。 */
+function matchesQuery(o, s, q) {
+  const needle = String(q).toLowerCase();
+  return [o.name, o.id, o.note, o.packId, o.author, o.compatAuthor, o.compatOf]
+    .some((v) => v != null && String(v).toLowerCase().includes(needle));
+};
 }
 
 /* ============================================================================
