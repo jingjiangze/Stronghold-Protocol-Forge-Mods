@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T01:45:00.000Z",
+  "generatedAt": "2026-10-30T02:10:00.000Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\Stronghold-Protocol-Forge-Mods\\_up\\modrepo-stage",
     "host": null,
@@ -42,6 +42,33 @@
         "插件包（plugin.json，不是 pack.json）：需要基座支持 `code` 字段与 clientOverlay（manifest 认字段 + server/index.js 建表 + static.js 命中；引擎仓 PR 分支 gpt/plugin-client-overlay），否则插件文件不下发、装了静默无效果。",
         "装好后在 plugins/config.json 的 trusted 里钉 plugin.lock.json 整份原文的 sha256（54c6598cff1af9f6e6d605978c005b0a5db8ac230f3ce5b67d089e515d14d550），并设 SP_PLUGIN_SCRIPTS=trusted 或 trusted-force（仅本机），重启生效；缺任一条被 PLUGIN_TRUST_PIN / PLUGIN_SCRIPTS_DISABLED 静默禁用。",
         "功能：玩家点「准备就绪」采集本机布阵进本地库（localStorage，400 条上限）→ 浏览器空闲时自带 Worker 跑确定性标准场景彩排（固定第 1 回合模板波次 + 固定 seed，官方 sim/rehearsal.js 同式：-1000×漏怪+击杀）→ 最优分回写并 POST /api/lineup-score（fail-open）。分数=布阵库排序用的标准场景分，不是真实回合预测。2026-10-21 部署树 3015 本机全链实测通过。"
+      ]
+    },
+    {
+      "id": "alliance-20",
+      "name": "同盟模拟 · 20 人分队",
+      "version": "1.1.0",
+      "sha256": "e2b776a284faa189235fe6bdd2b5dafd18aa0a1fff77ee550086706ece2f59a9",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.client + code.data（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "alliance-20",
+      "path": "mods/alliance-20/1.1.0/mod.zip",
+      "sizeBytes": 137888,
+      "fileCount": 7,
+      "unpackedBytes": 593031,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.client, code.data；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（5511330fa98c391f7d523453d39474aabe7f1002ea4f78bdfe201ce96e96e2d4）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/alliance-20/，收录即原样。2026-10-30"
       ]
     },
     {
@@ -207,6 +234,33 @@
         "layer": "C",
         "combat": false
       }
+    },
+    {
+      "id": "cdn-local",
+      "name": "素材门牌（CDN 指向）",
+      "version": "0.1.0",
+      "sha256": "4a2469c33df88d9921ae3d9aebb52ef9cfaaec2866fbd015c4a2ea3a21c4e46a",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.static（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "cdn-local",
+      "path": "mods/cdn-local/0.1.0/mod.zip",
+      "sizeBytes": 27189,
+      "fileCount": 6,
+      "unpackedBytes": 63182,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.static；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（a1f2686b6aaa5a6c3e0ec2847f5fad237140bbc542901240d0344de4da94309a）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/cdn-local/，收录即原样。2026-10-30"
+      ]
     },
     {
       "id": "cdn-source",
@@ -1301,6 +1355,33 @@
       }
     },
     {
+      "id": "loan-pledge",
+      "name": "魔塔·借贷抵押",
+      "version": "0.1.0",
+      "sha256": "be0cd190adca50eb8eb72c748344ada50befbb5a32c6864d49a8bbcf5297994a",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.match（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "loan-pledge",
+      "path": "mods/loan-pledge/0.1.0/mod.zip",
+      "sizeBytes": 5844,
+      "fileCount": 5,
+      "unpackedBytes": 10913,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.match；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（693f37e1f20c441b01eaf043884147ce57cd9a0b356e12ed90dc209bdb3427a1）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/loan-pledge/，收录即原样。2026-10-30"
+      ]
+    },
+    {
       "id": "makoto-voice",
       "name": "结城理（Persona 3 Reload 联动）· 日语语音 14 条",
       "version": "1.0.0",
@@ -1522,6 +1603,34 @@
         "layer": "A",
         "combat": true
       }
+    },
+    {
+      "id": "mota",
+      "name": "魔塔（无损挂载）",
+      "version": "0.3.1",
+      "sha256": "7d7f9248a5e867c679c07d70cf91d1a7142e9ad696fa067777d6dc6b2559ec06",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.lobby + code.match + code.client + code.data（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "mota",
+      "path": "mods/mota/0.3.1/mod.zip",
+      "sizeBytes": 4469660,
+      "fileCount": 689,
+      "unpackedBytes": 16793951,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.lobby, code.match, code.client, code.data；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（32c3fdc87bc0e12c61e8f69d4a582882403b8c7dfc10501f920c5a70fc1fe145）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/mota/，收录即原样。2026-10-30",
+        "整树 fork（689 文件 / 16.8 MB）：client 59 个与宿主同路径覆盖、server 469 个同名。装前备份宿主 public/ 与 server/。"
+      ]
     },
     {
       "id": "mota-notice",
@@ -1838,6 +1947,33 @@
       }
     },
     {
+      "id": "operator-skins",
+      "name": "干员皮肤",
+      "version": "0.3.1",
+      "sha256": "bc4284caf57a4225a9db32f6663beb0f34367ad1b0a2f2274313666cfd3b646c",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.client + code.data（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "operator-skins",
+      "path": "mods/operator-skins/0.3.1/mod.zip",
+      "sizeBytes": 20857,
+      "fileCount": 9,
+      "unpackedBytes": 99187,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.client, code.data；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（2eb1ca051335634ef81a809d6c81bf2afda7e9c7315dd40c0e3e087aa4dbde7f）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/operator-skins/，收录即原样。2026-10-30"
+      ]
+    },
+    {
       "id": "perf-lite",
       "name": "低配优化（关动画与过渡）",
       "version": "1.0.0",
@@ -1968,6 +2104,36 @@
       }
     },
     {
+      "id": "relics-87",
+      "name": "湮灭藏品合集",
+      "version": "3.0.0",
+      "sha256": "8c8b24f9bdb75735a801039dfd3bb3e88e836ad94fe719ffeaaa444c5cf7dba9",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.data + code.client（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "relics-87",
+      "path": "mods/relics-87/3.0.0/mod.zip",
+      "sizeBytes": 3438886,
+      "fileCount": 90,
+      "unpackedBytes": 3472381,
+      "assets": {
+        "assetFree": false,
+        "count": 87,
+        "bytes": 3472381,
+        "byKind": {
+          "png": 87
+        },
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=content）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.data, code.client；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（a130e6c8cb20e2488fe1373e5c03c3058fb0382c3aadb19649ddf62b7bf8d553）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/relics-87/，收录即原样。2026-10-30",
+        "content 类，靠 code.data + 87 张藏品图供数据；单独安装不给对局加内容，是给 mota 藏品系统供料的。"
+      ]
+    },
+    {
       "id": "rhodes-ship",
       "name": "罗德岛盟约（源石弧修复）",
       "version": "1.1.1",
@@ -2031,6 +2197,36 @@
         "layer": "B",
         "combat": true
       }
+    },
+    {
+      "id": "room-chat",
+      "name": "同盟通讯",
+      "version": "0.1.0",
+      "sha256": "f33ddba8a30e4d648b51cb2a2c36103954596edb6ade1ddf85d43a8582de4f42",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.lobby + code.client（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "room-chat",
+      "path": "mods/room-chat/0.1.0/mod.zip",
+      "sizeBytes": 218956,
+      "fileCount": 88,
+      "unpackedBytes": 275419,
+      "assets": {
+        "assetFree": false,
+        "count": 76,
+        "bytes": 275419,
+        "byKind": {
+          "webp": 76
+        },
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.lobby, code.client；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（56decf1951bbc97fba07991ac97c3e81db225e249bf4151265ad07aabb0ccefa）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/room-chat/，收录即原样。2026-10-30",
+        "含 76 个 .webp 表情素材（community-emotes/）。"
+      ]
     },
     {
       "id": "s11-chess-extras",
@@ -2289,6 +2485,33 @@
         "layer": "A",
         "combat": false
       }
+    },
+    {
+      "id": "spectate",
+      "name": "实时观战",
+      "version": "0.1.0",
+      "sha256": "93c5e817917727165ee8e02298386a119e5761eb518baf7a83ccbe05dc47780b",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.client（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "spectate",
+      "path": "mods/spectate/0.1.0/mod.zip",
+      "sizeBytes": 9323,
+      "fileCount": 5,
+      "unpackedBytes": 21086,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.client；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（72dd5c58bc3e046c64f62f74ca6e914ccb825f1b40df107acf9858c800cebe3b）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/spectate/，收录即原样。2026-10-30"
+      ]
     },
     {
       "id": "srv-notice",
@@ -2709,6 +2932,33 @@
       ]
     },
     {
+      "id": "versus-room",
+      "name": "对抗房（房间层）",
+      "version": "0.1.0",
+      "sha256": "2159316453b1ef8d6f2d739596f0335cbe0e69addea83eaeb67bd2b8a545100b",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.lobby（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "versus-room",
+      "path": "mods/versus-room/0.1.0/mod.zip",
+      "sizeBytes": 3289,
+      "fileCount": 4,
+      "unpackedBytes": 4578,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.lobby；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（819febfc39a8e5fd47988dc7051229f962724ef0467b8041b845856d552352fa）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/versus-room/，收录即原样。2026-10-30"
+      ]
+    },
+    {
       "id": "voice-lang",
       "name": "语音语种（更正：Forge 已原生支持，这一项不需要 mod）",
       "version": "1.1.0",
@@ -2835,6 +3085,33 @@
         "layer": "C",
         "combat": false
       }
+    },
+    {
+      "id": "xie-room",
+      "name": "协同共竞（房间层）",
+      "version": "0.1.0",
+      "sha256": "aafd26fffa57025f8e877cbac39e22a8e9540b23e87fdf8f27427259dde1aea2",
+      "packHash": "",
+      "category": "functional",
+      "categoryWhy": "声明了 code.lobby（有生效面）；需要基座支持 plugin.json 的 code 字段与对应装载链",
+      "stationId": "",
+      "packId": "xie-room",
+      "path": "mods/xie-room/0.1.0/mod.zip",
+      "sizeBytes": 2365,
+      "fileCount": 4,
+      "unpackedBytes": 3105,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）：不是 pack.json 工坊包，进不了 build-index / promote-incoming 的 stage，本条由维护者手工补录（格式对齐 mods/ai-scoring）。",
+        "装载面：code.lobby；api 2 / app >=0.3.0 <0.4.0。需要基座支持 code 字段与对应装载链，否则插件文件不下发、装了静默无效果。",
+        "trusted 需在 plugins/config.json 里钉 plugin.lock.json 的 sha256（813c01bfd8c518732c1fa0486799a984f7dc463983be40429fd423b4ecef0a9a）并设 SP_PLUGIN_SCRIPTS=trusted。来源：jingjiangze/stronghold-server@baidu plugins/xie-room/，收录即原样。2026-10-30"
+      ]
     },
     {
       "id": "xingkong-chess-extras",
