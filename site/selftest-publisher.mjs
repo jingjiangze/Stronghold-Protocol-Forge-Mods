@@ -23,12 +23,27 @@
 //   ⑭  **档 2 恢复**：撤自己的软删 ⇒ 200 且重新公开；别人的 ⇒ 403；不是软删来的 ⇒ 409
 //   ⑮  **档 3 硬删**（物理，全站唯一会删数据的路）：一次调用不删 · 凭据/包名少一个都不删 ·
 //       有引用 ⇒ 409 先报人 · 二次确认后真删 + 墓碑在位 + 记录确实不在 + 再删/恢复 ⇒ 410
+//   ⑯  **服务端预渲染**（业主 2026-10-15 批「做」）：不跑任何 JS 读 `/mods` 的 HTML，
+//       `#list` 里就有列表与搜索结果，且**卡片行数 == /api/mods 同查询条数**；
+//       三路空文案（搜索无结果 / 筛选无结果 / 还没有包）各自如实说清
+//   ⑰  注入页面的那一份行渲染源码**自包含**（空上下文里跑得起来）—— `toString()` 注入的
+//       代价就在这一条上：引用了模块作用域的东西，浏览器里必炸而服务端预渲染照样是好的
+//   ⑱  **响应压缩（gzip）**（2026-10-15）：`/mods` 带 `Accept-Encoding: gzip` ⇒ 线上实体
+//       真是 gzip 且**解压后逐字节相同**；不带就不压；`/api/file/<id>` 的 zip 下载**绝不压**；
+//       可压缩响应一律带 `Vary: Accept-Encoding`（压与不压都带）；`content-length` 与压缩后
+//       实体一致；`gzip;q=0` 不压、`*` 压；小响应不压
 import { spawn } from 'node:child_process';
+// ⑱ 要发**原始** HTTP：Node 的 fetch（undici）会自动解压 gzip 并留着 content-encoding 头，
+// 用它验不到「线上实体真的是 gzip」；解压也自己来（内置 zlib，不加依赖）。
+import { request } from 'node:http';
+import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, readdirSync, existsSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// ⑰ 要在**空上下文**里跑那段源码：只用内置，不加依赖（本项目零依赖）。
+import { runInNewContext } from 'node:vm';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PORT = 8807;
@@ -712,6 +727,299 @@ try {
     '两条筛选**各自保留**：kind 没被 func 顶掉、func 也没被 kind 顶掉');
   const pgNone = await (await fetch(`${BASE}/mods`)).text();
   check(pgNone.includes('data-kinds=""') && pgNone.includes('data-funcs=""'), '不筛时两个都是空（走现状那条路）');
+
+  // ================================================================
+  // ⭐ 关键字搜索 `?q=`（业主 2026-10-15：「mod 公开页记得加个搜索框」）
+  //    判据：**期望集合从全量自己算一遍**（不写死 id）—— 这样夹具增删一条也不会变成假绿/假红，
+  //    而「每一条都真的含这个词」这句话由 `hasTerm` 直接验，不是靠「条数看着对」。
+  //    ⚠️ 这一段**只发 GET**（一条写操作都没有），所以下面「与不带 q 逐字节相同」那条才成立。
+  // ================================================================
+  console.log('\n⑬b 关键字搜索 ?q=（服务端过滤 + 与 kind/func 叠加）');
+  const qAll = await (await fetch(`${BASE}/api/mods`)).json();
+  const qRows = [...qAll.mods, ...qAll.flagged];
+  const hasTerm = (m, t) => [m.name, m.author, m.packId, m.funcKind]
+    .some((v) => v != null && String(v).toLowerCase().includes(t.toLowerCase()));
+  const idsOf = (b) => [...b.mods, ...b.flagged].map((m) => m.id).sort();
+  const qGet = async (qs) => (await fetch(`${BASE}/api/mods?${qs}`)).json();
+
+  // ① 正常词：命中 N 条，且**每一条都真的含这个词**（期望集合 = 拿全量自己筛一遍）
+  const term = 'mine-test';                       // 夹具里所有 goodPack 的包内 id
+  const expectA = qRows.filter((m) => hasTerm(m, term)).map((m) => m.id).sort();
+  check(expectA.length > 1, `夹具里确实有多条命中「${term}」（不然下面几条是空跑）`, `${expectA.length} 条`);
+  const qHit = await qGet(`q=${encodeURIComponent(term)}`);
+  check(JSON.stringify(idsOf(qHit)) === JSON.stringify(expectA),
+    `?q=${term} ⇒ 命中的正是那几条`, `${idsOf(qHit).length} 条 / 期望 ${expectA.length} 条`);
+  check([...qHit.mods, ...qHit.flagged].every((m) => hasTerm(m, term)),
+    '返回的**每一条都真的命中**（不是「搜了没筛」）');
+
+  // ①b ⚠️ 上面那个词**恰好命中全部**（夹具里每条都叫 mine-test）⇒ 它对「筛掉了东西」是**空跑**。
+  //     再拿一个**只命中一部分**的词：`?q=…` 必须返回**真子集**（旧服务端忽略 q ⇒ 这里立刻红）。
+  const disc = (() => {
+    for (const m of qRows) {
+      for (const v of [m.name, m.author, m.packId]) {
+        if (!v) continue;
+        const n = qRows.filter((x) => hasTerm(x, String(v))).length;
+        if (n >= 1 && n < qRows.length) return String(v);
+      }
+    }
+    return null;
+  })();
+  check(disc != null, '夹具里有一个**只命中一部分**的词（能证明真的筛掉了东西）', String(disc));
+  const expectD = qRows.filter((m) => hasTerm(m, disc)).map((m) => m.id).sort();
+  const qDisc = await qGet(`q=${encodeURIComponent(disc)}`);
+  check(JSON.stringify(idsOf(qDisc)) === JSON.stringify(expectD) && idsOf(qDisc).length < qRows.length,
+    `?q=${disc} ⇒ 只剩命中的那几条，**真的筛掉了**其余 ${qRows.length - expectD.length} 条`,
+    `${idsOf(qDisc).length} 条 / 全量 ${qRows.length} 条`);
+
+  // ② 大小写不敏感 + 首尾空白忽略
+  const qCase = await qGet(`q=${encodeURIComponent('  ' + term.toUpperCase() + '  ')}`);
+  check(JSON.stringify(idsOf(qCase)) === JSON.stringify(expectA),
+    '大小写不敏感 + 首尾空白忽略：`  MINE-TEST  ` 与 `mine-test` 结果逐条相同',
+    `${idsOf(qCase).length} 条`);
+
+  // ③ 不存在的词 ⇒ 0 条
+  const qNone = await qGet('q=zzz' + 'nope'.repeat(4) + 'zzz');
+  check(qNone.mods.length === 0 && qNone.flagged.length === 0, '不存在的词 ⇒ 0 条',
+    `mods=${qNone.mods.length} flagged=${qNone.flagged.length}`);
+
+  // ④ 与 ?func= 叠加 = **交集**（AND 语义，不是二选一）
+  const expectF = expectA.filter((id) => qRows.find((m) => m.id === id)?.funcKind === 'gameplay').sort();
+  const qFunc = await qGet(`func=gameplay&q=${encodeURIComponent(term)}`);
+  check(JSON.stringify(idsOf(qFunc)) === JSON.stringify(expectF),
+    `?func=gameplay&q=${term} ⇒ 结果是**两者交集**`, `${idsOf(qFunc).length} 条 / 期望 ${expectF.length} 条`);
+
+  // ⑤ 与 ?kind= 叠加同理
+  const expectK = expectA.filter((id) => qRows.find((m) => m.id === id)?.packKind === 'functional').sort();
+  const qKind = await qGet(`kind=functional&q=${encodeURIComponent(term)}`);
+  check(JSON.stringify(idsOf(qKind)) === JSON.stringify(expectK),
+    `?kind=functional&q=${term} ⇒ 结果是**两者交集**`, `${idsOf(qKind).length} 条 / 期望 ${expectK.length} 条`);
+
+  // ④b ⭐ AND 语义的**尖判据**：拿一个「有命中、但一条游戏玩法都不是」的词 ——
+  //     叠加 `?func=gameplay` 之后必须 **0 条**。旧服务端忽略 q ⇒ 这里会给出一堆 ⇒ 立刻红。
+  const np = qRows.find((m) => m.funcKind !== 'gameplay' && (m.name || m.author || m.packId));
+  if (np) {
+    const t2 = String(np.name || np.author || np.packId);
+    const n1 = qRows.filter((m) => hasTerm(m, t2)).length;
+    const expectAnd = qRows.filter((m) => hasTerm(m, t2) && m.funcKind === 'gameplay').map((m) => m.id).sort();
+    const withFunc = await qGet(`func=gameplay&q=${encodeURIComponent(t2)}`);
+    check(JSON.stringify(idsOf(withFunc)) === JSON.stringify(expectAnd) && expectAnd.length === 0,
+      `AND 语义（尖判据）：?q=${t2} 有 ${n1} 条命中、其中**没有一条**是游戏玩法 ⇒ 叠加 ?func=gameplay 后必须 **0 条**`,
+      `${idsOf(withFunc).length} 条`);
+  }
+
+  // ⑥ 无 q / 空 q / 只有空白 ⇒ **与改前逐字节相同**（这条是「不改其它行为」的硬判据）
+  const qEmpty = await qGet('q=');
+  const qBlank = await qGet('q=%20%20');
+  check(JSON.stringify(qEmpty) === JSON.stringify(qAll) && JSON.stringify(qBlank) === JSON.stringify(qAll),
+    '`?q=` 与 `?q=%20%20` 按「不传」处理 ⇒ 响应与不带 q **逐字节相同**（列表/顺序/计数一字未改）');
+  check(!('q' in qAll), '不带 q 时响应里**没有** q 这一栏（老读法、老快照照旧能逐字比）');
+
+  // ⑦ 只搜不筛时 `counts` **没被 q 过滤掉**（业主口径：「别把 counts 也过滤掉」）
+  const qCounts = await qGet(`q=${encodeURIComponent(term)}`);
+  check(JSON.stringify(qCounts.counts) === JSON.stringify(qAll.counts),
+    '只搜不筛时 counts 照旧是全站每类计数（**没被 q 收窄**）',
+    `total=${qCounts.counts?.total} functional=${qCounts.counts?.functional}`);
+
+  // ⑧ 页面：搜索框在位、当前关键字注入 data-q、**自由文本转义**（反射型 XSS 挡住）
+  const pgQ = await (await fetch(`${BASE}/mods?q=${encodeURIComponent(term)}`)).text();
+  check(pgQ.includes(`data-q="${term}"`) && !pgQ.includes('__Q__'),
+    '列表页把当前关键字注入 data-q（占位符已替换）');
+  check(pgNone.includes('data-q=""'), '不搜时 data-q 是空串（页面走现状那条路）');
+  check(/<form class="searchbar"[^>]*method="get"[^>]*action="\/mods"/.test(pgNone)
+    && pgNone.includes('id="searchbar"') && pgNone.includes('type="search"') && pgNone.includes('name="q"'),
+    '列表页上有搜索框，且是**真表单**（method=get action=/mods ⇒ 回车与按钮都走原生提交）');
+  check(pgNone.includes('id="qclear"'), '有「清除」入口（href 兜底 /mods）');
+  const pgQKind = await (await fetch(`${BASE}/mods?kind=documentation&q=${encodeURIComponent(term)}`)).text();
+  check(pgQKind.includes('data-kinds="documentation"') && pgQKind.includes(`data-q="${term}"`),
+    '搜索与分类筛选**同时**注入页面（搜一次不会把分类丢掉）');
+  check(/name="kind" value="documentation"/.test(pgQKind),
+    '表单里那个 hidden 也带着当前分类（**无 JS** 的原生提交照样保留筛选）');
+  const evil = '<script>alert(1)</script>';
+  const pgEvil = await (await fetch(`${BASE}/mods?q=${encodeURIComponent(evil)}`)).text();
+  check(!pgEvil.includes(evil), '自由文本里的标签**没有**被原样写进 HTML（反射型 XSS 挡住了）');
+  check(pgEvil.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), '注入的是**转义后**的形式',
+    (pgEvil.match(/data-q="[^"]*"/) || [''])[0]);
+
+  // ================================================================
+  console.log('⑯ 服务端预渲染：不跑 JS 读 /mods，`#list` 里就有列表与搜索结果');
+  // 判据一句话：把 /mods 的 HTML 当**字符串**读（一个字节的 JS 都不执行），抠出 `#list` 的内层；
+  // 它必须是服务端画好的卡片（不是「正在载入…」），且**卡片行数 == /api/mods 同查询条数**。
+  // ⚠️ 这条判据对着改前代码**必须红**：改前 `#list` 内恒为 `<p class="dim">正在载入…</p>`
+  //    （0 行卡片），而接口照旧给得出条数 ⇒ 「行数 == 条数」当场不成立。
+  // 抠法：`#list` 的开标签 与 它后面那个 `<script` 之间，就是内层 HTML + `#list` 自己的收标签。
+  // 不按 `[\s\S]*?</div>` 抠 —— 卡片里全是嵌套 div，那样只会抠到第一个 `</div>`。
+  const listInnerOf = (html) => {
+    const a = html.indexOf('<div id="list"');
+    const b = html.indexOf('<script', a);
+    if (a < 0 || b < 0) return null;
+    const seg = html.slice(a, b);
+    return seg.slice(seg.indexOf('>') + 1).replace(/<\/div>\s*$/, '');
+  };
+  // 一张卡片 = 一个 `<div class="panel">` 或 `<div class="panel brackets">`。
+  // ⚠️ 不能用 `class="panel` 裸匹配 —— `class="panel__body"` 也长这样，会把每张卡多数一次。
+  const rowsOf = (inner) => (inner.match(/<div class="panel(?:\s|")/g) || []).length;
+
+  const preCases = [
+    ['', '不筛不搜'],
+    [`q=${encodeURIComponent(term)}`, '只搜'],
+    ['func=utility', '只筛功能类目'],
+    ['kind=documentation', '只筛技术维度'],
+    ['kind=documentation&func=assets%2Cutility', '两个维度同时筛'],
+    [`func=gameplay&q=${encodeURIComponent(term)}`, '搜索 + 功能叠加'],
+    ['q=zzz-nope-zzz', '搜不到（空结果）'],
+  ];
+  for (const [qs, label] of preCases) {
+    const html = await (await fetch(`${BASE}/mods${qs ? '?' + qs : ''}`)).text();
+    const api = await (await fetch(`${BASE}/api/mods${qs ? '?' + qs : ''}`)).json();
+    const inner = listInnerOf(html);
+    const rows = inner == null ? -1 : rowsOf(inner);
+    const want = (api.mods || []).length + (api.flagged || []).length;
+    check(inner != null && inner.trim().length > 0 && !/正在载入/.test(inner),
+      `【预渲染】${label}：无 JS 时 #list 里就有服务端画好的内容（不是「正在载入…」）`,
+      `#list 内 ${inner == null ? '抠不到' : inner.length} 字符`);
+    check(rows === want, `【预渲染】${label}：#list 卡片行数 == /api/mods 同查询条数`,
+      `${rows} 行 vs 接口 ${want} 条`);
+    check(!html.includes('__LIST_HTML__') && !html.includes('__LIST_RENDER__'),
+      `【预渲染】${label}：两个占位符都已替换（不留占位符）`);
+  }
+  // 三路空文案的**搜索**那一路（另两路见下）
+  const pgNoneQ = await (await fetch(`${BASE}/mods?q=zzz-nope-zzz`)).text();
+  check(listInnerOf(pgNoneQ).includes('当前搜索（搜索「zzz-nope-zzz」）下没有已上线的包。'),
+    '搜不到时的空文案**如实点出是按什么搜空的**（不是让人以为站上一条都没有）',
+    listInnerOf(pgNoneQ).trim());
+  // **筛选**那一路：找一个**真的筛不出东西**的 (kind, func) 组合 —— 按当前夹具现算，不写死。
+  let emptyFilter = null;
+  for (const k of ['functional', 'documentation', 'unknown']) {
+    for (const f of ['gameplay', 'expansion', 'utility', 'assets', 'documentation', 'uncategorized']) {
+      const r = await (await fetch(`${BASE}/api/mods?kind=${k}&func=${f}`)).json();
+      if ((r.mods || []).length === 0 && (r.flagged || []).length === 0) { emptyFilter = { k, f }; break; }
+    }
+    if (emptyFilter) break;
+  }
+  check(emptyFilter != null, '夹具里找得到一个「筛不出东西」的组合（否则这一路验不到）',
+    emptyFilter ? `kind=${emptyFilter.k} func=${emptyFilter.f}` : '没找到');
+  if (emptyFilter) {
+    const pgEmptyF = await (await fetch(`${BASE}/mods?kind=${emptyFilter.k}&func=${emptyFilter.f}`)).text();
+    check(/当前筛选（.+）下没有已上线的包。/.test(listInnerOf(pgEmptyF)),
+      '筛选筛空时的空文案**如实点出是按什么筛空的**', listInnerOf(pgEmptyF).trim());
+  }
+  // 「一份实现、两个调用方」：页面里只注入**一份** `makeModListRenderer`，
+  // 客户端 fetch 回来后调的是它（`__R.renderList`）—— 不许页面里再有一份自己的卡片渲染。
+  check((pgNone.match(/function makeModListRenderer\(/g) || []).length === 1,
+    '页面里只注入**一份**行渲染实现（一份实现、两个调用方）');
+  check(pgNone.includes('__R.renderList('), '客户端重渲染调的是**同一份**实现（__R.renderList）');
+
+  // ================================================================
+  console.log('⑰ 注入页面的那一份源码**自包含** + 第三路空文案（空站）');
+  // 为什么必须验：那段文本是 `makeModListRenderer.toString()` 注进页面的 ——
+  // 只要它引用了 server.mjs **模块作用域**里的任何东西，浏览器里就 ReferenceError，
+  // 而服务端预渲染照样是好的（两边不对称，这种最难查）。所以这里在**空上下文**里跑它。
+  const srcStart = pgNone.indexOf('(function makeModListRenderer()');
+  check(srcStart >= 0, '页面里注入了行渲染实现的源码文本（toString 注入）');
+  if (srcStart >= 0) {
+    // 配平大括号找函数体结束（这段源码里没有会让计数失衡的括号）
+    let depth = 0, end = -1;
+    for (let k = pgNone.indexOf('{', srcStart); k < pgNone.length; k++) {
+      if (pgNone[k] === '{') depth++;
+      else if (pgNone[k] === '}') { depth--; if (depth === 0) { end = k + 1; break; } }
+    }
+    const fnSrc = pgNone.slice(srcStart + 1, end);   // 去掉外层那个 `(`
+    const Dstub = {
+      el: (tag, cls, text) => ({ tag, cls: cls || '', text: text == null ? null : String(text), kids: [],
+        style: {}, append(...ks) { this.kids.push(...ks); }, setAttribute() {} }),
+      text: (t) => ({ tag: '#text', text: String(t) }),
+    };
+    try {
+      const R = runInNewContext(`(${fnSrc})()`, {});
+      const root = { kids: [], textContent: '', append(...ks) { this.kids.push(...ks); } };
+      const hits = R.renderList(root, { mods: [], flagged: [], active: { kinds: [], funcs: [], q: '' } }, Dstub);
+      check(hits === 0 && JSON.stringify(root.kids).includes('还没有通过审核的包。'),
+        '注入的那份源码在**空上下文**里跑得起来（自包含）；空站的文案是「还没有通过审核的包。」',
+        `命中 ${hits} 条`);
+    } catch (e) {
+      check(false, '注入的那份源码在**空上下文**里跑得起来（自包含）',
+        `${e.constructor.name}: ${e.message}`);
+    }
+  }
+
+  // ================================================================
+  console.log('⑱ 响应压缩（gzip）：只压文本、只在客户端声明支持时压、二进制下载绝不压');
+  // 判据一句话：`/mods` 带 `Accept-Encoding: gzip` 时**线上实体真的是 gzip**（解压后逐字节相同）；
+  // 不带就不压；`/api/file/<id>` 的 zip 下载**一个字节都不压**；可压缩响应一律带 `Vary`。
+  // ⚠️ 必须用 `node:http` 发**原始**请求：Node 的 fetch（undici）会**自动解压** gzip 并留着
+  //    `content-encoding` 头 —— 用它「看起来也是 gzip」，但验不到实体，这条判据就废了。
+  // ⚠️ 这条判据对着**改前代码必须红**：改前一处压缩都没有，①（没有 content-encoding）
+  //    与④（没有 vary）当场不成立。
+  const rawGet = (path, headers = {}) => new Promise((resolve, reject) => {
+    const rq = request({ host: '127.0.0.1', port: PORT, path, method: 'GET', headers }, (r) => {
+      const chunks = [];
+      r.on('data', (c) => chunks.push(c));
+      r.on('end', () => resolve({ status: r.statusCode, h: r.headers, buf: Buffer.concat(chunks) }));
+    });
+    rq.on('error', reject);
+    rq.end();
+  });
+  const sha256 = (b) => createHash('sha256').update(b).digest('hex');
+  // 夹具里必然有已上线的记录（⑯ 刚断言过「卡片行数 == /api/mods 条数」）⇒ 从接口现取一个 id，
+  // 不写死编号 —— 写死就会在夹具调整时变成一条与本事无关的假红。
+  const gzModsApi = await (await fetch(`${BASE}/api/mods`)).json();
+  const gzId = (gzModsApi.mods || [])[0]?.id;
+  check(!!gzId, '夹具里有一条已上线的记录（否则「下载流不压」那两条验不到）', gzId || '（0 条）');
+
+  const modsPlain = await rawGet('/mods');
+  const modsGz = await rawGet('/mods', { 'accept-encoding': 'gzip' });
+  const gzOk = modsGz.h['content-encoding'] === 'gzip';
+  // ① 带 gzip 声明 ⇒ 真的压了，且**解压后与不带压缩的正文逐字节相同**
+  check(gzOk, '① `/mods` 带 `Accept-Encoding: gzip` ⇒ 响应**真有** `Content-Encoding: gzip`',
+    String(modsGz.h['content-encoding'] || '（没有这个头）'));
+  let unzipped = null;
+  if (gzOk) { try { unzipped = gunzipSync(modsGz.buf); } catch { unzipped = null; } }
+  check(unzipped != null && sha256(unzipped) === sha256(modsPlain.buf),
+    '① `/mods` 的 gzip 实体**解压后与明文正文逐字节相同**（sha256 相等）',
+    unzipped ? `${modsGz.buf.length}B → 解压 ${unzipped.length}B · 明文 ${modsPlain.buf.length}B · sha 同` : '解压失败');
+  // ⑦ content-length 必须是**压缩后**的长度（绝不能沿用压缩前的）
+  check(Number(modsGz.h['content-length']) === modsGz.buf.length,
+    '⑦ `content-length` 与**压缩后**的实体长度一致（没沿用压缩前的长度）',
+    `头 ${modsGz.h['content-length']} vs 实体 ${modsGz.buf.length}`);
+  // ② 没有 Accept-Encoding ⇒ 不压
+  check(!modsPlain.h['content-encoding'],
+    '② 不带 `Accept-Encoding` ⇒ **不带** `Content-Encoding`（不硬塞给不收 gzip 的客户端）',
+    String(modsPlain.h['content-encoding'] || '（无，对）'));
+  // ④ Vary 与「这一次压没压」无关：两种请求都得带
+  check(/accept-encoding/i.test(String(modsGz.h.vary || '')) && /accept-encoding/i.test(String(modsPlain.h.vary || '')),
+    '④ 可压缩响应一律带 `Vary: Accept-Encoding`（压与不压都带 —— 中间缓存才不会串）',
+    `带 AE: ${modsGz.h.vary || '（无）'} · 不带 AE: ${modsPlain.h.vary || '（无）'}`);
+  // ③ 下载流绝不压（zip 压了就是坏数据，且与 content-length / 文件 sha256 全对不上）
+  if (gzId) {
+    const dlPlain = await rawGet(`/api/file/${gzId}`);
+    const dlGz = await rawGet(`/api/file/${gzId}`, { 'accept-encoding': 'gzip' });
+    check(dlPlain.status === 200 && !dlGz.h['content-encoding'] && sha256(dlGz.buf) === sha256(dlPlain.buf),
+      '③ `/api/file/<id>` 的 zip 下载**不被压缩**（带 gzip 声明也一样，字节完全相同）',
+      `http=${dlGz.status} CE=${dlGz.h['content-encoding'] || '（无，对）'} ${dlGz.buf.length}B`);
+    check(Number(dlGz.h['content-length']) === dlGz.buf.length,
+      '③ 下载响应的 `content-length` 与实体一致（没被压缩碰过）',
+      `头 ${dlGz.h['content-length']} vs 实体 ${dlGz.buf.length}`);
+    // Range：站点**没有**任何 Range / 206 实现（`server.mjs` 里搜不到 `range`）⇒ 这条只钉住
+    // 「Range 请求不会被压缩碰坏」：忽略 Range 照旧回 200 整份、且不压。若哪天加了 206，这里会红。
+    const dlRange = await rawGet(`/api/file/${gzId}`, { range: 'bytes=0-99', 'accept-encoding': 'gzip' });
+    check(dlRange.status === 200 && !dlRange.h['content-encoding'] && dlRange.buf.length === dlPlain.buf.length,
+      '③ Range 请求走同一条下载路：照旧**整份 200、且不压**（站点本来就没有 206，这次没动它）',
+      `http=${dlRange.status} ${dlRange.buf.length}B`);
+  }
+  // ③ 补充：按 q 值判，不是「字符串里出现过 gzip 就算」
+  const q0 = await rawGet('/mods', { 'accept-encoding': 'gzip;q=0' });
+  const star = await rawGet('/mods', { 'accept-encoding': '*' });
+  check(!q0.h['content-encoding'] && star.h['content-encoding'] === 'gzip',
+    '③ `gzip;q=0` 不压、`*` 压（按 q 值判，不是「出现过 gzip 字样」就算）',
+    `q=0 ⇒ ${q0.h['content-encoding'] || '（无，对）'} · * ⇒ ${star.h['content-encoding'] || '（无）'}`);
+  // ⑤ 小响应不压（`/healthz` 的 JSON 只有几十字节）
+  const tiny = await rawGet('/healthz', { 'accept-encoding': 'gzip' });
+  check(tiny.status === 200 && tiny.buf.length < 1024 && !tiny.h['content-encoding'],
+    '⑤ 小响应（< 1KB）不压 —— 不为几十字节白加一层头',
+    `http=${tiny.status} ${tiny.buf.length}B CE=${tiny.h['content-encoding'] || '（无，对）'}`);
+  // 顺手报一眼压缩比（信息用，不作为判据：夹具大小与生产不同）
+  console.log(`  · 参考：/mods 明文 ${modsPlain.buf.length}B → gzip ${modsGz.buf.length}B`
+    + (modsPlain.buf.length ? `（${(100 * modsGz.buf.length / modsPlain.buf.length).toFixed(1)}%）` : ''));
 
   // ---- 发布者自己填功能类目（走 /api/publisher/update，改完回待审）
   const pubFk = await postJsonRead('/api/publisher/update', { id: idB, funcKind: 'expansion' }, tokB);

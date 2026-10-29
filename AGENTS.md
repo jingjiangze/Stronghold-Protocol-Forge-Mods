@@ -32,7 +32,7 @@ AI 助手（Codex、Claude Code、Cursor、Copilot…）与维护者在本仓库
 | [`incoming/SOURCE.template.md`](incoming/SOURCE.template.md) | 投稿人 | `SOURCE.md` 的填空模板（五件事） |
 | [site/README.md](site/README.md) | **维护者** | 上传站 / 审核台的整套用法（部署、环境变量、三视图、兼容包发布、备份与更新） |
 | [NOTICE.md](NOTICE.md) | 所有人 | 每个包的来源、署名与许可；非商业声明 |
-| 引擎文档（本仓库只索引） | **所有人** | `docs/WORKSHOP.md`（包格式规则）、`docs/MOD-SURFACE.md`（全部表面）、`docs/design/mod-layer.md`（边界；**§28.23** 是 `server.modules[].channels` 通道声明面，**§28.43–§28.50** 是这几版新加的面 —— 其中 **§28.49 `trait.grantsBonds` 已合入、今天能用**（[SKILL.md](SKILL.md) §19.7）、**§28.50 `pack.json.enabled`**（§19.9）） |
+| 引擎文档（本仓库只索引） | **所有人** | `docs/WORKSHOP.md`（包格式规则）、`docs/MOD-SURFACE.md`（全部表面）、`docs/design/mod-layer.md`（边界；**§28.23** 是 `server.modules[].channels` 通道声明面，**§28.43–§28.57** 是这几版新加的面 —— 其中 **§28.49 `trait.grantsBonds` 今天能用**（[SKILL.md](SKILL.md) §19.7）、**§28.50 `pack.json.enabled`**（§19.9）、**§28.52 `pack.json.callBudget`**（§19.10）、**§28.53 房间同意 + 服主 pin**（§19.11），加上 0.3.0 合入新落的四条：**§28.54 `pack.json.matchKinds`**（§19.16）、**§28.55 `client.screens`**（§19.17）、**§28.56 `server.modules[].lane`**（§19.18）、**§28.57 `server.room.hold`**（§19.19）；上游 0.3.1 已合入引擎 `main`（发行 tag `v0.19.1-0.3.1`），这几节按当前树核过；`PLUGIN_API` 抬到 `2` 只影响 `plugins/`，工坊包的 `api` 仍对 `MOD_API_VERSION = 1` 比对） |
 
 ## 3. 硬规则
 
@@ -50,9 +50,10 @@ AI 助手（Codex、Claude Code、Cursor、Copilot…）与维护者在本仓库
 - **只写 `pack.json` 认识的字段**：字段全集是引擎 `shared/workshop.js` 的 `PACK_FIELDS`。
   多写一个键，**整包被拒**（`PACK_UNKNOWN_FIELD`）。
 - **`id` 必须与目录名一致**（装载器按 `<根>/<包 id>/pack.json` 找包）。
-- **只 import 白名单别名**（`@kit/*`、`@sim/*`、`@battle/index.js`，以及**按文件开的** 4 个官方 ops kit
-  `@ops/op-{shwaz,ray,aglna2,thumpy}.js`，共 15 条），不用相对路径碰引擎。`@ops/` 是命名空间不是放行 ——
-  这 4 个之外同前缀的仍然被拒。
+- **只 import 白名单别名**（`@kit/*`、`@sim/*`、`@battle/index.js`，以及**按文件开的** 8 个官方 ops kit
+  `@ops/op-{shwaz,ray,aglna2,thumpy,aphris,heyak,jesca2,nasti}.js`，另加 `@sim/body.js` 与 `@sim/professions.js`，
+  共 **22** 条），不用相对路径碰引擎。
+  `@ops/` 是命名空间不是放行 —— 这 8 个之外同前缀的仍然被拒。清单见 [SKILL.md](SKILL.md) §7 与 §19.13。
 - **署名与许可不可省**：每包必带 `PROVENANCE.md`（六项，见 [SKILL.md](SKILL.md) §10）；
   保留原作者署名、原件许可原样保留（改名 `NOTICE-原件-*`）、写清改了什么、哪些部分没有接口做不了。
   **包内原作者文本与包自带元数据一字不改** —— 与新实现不符时，写在我们自己的 `PROVENANCE.md` 里。
@@ -164,7 +165,7 @@ node tools/check-packs.mjs --engine /path/to/Stronghold-Protocol-Forge --json   
 
 | 要判的事 | 读哪里 |
 |---|---|
-| 这个包能声明哪些字段 | 引擎 `shared/workshop.js` 的 `PACK_FIELDS`（**闭集，36 键**）；`content` 名单另有一份 |
+| 这个包能声明哪些字段 | 引擎 `shared/workshop.js` 的 `PACK_FIELDS`（**闭集，38 键**）；`content` 名单另有一份（**15** 个文件） |
 | 「这一版能不能用」的通道面 | 本仓 [SKILL.md](SKILL.md) §19 / §20（每条带 `文件:行号`）—— **核不到就回引擎复一遍**，那张「在途」表会过期 |
 | 站上某条记录现在是什么状态 | 审核台三个视图（§7）；**不要**拿 `mods/index.json` 反推站上状态（镜像只是采集时刻的快照） |
 | 站侧到底怎么判的 | `site/server.mjs` —— 拒绝码是**机器可读**的，按 `code` 直接搜 |
