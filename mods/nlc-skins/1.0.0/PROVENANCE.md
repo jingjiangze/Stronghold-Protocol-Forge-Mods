@@ -12,3 +12,12 @@
 ## 素材与授权
 
 - 本包含 30 个素材文件 / 7325735 B（{"png": 18, "atlas": 6, "skel": 6}）—— 版权归原权利方，仅供非商业个人使用。
+
+
+## 装载失败与处置（2026-10-30）
+
+> 由 `.github/workflows/pack-compat.yml`（真装载门）实测判出。
+
+**装不上，且不可重设计**：判词 `PACK_UNKNOWN_FIELD: "credits"` → 去掉后又 `content: ["skins","assets"]` 两个名字都不合法。它真正想做的「整份替换宿主 `data/assets.json`」（7969 条、绝对 URL）**pack 没有这条通道**；而 pack 的 `art` 是 `pack.json` 里的内联表（`{表名:{id:条目}}`，路径相对 `assets/`），两者不可互转。
+
+完整分析见 [docs/PACK-LOAD-FAILURES.md](../../../docs/PACK-LOAD-FAILURES.md)。

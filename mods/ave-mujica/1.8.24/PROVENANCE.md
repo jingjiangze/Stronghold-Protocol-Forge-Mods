@@ -12,3 +12,12 @@
 ## 素材与授权
 
 - 本包含 839 个素材文件 / 24233376 B（{"png": 63, "m4a": 1, "mp3": 96, "webp": 643, "atlas": 18, "skel": 18}）—— 版权归原权利方，仅供非商业个人使用。
+
+
+## 装载失败与处置（2026-10-30）
+
+> 由 `.github/workflows/pack-compat.yml`（真装载门）实测判出。
+
+**装不上，但不需要修**：判词 `ART_UNKNOWN_TABLE: "sfxUnits"`。同 id 的 **`1.8.25` 装载是通过的**（真装载门实测）⇒ 本版本是旧版本，已被取代。
+
+完整分析见 [docs/PACK-LOAD-FAILURES.md](../../../docs/PACK-LOAD-FAILURES.md)。

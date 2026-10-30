@@ -12,3 +12,12 @@
 ## 素材与授权
 
 - 本包**不含**图片 / 音频 / 字体 / Spine 素材。
+
+
+## 装载失败与处置（2026-10-30）
+
+> 由 `.github/workflows/pack-compat.yml`（真装载门）实测判出。
+
+**装不上，且不可重设计**：判词 `PACK_UNKNOWN_FIELD: "credits"`（去掉后又 `EMPTY_PACK`）。本包交付的是**开发集成套件** —— `integration-fragments/server-*.fragment.js` 要手工贴进宿主 `server/match/*`，`portable/` 是跨 render 版本的移植层。任何 pack / plugin 形态都表达不了「往宿主函数体里插几行」。
+
+完整分析见 [docs/PACK-LOAD-FAILURES.md](../../../docs/PACK-LOAD-FAILURES.md)。

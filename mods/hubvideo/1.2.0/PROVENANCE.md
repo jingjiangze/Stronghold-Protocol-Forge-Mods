@@ -12,3 +12,12 @@
 ## 素材与授权
 
 - 本包含 2 个素材文件 / 1563310 B（{"png": 2}）—— 版权归原权利方，仅供非商业个人使用。
+
+
+## 装载失败与处置（2026-10-30）
+
+> 由 `.github/workflows/pack-compat.yml`（真装载门）实测判出。
+
+**装不上，且只发客户端会更糟**：判词 `EMPTY_PACK`。客户端 3 个文件能映射成插件 `code.client`，但 `payload/server/hubVideo.js` 是**路由模块**（`/hub-video/resolve` 等，且 `import ./http/common.js` 相对导入宿主树），插件带不动 ⇒ 单发客户端会得到「面板在、视频放不出来」的假功能。
+
+完整分析见 [docs/PACK-LOAD-FAILURES.md](../../../docs/PACK-LOAD-FAILURES.md)。
