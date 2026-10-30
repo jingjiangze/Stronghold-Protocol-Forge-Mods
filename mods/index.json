@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T02:10:00.000Z",
+  "generatedAt": "2026-10-30T10:15:00.000Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\Stronghold-Protocol-Forge-Mods\\_up\\modrepo-stage",
     "host": null,
@@ -1070,6 +1070,32 @@
         "**适配说明**：原件以 `install.mjs` + `files.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
         "修复立绘引用：payload/data 下的 chess.json / config.json 与立绘登记。",
         "站上已存在同名兼容改写版（stationId 1820c9b571c8）；本条是**原件（修复版）**。"
+      ]
+    },
+    {
+      "id": "fanpack-kazdel-mod",
+      "name": "卡兹戴尔同人内容包（立绘修复版）",
+      "version": "1.2.2",
+      "sha256": "d99e45602bcba65ad9001e8892c4e6efb7f03cff12bf746927f0862f72553d7e",
+      "packHash": "2130421bf1fa2fc72f79ccdae8e21d849ac0646a3de6b527250043d642602618",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件是 install.mjs + manifest.json 形态）",
+      "packId": "fanpack-kazdel-mod",
+      "path": "mods/fanpack-kazdel-mod/1.2.2/mod.zip",
+      "sizeBytes": 612717,
+      "fileCount": 44,
+      "unpackedBytes": 3286737,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "修版（原 1.2.1 引擎整包拒）：content 里的 config 不是数据文件",
+        "**适配说明**：原件以 `install.mjs` + `files.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
+        "修复立绘引用：payload/data 下的 chess.json / config.json 与立绘登记。"
       ]
     },
     {
@@ -2659,6 +2685,33 @@
         "containers": []
       },
       "notes": [
+        "原件形态：`pack/pack.json`（唯一顶层目录），已是规范工坊包。"
+      ]
+    },
+    {
+      "id": "test-sim",
+      "name": "测试模拟（Forge 工坊包样例）",
+      "version": "1.0.1",
+      "sha256": "6cc7834e4feb5b48424534d70ceb11c528519839ba72ce676a7336f2e5c677e8",
+      "packHash": "db2a9d75692cf7a6308e21d5ad161ccc8a1dd28f5b6ea6590db7077f25dc0297",
+      "category": "functional",
+      "categoryWhy": "声明了 server/content",
+      "packId": "test-sim",
+      "path": "mods/test-sim/1.0.1/mod.zip",
+      "sizeBytes": 11695,
+      "fileCount": 4,
+      "unpackedBytes": 34336,
+      "assets": {
+        "assetFree": false,
+        "count": 2,
+        "bytes": 1977128,
+        "byKind": {
+          "png": 2
+        },
+        "containers": []
+      },
+      "notes": [
+        "修版（原 1.0.0 引擎整包拒）：原件是安装器形态、顶层没有 pack.json",
         "原件形态：`pack/pack.json`（唯一顶层目录），已是规范工坊包。"
       ]
     },

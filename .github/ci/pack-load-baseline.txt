@@ -2,10 +2,13 @@
 # 一个永远红的门等于没门（同 mod-compat.yml 的 baseline 口径）。
 # 修好一个就删一行 —— 脚本会在汇总里报「基线里这些已恢复，请从基线删掉」。
 #
+# 键的粒度：**一律写 id@version**。只写 id 会把同 id 的好版本一起算进基线，
+# 于是新版本装不上也看不见（2026-10-30 实测踩过）。只写 id 仍可用，但别默认这么写。
+#
 # 首次基线（2026-10-30，引擎 jingjiangze/Stronghold-Protocol-Forge@main）：
-ave-mujica@1.8.24    # ART_UNKNOWN_TABLE: "sfxUnits" 不是 art 表（1.8.24）
-drag-facing-wheel   # PACK_UNKNOWN_FIELD: "credits"（装载器不认识的顶层键）
-fanpack-kazdel-mod  # UNKNOWN_CONTENT_FILE: content "config" 不是数据文件
-hubvideo            # EMPTY_PACK: 没声明任何内容面
-nlc-skins           # PACK_UNKNOWN_FIELD: "credits"
-test-sim            # pack.json is missing
+ave-mujica@1.8.24          # ART_UNKNOWN_TABLE: "sfxUnits" 不是 art 表（已被 1.8.25 取代，1.8.25 能装）
+drag-facing-wheel@1.0.0    # PACK_UNKNOWN_FIELD: "credits"；去掉后又 EMPTY_PACK —— 它是宿主 JS 覆盖，pack 形态装不下
+fanpack-kazdel-mod@1.2.1   # UNKNOWN_CONTENT_FILE: content "config"（已出 1.2.2 修版）
+hubvideo@1.2.0             # EMPTY_PACK —— payload 是宿主路径覆盖，pack 形态装不下
+nlc-skins@1.0.0            # credits + content["skins","assets"] 两个都不合法；需按 art 表重写声明
+test-sim@1.0.0             # pack.json is missing（原件是安装器形态；已出 1.0.1 修版）
