@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-30T10:16:19.769Z",
+ "generatedAt": "2026-10-30T13:59:21.505Z",
  "mods": [
   {
    "id": "ai-scoring",
@@ -992,6 +992,24 @@
    "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/nlc-skins/1.0.0/mod.zip"
   },
   {
+   "id": "nlc-skins",
+   "name": "国家图书馆联动皮肤（NLC 三款 + 追忆回合修复）",
+   "version": "1.0.1",
+   "category": "functional",
+   "note": "插件包（plugin.json manifest 2，class=trusted）。2026-10-30 重打包：原 1.0.0 是 pack.json 形态、content 写成 [\"skins\",\"assets\"]，这两个名字引擎都不认，装载期整包被拒。\n⚠️ 它会整份替换宿主 data/assets.json（7969 文件 / 485 MB 索引）+ avatars/skins/skins-installed 三张表。不是「加皮肤」，是「换整张表」——宿主素材已演进过就会 URL 对不上。\n⚠️ 只有 2026-10-30 及以后的引擎才认 code.data 的任意 data/<name>.json；更早的引擎上本包装得上但四张表都不生效（静默）。trusted 需钉 plugin.lock.json 的 sha256（78b38a33…412c）并设 SP_PLUGIN_SCRIPTS=trusted。",
+   "author": "原件未署名",
+   "license": "原件未声明许可",
+   "compatAuthor": "jingjiangze（本次重打包，未改任何素材字节）",
+   "isCompat": true,
+   "from": "站上 `mods/nlc-skins/1.0.0/mod.zip`",
+   "sizeBytes": 5165208,
+   "fileCount": 37,
+   "sha256": "97d72087d90be6dcf36960a81ca2deae228ff8acda1a8fccf11a492a8c773df3",
+   "packId": "nlc-skins",
+   "addedAt": 1793368440000,
+   "download": "https://raw.githubusercontent.com/jingjiangze/Stronghold-Protocol-Forge-Mods/master/mods/nlc-skins/1.0.1/mod.zip"
+  },
+  {
    "id": "node-metrics-healthz",
    "name": "节点负载读数（/healthz 加 node 节 + 只读指标端点）",
    "version": "1.0.0",
@@ -1803,5 +1821,5 @@
   }
  ],
  "keyId": "sp-workshop-2026-10",
- "sig": "yzy/JaPCjrzQ8rKyenAoH9UffswPy4qxkAwfbLRf5f3KuZLtJcdu+WNogyPe3UDN+XpS1EeJNcRdq8R+QzZFCQ=="
+ "sig": "2mSVTF1DpDNaTZMxCpkuDnCYya2YBnKWLB/Xfvo0hAFG0BM6n1HLTXmALh1iE/i+MJ7AdGPJPeVN5tRTzIASAQ=="
 }
