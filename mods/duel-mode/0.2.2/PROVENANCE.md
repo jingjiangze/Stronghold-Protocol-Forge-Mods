@@ -5,11 +5,11 @@
 
 | 项 | 值 |
 |---|---|
-| ① 包 id / 版本 | `duel-mode` · 0.2.2 |
-| ② 原作者 | jingjiangze（来源：**未声明**） |
-| ③ 原件许可 | **未声明** |
+| ① 包 id / 版本 | `duel-mode` · 0.2.1 |
+| ② 原作者 | 未声明 |
+| ③ 原件许可 | AGPL-3.0-or-later |
 | ④ 兼容改写者 | **未声明** |
-| ⑤ 来源 | 站上记录 `28067c9e377b` · https://github.com/Cloudnyco/Duel-Channel |
+| ⑤ 来源 | 站上记录 `b6a3f39ae9ad` · https://github.com/Cloudnyco/Duel-Channel |
 | ⑥ 改了什么 | **未声明** |
 
 ## 素材与授权（实测清点，业主 2026-10-12 口径：**如实标注**，不因此拦包）

@@ -68,13 +68,7 @@
 //                                            只追加 decision.json 与一笔 meta.revisions，零删除
 //   GET  /mods?kind=…  与  GET /api/mods?kind=…   ← 技术维度筛选，**不传 = 现状**（一字未改）
 //   GET  /mods?func=…  与  GET /api/mods?func=…   ← 功能类目筛选（6 类；可与 kind 叠加）
-//   GET  /mods?q=…     与  GET /api/mods?q=…      ← 关键字搜索（业主 2026-10-15；
-//                                                    匹配 name/author/packId/funcKind，
-//                                                    大小写不敏感、可与 kind/func 叠加）
-//   ⭐ 响应压缩（gzip）   ← 文本响应（html / css / json / js…）在客户端声明支持时压一层；
-//                            二进制与下载流（`/api/file/*` 的 zip）**绝不压**（2026-10-15）
 import { createServer } from 'node:http';
-// ⭐ gzip 用 Node **内置**的 zlib —— 本项目零依赖，不为它引任何外部包。
 import { gzipSync } from 'node:zlib';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, createReadStream, statSync, renameSync, copyFileSync, unlinkSync, rmSync } from 'node:fs';
@@ -82,6 +76,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readZipEntries, readZipFile, looksLikeZip } from './zip.mjs';
 import { reviewName, reviewLabel, reviewEntries, hasBlocker, reviewContainer, reviewSelfDecl, reviewCompatPackJson, needsAcknowledge, ACK_CODES } from './review.mjs';
+import { checkPack } from './packcheck.mjs';
+import {
+  FB_FIELDS, FB_KINDS, FB_SEVERITIES, FB_TEXT_MAX, FB_SHORT_MAX, FB_BODY_MAX,
+  FB_IMG_MAX, FB_IMG_BYTES_MAX, FB_MODS_MAX, FB_PAGE_DEFAULT, FB_PAGE_MAX,
+  FB_DEDUPE_RE, FB_ID_RE, FB_STATES, FB_REASON_MAX, fbStateOf,
+  normalizeFeedback, sniffImage, fbGroupKey, fillFeedbackPage,
+} from './feedback.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PAGES = join(HERE, 'pages');
@@ -674,43 +675,6 @@ function funcKindFilterOf(url) {
   return { funcs: [...new Set(parts)] };
 }
 
-/**
- * ⭐ **关键字搜索**（业主 2026-10-15：「mod 公开页记得加个搜索框」）。
- *
- * 读法（`GET /mods?q=…` 与 `GET /api/mods?q=…` 共用这一份）：
- *   · **不传** / 空串 / 只有空白 ⇒ 返回 `{ q: null }`：调用方走**现状**（全量、顺序照旧）；
- *   · 有内容 ⇒ 返回 `{ q }`（**已 `trim`**）。
- * 与 `kind` / `func` **可以叠加**（AND 语义，三条各管一件事）：
- *   `?kind=functional&func=utility&q=面板` = 既装得上、又是实用工具、且命中「面板」。
- * ⚠️ 它**不像** `kind` / `func` 那样会 400：`q` 是自由文本，**没有闭枚举可校验**，
- *    任何字符串都是合法输入（空 = 不筛）。
- *
- * 匹配口径（一句话）：**下面四个字段里任意一个包含这个关键字，就算命中** ——
- *   `name`（站侧显示名）· `author`（原作者）· `packId`（包内 `pack.json` 的 id）·
- *   `funcKind`（功能类目）。
- *   ⚠️ **大小写不敏感**（两边都 `toLowerCase()`）、**首尾空白忽略**（`trim`）；
- *      但**中间的空格不折叠、也不拆词** —— 整串当一个子串找。拆词会把「A B」悄悄变成
- *      「既含 A 又含 B」的 AND，与「关键字」这个词的预期不符，也说不清是哪种。
- *   ⚠️ 字段是**闭集，就这四个**：`note` / `compatNote` / `compatAuthor` 这类自由文本
- *      **故意不搜** —— 它们装的是维护者写的说明，搜进来会让「按名字找一个包」的人
- *      被一堆说明文案命中，列表反而更难读。要搜它们请先改这一行（判据只有这一份）。
- *   ⚠️ 值缺失（`null` / 空串 —— 比如没有 `packId` 的记录）**跳过**，
- *      **不当成空串去命中所有关键字**（那会让「搜什么都出全部」变成一个查不出的 bug）。
- */
-function queryFilterOf(url) {
-  const raw = url.searchParams.get('q');
-  if (raw == null) return { q: null };
-  const q = String(raw).trim();
-  if (!q) return { q: null };
-  return { q };
-}
-/** 一条记录是否命中关键字（判据只有这一份；`o` 是 `/api/mods` 那个对外 shape，`s` 是记录本身）。 */
-function matchesQuery(o, s, q) {
-  const needle = q.toLowerCase();
-  return [o.name, o.author, o.packId, funcKindOf(s)]
-    .some((v) => v != null && String(v).toLowerCase().includes(needle));
-}
-
 // ---------------------------------------------------------------- 数据模型字段（新增）
 /**
  * `meta.json` 新增字段（老记录一个都没有 ⇒ 老记录一律**不可认领**，裁定 ④）：
@@ -842,6 +806,179 @@ const isCompat = (id) => dirOf(id)?.area === 'compat';
  */
 const isHidden = (m) => !!m && m.hidden === true;
 
+// ---------------------------------------------------------------- 反馈面（2026-10-13 新增）
+/**
+ * mod 反馈**住在被反馈那条记录的目录里**：不进 `meta.json`，也不在 `DATA_DIR` 根新建区。
+ *
+ * 两个理由，都是这仓库已有的纪律：
+ *   ① `DATA_DIR` 根「只有上游那几个目录」是 `selftest-compat.mjs` 断言过的不变量
+ *      （多出一个散文件就等于某条失败路径没清理干净）。反馈**不在根上新开区** ⇒ 不牵动这条；
+ *      （2026-10-14 上游为「硬删（档 3）」加了 `tombstones/`，那条断言与 `selftest-feedback.mjs`
+ *      的同类断言都已按这份清单放行。）
+ *   ② 业主 2026-10-13 的口径是「**反馈正文与图片只有网站维护者能看到**」。
+ *      把反馈存在 `meta.json` **外面**，公开面（`/api/mods`、`/mods`、`/api/status`、
+ *      `/api/publisher/mine`）读的都是 `meta.json` —— 于是「不泄露」是**数据结构本身**保证的，
+ *      不依赖某个端点记得少写一个字段。
+ *
+ * ```
+ * <区>/<记录编号>/feedback/<反馈编号>.json        一条反馈（正文 + 元数据 + 图片清单 + 图片令牌哈希）
+ * <区>/<记录编号>/feedback/<反馈编号>-<序>.<ext>   图片原字节（不转码不缩放；ext 由魔数嗅探结果给）
+ * ```
+ *
+ * ⚠️ 零删除：反馈**没有删除口**。要打回/隐藏某条反馈请删目录（人工），
+ *    与站点「整条链上没有任何一处删数据」的立场一致。
+ */
+const FB_DIR_NAME = 'feedback';
+const fbDirOf = (id) => { const f = dirOf(id); return f ? join(f.dir, FB_DIR_NAME) : null; };
+/** 图片令牌**只存哈希**（与认领码 / 发布者令牌同一套：盘上没有明文可偷，备份也一样）。 */
+const fbTokHashOf = (tok) => sha256Hex(`sp-modsite/feedback-image-token/v1:${String(tok || '')}`);
+/**
+ * 「这枚图片令牌是不是这一条反馈的」—— 与 `publisherTokenOk` 同一口径：
+ * 输入先哈希成定长 32 字节，再逐条 `timingSafeEqual`，**形状不对的输入也照比一次**，
+ * 不因长度不同提前返回（否则「像不像令牌」会从耗时上漏出去）。
+ */
+function fbTokenOk(fb, token) {
+  const list = Array.isArray(fb?.imageTokens) ? fb.imageTokens : [];
+  const given = Buffer.from(fbTokHashOf(token), 'hex');
+  let hit = false;
+  for (const t of list) {
+    let buf = EMPTY32;
+    const h = String(t?.h || '');
+    if (/^[0-9a-f]{64}$/.test(h)) { try { buf = Buffer.from(h, 'hex'); } catch { buf = EMPTY32; } }
+    if (buf.length === given.length && timingSafeEqual(buf, given)) hit = true;
+  }
+  return hit;
+}
+/** 某条记录下的全部反馈（时间正序；没有目录就是空数组）。**只给管理口与幂等判据用。** */
+function listFeedback(id) {
+  const d = fbDirOf(id);
+  if (!d || !existsSync(d)) return [];
+  let names = [];
+  try { names = readdirSync(d); } catch { return []; }
+  return names
+    .filter((n) => n.endsWith('.json') && FB_ID_RE.test(n.slice(0, -5)))
+    .map((n) => readJson(join(d, n)))
+    .filter((x) => x && FB_ID_RE.test(String(x.id || '')) && String(x.mod || '') === id)
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+}
+/**
+ * 「同一个 mod」的折叠索引（业主需求 ②：单个看 + 合并看）。
+ * 分组键与判据见 `feedback.mjs` 的 `fbGroupKey` —— 两条：同 `packId`、或 `compatOf` 双向有链。
+ *
+ * ⚠️ 这里**会**为普通投稿解一次 zip 取 `pack.json.id`（走 `signatureOf`，同一条记录有缓存），
+ *    与公开列表 `/api/mods` 用的是同一份推导，不另立判据。
+ * @returns {Promise<{ byRec: Map<string,string>, members: Map<string,string[]> }>}
+ */
+async function fbGroupIndex() {
+  const subs = allSubs();
+  const packIdOf = new Map();
+  for (const s of subs) {
+    let pid = (s.pack && s.pack.id) || null;
+    if (!pid && s.kind !== 'compat') {
+      const sig = await signatureOf(s);
+      pid = sig.packId || null;
+    }
+    packIdOf.set(s.id, pid);
+  }
+  const parent = new Map(subs.map((s) => [s.id, s.id]));
+  const find = (x) => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r);
+    let cur = x;
+    while (parent.get(cur) !== r) { const nx = parent.get(cur); parent.set(cur, r); cur = nx; }
+    return r;
+  };
+  const union = (a, b) => {
+    if (!parent.has(a) || !parent.has(b)) return;      // compatOf 指向一条已被删掉的记录：不并、也不报错
+    const ra = find(a); const rb = find(b);
+    if (ra !== rb) parent.set(rb, ra);
+  };
+  // 判据①：同一个 pack id ⇒ 同一款（线上实测有两组这样的情形）
+  const firstByPack = new Map();
+  for (const [id, pid] of packIdOf) {
+    if (!pid) continue;
+    const first = firstByPack.get(pid);
+    if (first) union(first, id); else firstByPack.set(pid, id);
+  }
+  // 判据②：compatOf 链（双向 —— 只要 A 说它由 B 改来，A、B 就是一款）
+  for (const s of subs) {
+    const of = String(s.compatOf || '');
+    if (ID_RE.test(of)) union(of, s.id);
+  }
+  const members = new Map();
+  for (const s of subs) {
+    const root = find(s.id);
+    if (!members.has(root)) members.set(root, []);
+    members.get(root).push(s.id);
+  }
+  for (const [k, v] of members) members.set(k, v.sort());
+  const byRec = new Map();
+  for (const [root, ids] of members) {
+    const pid = ids.map((i) => packIdOf.get(i)).find(Boolean) || null;
+    const label = fbGroupKey(root, pid);      // 组名：有 pack id 就用它，没有就退回组根的记录编号
+    for (const i of ids) byRec.set(i, label);
+  }
+  return { byRec, members, packIdOf };
+}
+/** 一条记录所在的**整组**编号（含它自己；索引里没有就它一条）。 */
+function fbGroupMembers(index, id) {
+  for (const [, ids] of index.members) if (ids.includes(id)) return ids;
+  return [id];
+}
+/** 反馈里图片那一栏对**外**的发法：只给元数据，`url` 一律由管理口现拼。 */
+const fbImageMeta = (img) => ({
+  n: img.n, bytes: img.bytes, sha256: img.sha256, mediaType: img.mediaType, at: img.at,
+});
+
+/**
+ * 把一张反馈图片发出去。**与 `sendFile` 的区别是刻意的**：
+ *   · `content-disposition: inline`（维护者要在浏览器里直接看图，不是下载一堆附件）；
+ *   · `content-type` 只来自**落盘时嗅探的结果**（不读扩展名、不读客户端报的）；
+ *   · `x-content-type-options: nosniff` —— 站点没有 CSP，这一条是图片这一路唯一的浏览器侧护栏。
+ * 调用方必须**先过** `adminAllowed()` + `isAdmin()` 两道，这个函数自己不看凭据。
+ */
+const sendFbImage = (res, path, mediaType) => {
+  const st = statSync(path);
+  res.writeHead(200, {
+    'content-type': mediaType,
+    'content-length': st.size,
+    'x-content-type-options': 'nosniff',
+    'content-disposition': 'inline',
+    'cache-control': 'no-store',
+  });
+  createReadStream(path).pipe(res);
+};
+
+/**
+ * 样式表链接。这个串**必须**与上游 `renderPage` 里 `__CSS__` 注入的那个一致，否则反馈页
+ * 与其余页面吃到不同缓存版本（浏览器上一份新CSS一份旧CSS，最难查的那种）。
+ * 抄一份在这里是 S1 换掉「寄在 renderPage 体内」这笔账的**唯一**代价，
+ * 由 `selftest-feedback.mjs` 逐字比对上游那一行来守（对不上就红）。
+ */
+const FEEDBACK_THEME_CSS = '/theme.css?v=3';
+
+/**
+ * 反馈那两页**自己发**（S1，2026-10-14）：形状与上游的 `renderPage` 一致，但**不经过它**。
+ *
+ * 为什么不复用 `renderPage`：那个函数是上游每次加筛选维度都要插一行的老住户（`__KINDS__`
+ * / `__FUNCS__` / `__MAX_MB__` 都长在里面），我方往它体内挂代码 ⇒ 每轮上游同步必撞一块。
+ * 现在它**逐字节等于上游**，判据由 `.github/overlay-check.mjs` 的 `noTouch` 守。
+ * 少掉的那几个槽（`__VIEW__` / `__KINDS__` / `__FUNCS__` / `__MAX_MB__`）反馈页一个都不用 ——
+ * 真需要谁的注入值，就在调用处把值当参数传进来，不靠共享一个全局填充器。
+ */
+const renderFeedbackPage = (res, name, opts = {}) => {
+  const p = join(PAGES, name);
+  if (!existsSync(p)) return send(res, 404, '页面不存在', { 'content-type': 'text/plain; charset=utf-8' });
+  const html = fillFeedbackPage(readFileSync(p, 'utf8'), {
+    css: FEEDBACK_THEME_CSS,
+    adminApi: ADMIN_API,
+    adminPage: `/${ADMIN_PATH}`,
+    fbMod: opts.fbMod,
+    idRe: ID_RE,
+  });
+  send(res, 200, html, { 'content-type': 'text/html; charset=utf-8' });
+};
+
 /** 包里的 pack.json（只读它一条，最多 1 MB；读不到/解析不了都返回 null）。 */
 async function packJsonFor(file) {
   const m = await readZipFile(file, ['pack.json']);
@@ -933,7 +1070,17 @@ async function packAuthorOf(id) {
     // （指令㉑：引擎不允许同 id 并存，玩家一次只能装一条，这件事必须在卡片上直接点出来）。
     // 读不到 id 就是 null：**不猜、不编**，拿不到就不画那一行（见 pages/mods.html 的 sameIdPeers）。
     const pid = pack && typeof pack.id === 'string' ? pack.id.trim() : '';
-    value = { author: a || null, authorSource: a ? 'pack.json' : null, packId: pid || null };
+    // 2026-10-14：同一次读顺带跑一遍**契约预检**（site/packcheck.mjs）。它是纯函数、只读 `pack.json`
+    // 这一条，结论随记录如实展示给审核台与下载者 —— 契约（顶层键闭集 / `content` 名单 / `combat` 声明）
+    // 原本只有引擎在装载期才判，站上看得见才不会把"装了才知道装不上"推给玩家。
+    const cc = checkPack(pack);
+    value = {
+      author: a || null, authorSource: a ? 'pack.json' : null, packId: pid || null,
+      // 会改对局结果：true / false / null（没写）。公网卡片按它标「会改对局结果」。
+      combat: cc.combat,
+      // 预检结论（只带 blocker，公网/审核台要的就是"引擎会不会拒"这一行；info 不进公网载荷）。
+      packcheck: cc.codes.filter((c) => c.level === 'blocker'),
+    };
   } catch {
     value = null;                        // zip 坏了 / 条目加密 ⇒ 当作「读不到」，不是错误页
   }
@@ -955,7 +1102,14 @@ async function signatureOf(s) {
     ? { author: s.author, authorSource: s.authorSource || null }
     : { author: (fromPack && fromPack.author) || null, authorSource: (fromPack && fromPack.authorSource) || null };
   // packId 一律取自包内 pack.json —— 它就是「同 id 不能并存」那条判据里的 id。
-  return { ...auth, packId: (fromPack && fromPack.packId) || null };
+  // 2026-10-14：`combat` 与契约预检结论也来自**同一次**读（packAuthorOf），所以必须在这里一并透出 ——
+  // 这一行是重建对象，漏一个字段就是"上游读到了、公网永远拿不到"（本次就先踩了这个坑）。
+  return {
+    ...auth,
+    packId: (fromPack && fromPack.packId) || null,
+    combat: fromPack ? fromPack.combat : null,
+    packcheck: (fromPack && Array.isArray(fromPack.packcheck)) ? fromPack.packcheck : [],
+  };
 }
 
 /**
@@ -1245,35 +1399,14 @@ const allSubs = () => {
 
 // ---------------------------------------------------------------- HTTP 小工具
 
-/* ============================================================================
- * ⭐ 响应压缩（gzip）—— 2026-10-15 加。起因：`/mods` 改成服务端预渲染后，未压缩
- *    **197,905 字节**（改前 20,101），而站点前置没有 gzip ⇒ 每次看列表多传约 178 KB。
- *
- * 口径（改这段之前先读这六条）：
- *   ① **只走 `send` 这一条出口** —— 站点所有**文本**响应（页面 / JSON / 样式表）都经过它，
- *      所以「一处写、全站生效」，不用去逐个路由挂；
- *   ② **只对文本类型压**（`text/*`、`application/json|javascript|xml`、`image/svg+xml`）——
- *      ⚠️ 二进制 / 下载流（`/api/file/*` 的 zip）走的是**另一个出口 `sendFile`**，它压根不经过
- *      这里；这里再按 content-type 判一道，是为了「哪天有人拿 `send` 发二进制」也不会被压坏；
- *   ③ **只在客户端声明支持时压**（`Accept-Encoding` 里 gzip 的 `q` 不为 0；`*` 也算支持）；
- *   ④ **一律带 `Vary: Accept-Encoding`** —— 与「这一次到底压没压」**无关**：同一个地址对不同
- *      客户端给的内容确实不同，中间缓存必须按它分桶，否则会把 gzip 实体发给不收 gzip 的客户端；
- *   ⑤ **小于 `GZIP_MIN_BYTES` 不压** —— 省 CPU，也免得为几十字节多一层头；压完反而更大也退回原文；
- *   ⑥ `content-length` 必须与**压缩后**的实体一致（绝不用压缩前的长度）⇒ 这里显式写死。
- *
- * ⚠️ `sendFile`（`/api/file/*`）**一个字节都不碰**：那条路自己写 `content-length` 再 `pipe`
- *    文件流，压了就会让「下载下来的字节」与 `content-length` / 文件 sha256 全对不上。
- *    另：站点**没有任何 Range / 206 实现**（`server.mjs` 里搜不到 `range`）⇒ 这次改动
- *    也不存在「压了就不支持 Range」这回事。
- * ==========================================================================*/
-/** res → 本次请求的 req。**每个 res 只属于一个请求**，所以并发下也不会串。 */
+/** res → 本次请求的 req（每个 res 只属于一个请求，并发下也不会串）。 */
 const REQ_OF = new WeakMap();
 /** 小于这个字节数不压：省 CPU，也免得为几十字节白加一层头。 */
 const GZIP_MIN_BYTES = 1024;
-/** 可压缩的类型（全是文本）。⚠️ `text/event-stream` 排除在外：流式响应压了就再也吐不出来。 */
+/** 可压缩的类型（全是文本）。`text/event-stream` 排除：流式响应压了就吐不出来。 */
 const COMPRESSIBLE_TYPE = /^(?:text\/(?!event-stream)|application\/(?:json|javascript|xml|manifest\+json|ld\+json)|image\/svg\+xml)/i;
 
-/** 客户端到底收不收 gzip：`gzip;q=0` 是**明确不收**，`*` 是「别的都收」⇒ 也算收。 */
+/** 客户端收不收 gzip：`gzip;q=0` 是明确不收；`*` 算「别的都收」。 */
 const acceptsGzip = (req) => {
   const ae = String((req && req.headers && req.headers['accept-encoding']) || '');
   if (!ae) return false;
@@ -1287,33 +1420,32 @@ const acceptsGzip = (req) => {
       const m = /^\s*q\s*=\s*([0-9.]+)\s*$/i.exec(prm);
       if (m) q = Number(m[1]);
     }
-    // `*` 先记下；显式写出来的 gzip 以它自己为准（`gzip;q=0, *;q=1` 仍然是不收）。
     if (name === '*') { star = q; continue; }
-    return q > 0;
+    return q > 0;                       // 显式写出来的 gzip 以它自己为准
   }
   return star !== null && star > 0;
 };
 
-/** 按需压一层：**就地**改 `headers`（vary / content-encoding / content-length），返回真正要发出去的实体。 */
+/** 按需压一层：**就地**改 headers（vary / content-encoding / content-length），返回真正要发的实体。
+ *  ⚠️ `sendFile`（/api/file/* 的 zip 下载）走的是另一个出口、自己写 content-length 再 pipe，
+ *  不经过这里 —— 那条路一个字节都不能压，否则下载下来的字节与 sha256 对不上。 */
 const encodeBody = (req, body, headers) => {
-  // ② 非文本类型：一个字节都不压。
   if (!COMPRESSIBLE_TYPE.test(String(headers['content-type'] || ''))) return body;
-  // ④ Vary 与「这一次压没压」无关 —— 它声明的是「这个地址的响应**随这个头而变**」。
+  // Vary 与「这一次压没压」无关：它声明的是「这个地址的响应随这个头而变」，缓存必须按它分桶。
   headers.vary = headers.vary ? `${headers.vary}, Accept-Encoding` : 'Accept-Encoding';
-  if (body.length < GZIP_MIN_BYTES) return body;   // ⑤ 小响应不压
-  if (!acceptsGzip(req)) return body;              // ③ 客户端没说要，就不给
+  if (body.length < GZIP_MIN_BYTES) return body;
+  if (!acceptsGzip(req)) return body;
   const gz = gzipSync(body);
-  if (gz.length >= body.length) return body;       // 压完反而更大（极少见的文本）⇒ 退回原文
+  if (gz.length >= body.length) return body;
   headers['content-encoding'] = 'gzip';
-  headers['content-length'] = String(gz.length);   // ⑥ 压缩**后**的长度
+  headers['content-length'] = String(gz.length);   // 压缩**后**的长度
   return gz;
 };
 
 const send = (res, code, body, headers = {}) => {
   const out = { 'cache-control': 'no-store', ...headers };
-  // 与 `res.end(body)` 同样的语义：`null` / `undefined` 是空体，其余按 UTF-8 字符串发。
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(body == null ? '' : String(body));
-  // ⚠️ 顺序有讲究：先定实体（`encodeBody` 会改 `out`），再 writeHead，最后 end。
+  // ⚠️ 顺序：先定实体（encodeBody 会改 out），再 writeHead，最后 end。
   const wire = encodeBody(REQ_OF.get(res), buf, out);
   res.writeHead(code, out);
   res.end(wire);
@@ -1342,440 +1474,11 @@ const sendCss = (res) => {
  * 视图名由服务端**白名单**校验后再注入页面（不把 URL 上的任意值写进 HTML）。
  */
 const ADMIN_VIEWS = ['main', 'approved', 'rejected'];
-/* ============================================================================
- * ⭐ 公开列表「一行 mod 怎么画」——**只有这一份实现**，两个调用方：
- *   ① **服务端**：`/mods` 路由用它把列表**预渲染**进 `#list`（无 JS 也看得到列表与搜索结果）；
- *   ② **浏览器**：同一个函数被 `toString()` 注进页面（`renderPage` 换 `__LIST_RENDER__`），
- *      客户端 fetch 回来之后**用它重渲染** —— 绝不写两套行渲染逻辑。
- *
- * ⚠️ 纪律（改这个函数之前先读）：
- *   · 函数体里**不许出现任何 Node API，也不许引用模块作用域里的变量** —— 它要被 `toString()`
- *     原样搬到浏览器里跑；需要的东西一律由参数传进来（`D` 是最小 DOM 适配器 `{ el, text }`）。
- *   · 文案一个字都不要在这里重写：它就是页面上原来那一份（空结果三路、分区标题、徽标）。
- *   · 数据由 `data` 传进来，形状就是 `/api/mods` 的响应（`mods` / `flagged`），
- *     外加 `active`（当前 kind / func / q）—— 空结果那一行要说清是**按什么**空的。
- * ==========================================================================*/
-function makeModListRenderer() {
-  // ---- 「装上会不会生效」这一栏（指令③④）----------------------------------------
-  // 与 `m.kind`（compat / submission）**不是一回事**：`kind` 说的是这条**记录是怎么来的**
-  // （兼容改写来的，还是原样投上来的）；这里说的是**装上到底会不会生效**。两者正交，所以分开画。
-  //   functional    真功能   —— 装上即生效（pack.json 在 ZIP 根 + 干净根单独装载 errors=0）；
-  //   documentation 说明包   —— **装上不会启用任何功能**，下载下来是给你看的；
-  //   unknown       安装器 / 补丁形态 —— ZIP 根没有 pack.json，不能直接丢进 workshop 目录。
-  // ⚠️ 记录里缺这一栏一律按 **unknown** 画：**缺省绝不可能是「真功能」** ——
-  // 否则新批一条没分类的记录，又会在「真功能」区里漏出一个装不上的包。
-  const KIND_OF = (m) => (m.packKind === 'functional' || m.packKind === 'documentation') ? m.packKind : 'unknown';
-  const KIND_TITLE = { functional: '真功能 mod', documentation: '说明包', unknown: '其他（未分类 / 安装器·补丁形态）' };
-  const KIND_HINT = {
-    functional: '这些包**装上即生效**：pack.json 在 ZIP 根，并已在引擎 0.16.0 的干净 workshop 根**单独装载过，errors=0**。',
-    documentation: '**说明包（装上不会启用任何功能）**：参考 / 说明 / 补丁留档。下载下来是给你看的，不是给你装的。',
-    unknown: '这些包**没有通过「真功能」的那三道核**（或者本身就是安装器 / 补丁形态，ZIP 根没有 pack.json）：**不保证装上即生效**，下之前请先看包内说明。',
-  };
-  const KIND_BADGE = {
-    functional: ['badge ok', '真功能'],
-    documentation: ['badge info', '说明包（装上不会启用任何功能）'],
-    unknown: ['badge warn', '未核实是否装上即生效'],
-  };
-
-  // ---- ⭐⭐ 功能类目（业主 2026-10-14 裁定的 6 类）--------------------------------
-  // 与上面那一栏是**两个维度**，故意分开画：
-  //   · 上面那栏 = 技术维度「装上到底会不会生效」；
-  //   · 这一栏 = 功能维度「这包是干什么的」—— **业主说「现在分类不对，要按功能分」指的就是这一栏**。
-  // 缺省一律 `uncategorized`（未分类）：老记录没有这一栏 ⇒ 落未分类，**绝不替它猜一个真功能类**。
-  const FUNC_OF = (m) => (FUNC_BADGE[m && m.funcKind] ? m.funcKind : 'uncategorized');
-  const FUNC_TITLE = {
-    gameplay: '游戏玩法', expansion: '拓展包', utility: '实用工具',
-    assets: '素材替换', documentation: '说明文档', uncategorized: '未分类',
-  };
-  const FUNC_HINT = {
-    gameplay: '这一类的包**改的是玩法本身**：回合流程、对局规则、角色/技能的判定逻辑。',
-    expansion: '这一类的包**往里加东西**：新角色、新卡、新关卡、整合式的内容扩充。',
-    utility: '这一类的包**只办事、不改玩法**：面板、查询、设置、批量操作这类工具。',
-    assets: '这一类的包**换的是素材**：立绘、图标、音效、字体、界面皮肤 —— 玩法逻辑一个字不动。',
-    documentation: '这一类的包**装上不会启用任何功能**，是说明 / 参考 / 资料：下载下来是给你看的，不是给你装的。',
-    uncategorized: '**还没归类**（老记录默认落这里，等维护者一条一条看）。这里**不代表它不是好包** —— '
-      + '只代表分类这一栏还没人填过，请不要据此判断质量。',
-  };
-  const FUNC_BADGE = {
-    gameplay: ['badge ok', '游戏玩法'], expansion: ['badge ok', '拓展包'],
-    utility: ['badge ok', '实用工具'], assets: ['badge info', '素材替换'],
-    documentation: ['badge info', '说明文档'], uncategorized: ['badge warn', '未分类'],
-  };
-  // 功能类目的**固定顺序**（页面分区按它走；不按条数排序，免得每次刷新跳来跳去）。
-  const FUNC_ORDER = ['gameplay', 'expansion', 'utility', 'assets', 'documentation', 'uncategorized'];
-
-  // ---- 「同一个 pack id」的成对记录（指令㉑）--------------------------------------
-  // 引擎**不允许同 id 的两个包并存**：目录名与 `pack.json` 的 `id` 不一致即 `PACK_ID_MISMATCH` 整包被拒；
-  // 实测同一 workshop 根放两份 id 相同的包，只会装载 1 条、后者**静默覆盖**前者。
-  // ⇒ 玩家**一次只能装一条**。这件事以前只写在备注里，不看备注就不知道 —— 所以在卡片上直接点出来。
-  // **拿不到 pack.json id 的记录（packId 是 null）一律不猜、不画**。
-  function sameIdPeers(all, m) {
-    if (!m.packId) return [];
-    return all.filter((x) => x.id !== m.id && x.packId === m.packId);
-  }
-
-  /** 一张卡片。返回 `{ panel, body }` —— 调用方要往 body 里补画一行（疑似素材的命中特征）时用得上。 */
-  function card(m, flagged, peers, D) {
-    const c = D.el('div', 'panel' + (flagged ? ' brackets' : ''));
-    if (flagged) c.style.borderLeft = '4px solid var(--gold)';
-    const body = D.el('div', 'panel__body');
-    const head = D.el('div', 'flex');
-    const h = D.el('h2'); h.style.margin = '0'; h.textContent = m.name;
-    head.append(h);
-    // 兼容改写版：这是「谁由谁改来」的那个改写版，原件只留档、不在这里发。
-    if (m.kind === 'compat') head.append(D.el('span', 'badge ok', flagged ? '兼容版 · 含疑似素材' : '兼容改写版'));
-    // 「装上会不会生效」这个徽标**每一条都画**（含疑似素材那一组）：说明包与安装器形态
-    // 必须在名字旁边就看得出来，不能等下完了才发现装不上。
-    const kb = KIND_BADGE[KIND_OF(m)];
-    head.append(D.el('span', kb[0], kb[1]));
-    // ⭐ 功能类目徽标（业主 2026-10-14）：与上面那个技术徽标**并排画**，两个维度都看得见。
-    const fb = FUNC_BADGE[FUNC_OF(m)];
-    head.append(D.el('span', fb[0], fb[1]));
-    if (flagged) head.append(D.el('span', 'badge warn', '含疑似官方素材'));
-    body.append(head);
-    body.append(D.el('div', 'kv dim', `${(m.size / 1048576).toFixed(2)} MB · 上传于 ${String(m.uploadedAt).slice(0, 10)} · 编号 ${m.id}`));
-
-    // 同 id 提示（指令㉑）：同一行里把「另一条是谁」和「为什么一次只能装一条」都说清。
-    if (peers && peers.length) {
-      body.append(D.el('div', 'kv dim',
-        `⚠ 与 ${peers.map((p) => `「${p.name}」（编号 ${p.id}）`).join('、')} 同为 pack id 「${m.packId}」`
-        + ` —— 引擎不允许同 id 的两个包并存，装第二份会覆盖第一份，所以一次只能装一条。`));
-    }
-
-    // 两个署名**分开两栏**显示，谁也不覆盖谁：
-    // 原作者来自包自带的 pack.json（兼容包发布时预填、普通投稿由站点在读的时候现读，都不改记录）；
-    // 兼容者是站点侧记的（包里的元数据一个字节没动）。
-    // 两栏都带标签，免得只看到一个名字被误当成作者。
-    // 兼容改写版**一定要显示兼容者这一栏**，哪怕它是空的 —— 空就写「未填」。
-    // 把这一栏藏掉，会让人误以为这就是原件自己发的包。
-    // 反过来，**普通投稿没有「兼容」这回事** —— 那一栏整栏不画：画一个「（未记）」会让人
-    // 以为有个兼容者没填，那不是事实。普通投稿只画「原作者」这一栏。
-    const isCompat = m.kind === 'compat';
-    if (m.author || isCompat) {
-      const box = D.el('div', 'sigbox');
-      const sig = D.el('div', 'sig');
-      sig.append(D.el('span', 'sigk', '原作者'));
-      sig.append(D.el('span', 'sigv', m.author || '（未记）'));
-      if (isCompat) {
-        sig.append(D.el('span', 'sigk', '兼容改写者'));
-        sig.append(D.el('span', 'sigv', m.compatAuthor ? m.compatAuthor : '（未填）'));
-      }
-      box.append(sig);
-      if (isCompat) {
-        box.append(D.el('div', 'sighint', '原作说明与署名原样保留自包内的 pack.json；'
-          + '兼容改写是另一个人做的，记在站点侧，没有改动包里的元数据。'));
-        if (!m.compatAuthor) {
-          box.append(D.el('div', 'sighint', '「兼容改写者」这一栏**未填** —— 如实显示，站点没有代填任何名字。'));
-        }
-      }
-      body.append(box);
-    }
-    // 再补一行「这条是从哪条投稿改写来的」（业主 2026-10-11 批准加这一行）。
-    // 它说的是**记录之间的沿革**，不是人 —— 与上面那两栏署名是两回事：
-    // 原作者 / 兼容改写者说的是「谁做的」，这一行说的是「这条记录由哪条记录改来」。
-    // 所以文案里点明「不是原作者署名」，免得被误读成第三个署名。
-    // `compatOf` 有值才画；为空（早先手工批准上线的那几条兼容包就是空的）**整行不画** ——
-    // 不留「未知」「空」之类的占位：不画就是如实说「没有这条链」。
-    if (m.compatOf) {
-      const line = D.el('div', 'kv dim compatof', '由投稿 ' + m.compatOf + ' 改写来（记录沿革，不是原作者署名）');
-      line.id = 'compatof-' + m.id;
-      body.append(line);
-    }
-    // 「兼容说明」与「备注」是两个来源不同的栏位：
-    //   · `compatNote` 是站点侧的「兼容说明」（管理端点 `/compat/note` 改它）；
-    //   · `note` 是记录自己的备注栏。
-    // 站点的**存储层**在发布兼容包时会把同一段文案**同时写进两栏**（`server.mjs` 里那是有意为之，
-    // 本页不碰存储层、也不碰任何记录的数据），于是**两栏逐字相同**成了常态。
-    // 两栏都画 = 同一段字画两遍。所以这里只做**渲染层的去重**，判据一句话：
-    //   两栏都非空且（规范化空白后）逐字相同 ⇒ **只画一次**；只有一栏非空 ⇒ 画那一栏；
-    //   两栏都空 ⇒ **这一块不画**。两栏内容**不同**时两段都画（不相同就不是重复，不许并掉）。
-    // 相等判定先规范化（两端 trim + 连续空白折叠成单空格），免得只差空格还画两遍；
-    // **展示用原文**，不改写正文一个字。
-    // 相同时画 `compatNote`：它是「兼容说明」的语义栏，且带得出「兼容说明：」这个标签 ——
-    // 只画 `note` 会丢掉这个语义。
-    const noteKey = (v) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
-    const cNote = noteKey(m.compatNote);
-    const pNote = noteKey(m.note);
-    if (cNote) {
-      body.append(D.el('div', 'note', '兼容说明：' + m.compatNote));
-      if (pNote && pNote !== cNote) body.append(D.el('div', 'note', m.note));
-    } else if (pNote) {
-      body.append(D.el('div', 'note', m.note));
-    }
-
-    // 按钮文案也照实写：说明包点下去不会被当成「装上去就生效的功能包」。
-    const kk = KIND_OF(m);
-    const dlLabel = kk === 'documentation' ? '下载说明包 zip（不会启用任何功能）'
-      : kk === 'unknown' ? '下载 zip（未核实是否装上即生效）'
-        : (m.kind === 'compat' ? '下载兼容改写版 zip' : '下载 zip');
-    const a = D.el('a', 'btn btn--primary', dlLabel);
-    a.href = m.download;
-    a.style.marginTop = '10px';
-    body.append(a);
-    if (m.homepage) {
-      const s = D.el('div', 'kv dim');
-      s.style.marginTop = '8px';
-      s.append(D.text('原件来源：'));
-      const hh = D.el('a', null, m.homepage);
-      hh.href = m.homepage; hh.rel = 'noopener noreferrer nofollow';
-      s.append(hh);
-      body.append(s);
-    }
-    c.append(body);
-    return { panel: c, body };
-  }
-
-  /**
-   * 把一批数据画进 `listEl`。返回**命中条数**（`mods` + `flagged` 的和）——
-   * 页面拿它画「搜索「x」· 命中 N 条」那一行，屏幕上那个数就与这里画的**同一个数**。
-   *
-   * 主分区**按功能类目**分（业主 2026-10-14：「现在分类不对，要按功能分」）：
-   * 每一区一条判据、固定顺序，标题旁给条数；技术维度（装上会不会生效）**仍然画在每条卡片的徽标上**
-   * —— 两个维度正交，谁都不吞掉谁。`说明文档` 自成一区 ⇒ 业主那条
-   * 「说明包不能混在功能包里」的要求**照旧成立**。
-   */
-  function renderList(listEl, data, D) {
-    const mods = (data && data.mods) || [];
-    const flagged = (data && data.flagged) || [];
-    const active = (data && data.active) || {};
-    const ACTIVE = active.kinds || [];
-    const ACTIVE_FUNC = active.funcs || [];
-    const ACTIVE_Q = active.q || '';
-    listEl.textContent = '';
-    // 同 id 的「另一条」可能落在**任何一组**里（含疑似素材那一组），所以并起来找。
-    const all = mods.concat(flagged);
-    if (!mods.length && !flagged.length) {
-      // 空结果要**如实说清是按什么筛空的**。⭐ 搜索也进这一行（业主 2026-10-15）：
-      // 搜了没命中时写「当前搜索（搜索「x」）下没有…」，而不是让人以为站上一条都没有。
-      // ⚠️ 没搜索时那两句**逐字保持原样**（老判据照旧）。
-      const conds = [...ACTIVE.map((k) => KIND_TITLE[k] || k), ...ACTIVE_FUNC.map((k) => FUNC_TITLE[k] || k)];
-      listEl.append(D.el('p', 'dim', ACTIVE_Q
-        ? `当前搜索（${[`搜索「${ACTIVE_Q}」`, ...conds].join(' + ')}）下没有已上线的包。`
-        : (conds.length
-          ? `当前筛选（${conds.join(' + ')}）下没有已上线的包。`
-          : '还没有通过审核的包。')));
-      return all.length;
-    }
-    for (const k of FUNC_ORDER) {
-      const arr = mods.filter((m) => FUNC_OF(m) === k);
-      if (!arr.length) continue;
-      listEl.append(D.el('h2', 'sec', `${FUNC_TITLE[k]}（${arr.length}）`));
-      listEl.append(D.el('p', 'sub', FUNC_HINT[k]));
-      for (const m of arr) listEl.append(card(m, false, sameIdPeers(all, m), D).panel);
-    }
-    // 疑似素材**照旧单独一组、明确标注**：这一组说的是「素材版权」，与上面三区**正交** ——
-    // 一条既可以是真功能，也可以带疑似素材。所以它不并进任何分区，只把分类徽标照实画在每条上。
-    if (flagged.length) {
-      const box = D.el('div', 'warnbox');
-      box.append(D.el('h3', null, `含疑似官方素材的 mod（${flagged.length}）`));
-      box.append(D.el('div', null, '这些包在自动检查里命中了「像官方解包素材」的特征（Spine 模型、官方立绘/语音路径等），' +
-        '维护者已人工看过并放行。它们不是干净的工坊包：里面的素材版权与可用范围请自行判断，' +
-        '也请勿据此再分发素材本身。仓库正式收录的 packs/ 不含这类素材。'));
-      listEl.append(box);
-      for (const m of flagged) {
-        const built = card(m, true, sameIdPeers(all, m), D);
-        if (m.suspectedReasons && m.suspectedReasons.length) {
-          built.body.append(D.el('div', 'kv dim', '命中的特征：' + m.suspectedReasons.join('、')));
-        }
-        listEl.append(built.panel);
-      }
-    }
-    return all.length;
-  }
-
-  return {
-    renderList,
-    KIND_OF, KIND_TITLE, KIND_BADGE, KIND_HINT,
-    FUNC_OF, FUNC_TITLE, FUNC_BADGE, FUNC_HINT, FUNC_ORDER,
-    sameIdPeers,
-  };
-}
-
-/** 上面那一份渲染实现的**单例**（服务端这一侧用它预渲染 `#list`）。 */
-const MOD_LIST_RENDERER = makeModListRenderer();
-/**
- * 注进页面的那一段：就是上面那个函数的**源码文本**，就地调用一次得到同一个渲染器。
- * ⚠️ 之所以用 `toString()` 而不是「页面里再写一份」：这个项目忌讳判据两份实现 ——
- *    两份必然漂移（改了一处忘了另一处，服务端预渲染与客户端重渲染就会各画各的）。
- * ⚠️ 代价：`server.mjs` **不能被压缩 / 混淆**再跑（`toString()` 拿到的会是压缩后的文本）。
- *    本项目零构建、直接跑源码，所以这条成立；哪天要打包，这里必须一起改。
- */
-const MOD_LIST_RENDERER_SRC = `(${makeModListRenderer.toString()})()`;
-
-/* ---------------------------------------------------------------------------
- * 服务端侧的**最小 DOM 适配器**：只为了让上面那一个渲染函数在 Node 里跑出 HTML。
- * ⚠️ 它不是浏览器、也不打算是：只实现渲染函数用到的那几个成员
- *   （createElement / createTextNode / className / textContent / append / setAttribute /
- *    style / href / rel / id），然后序列化成 HTML。
- * ⚠️ **转义是这里的事**：页面那边走 `textContent`，浏览器替它转义；服务端拼字符串就得自己转。
- *    文本转 `& < >`，属性值再加 `"` —— 少一个就是一个反射型 XSS 口子（`/mods` 的 `q`
- *    已经是转义过的白名单外自由文本，但记录里的 `name` / `note` 同样是自由文本）。
- * -------------------------------------------------------------------------*/
-const htmlEscText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const htmlEscAttr = (s) => htmlEscText(s).replace(/"/g, '&quot;');
-/** CSS 属性名 camelCase → kebab-case（`borderLeft` → `border-left`）。 */
-const cssKebab = (k) => k.replace(/[A-Z]/g, (ch) => '-' + ch.toLowerCase());
-const htmlNode = (tag) => {
-  const n = { tag, cls: '', id: '', href: '', rel: '', attrs: {}, style: {}, children: [] };
-  n.append = (...kids) => { for (const x of kids) n.children.push(x); };
-  n.setAttribute = (k, v) => { n.attrs[k] = String(v); };
-  Object.defineProperty(n, 'className', { get: () => n.cls, set: (v) => { n.cls = String(v); } });
-  Object.defineProperty(n, 'textContent', {
-    get: () => n.children.map((x) => (x.text != null ? String(x.text) : '')).join(''),
-    set: (v) => { n.children = (v === '' || v == null) ? [] : [{ text: String(v) }]; },
-  });
-  return n;
-};
-const htmlSerialize = (x) => {
-  if (x.text != null) return htmlEscText(x.text);
-  const styleKeys = Object.keys(x.style);
-  const attrs = [
-    x.cls ? ` class="${htmlEscAttr(x.cls)}"` : '',
-    x.id ? ` id="${htmlEscAttr(x.id)}"` : '',
-    x.href ? ` href="${htmlEscAttr(x.href)}"` : '',
-    x.rel ? ` rel="${htmlEscAttr(x.rel)}"` : '',
-    ...Object.entries(x.attrs).map(([k, v]) => ` ${k}="${htmlEscAttr(v)}"`),
-    styleKeys.length
-      ? ` style="${htmlEscAttr(styleKeys.map((k) => `${cssKebab(k)}:${x.style[k]}`).join(';'))}"` : '',
-  ].join('');
-  return `<${x.tag}${attrs}>${x.children.map(htmlSerialize).join('')}</${x.tag}>`;
-};
-/** 服务端调用方：用**同一个渲染函数**把 `#list` 的内容画成 HTML 字符串。 */
-const renderModListHtml = (data) => {
-  const D = {
-    el: (tag, cls, text) => {
-      const n = htmlNode(tag);
-      if (cls) n.className = cls;
-      if (text != null) n.textContent = text;
-      return n;
-    },
-    text: (t) => ({ text: String(t) }),
-  };
-  const root = htmlNode('div');
-  MOD_LIST_RENDERER.renderList(root, data, D);
-  return root.children.map(htmlSerialize).join('');
-};
-
-/**
- * ⭐ 公开面的**取数 + 三道筛选 + 计数** —— **只有这一份实现**，两个调用方：
- *   · `GET /api/mods`（JSON，客户端 fetch 与第三方读的入口）；
- *   · `GET /mods`（同一个结果**预渲染**进 HTML，无 JS 也看得到）。
- * ⚠️ 这两条路**必须逐条一致**，所以过滤与计数一律在这里做完，调用方一个字节都不再筛。
- * ⚠️ `counts` 的算法**一个字节都没动**（2026-10-15 加搜索时定的口径照旧）：
- *    它数的是 `shaped`（全量已上线），**不按 `q` 收窄**；给不给也只由 kind / func 决定。
- */
-async function collectPublicMods({ kf, ff, qf }) {
-  const shape = (s, sig) => ({
-    id: s.id, name: s.name, note: s.note, uploadedAt: s.uploadedAt, size: s.size,
-    homepage: s.homepage || null, suspected: s.suspected === true,
-    suspectedReasons: s.suspectedReasons || [],
-    // 兼容包：**两个署名分开给**，谁也不覆盖谁。公网列表那一页照这两栏分别显示。
-    // 普通投稿这两栏里通常只有原作者（没有「兼容者」这回事）——但**原作者照给**：
-    // 来源是包内的 pack.json，见 signatureOf（推导，不回写记录）。
-    kind: s.kind || 'submission',
-    // **另一种** kind：这条包「**装上到底会不会生效**」（指令③④）。与上面那个 `kind`
-    // （compat / submission，说的是这条记录**怎么来的**）是两回事，所以**故意不复用同一个键**：
-    //   functional    装上即生效 —— 站上每条都过了三道核：① `pack.json` 在 ZIP 根
-    //                 （否则解压进 workshop 目录根本不被装载）② 在引擎 0.16.0 的干净 workshop
-    //                 根**单独装载 errors=0** ③ `pack.json` 的 `api`/`game` 区间与当前
-    //                 MOD_API_VERSION / 上游版本相容；
-    //   documentation 说明包 / 参考 / 补丁 —— **装上不会启用任何功能**；
-    //   unknown       安装器形态等，判不了就**不放进真功能区**。
-    // ⚠️ 记录里没有这一栏（还没分类的、或日后新批的）一律按 **unknown** 给：
-    // 缺省**绝不可能是 functional** —— 否则「下载了 mod 却不能用」会从新记录那里漏回来。
-    packKind: s.packKind || 'unknown',
-    // ⭐⭐ **功能类目**（业主 2026-10-14 裁定的 6 类）—— 这才是「这包是干什么的」那一栏。
-    // 与上面的 `packKind`（技术维度：装上会不会生效）**是两个维度、两个键**，故意不复用。
-    // 缺省 `uncategorized`（未分类）：老记录没有这一栏 ⇒ 落未分类，**绝不猜**。
-    funcKind: funcKindOf(s),
-    funcKindTitle: FUNC_KIND_TITLES[funcKindOf(s)],
-    // 包内 `pack.json` 的 `id`（兼容包取记录里那一栏）。**只用来做一件事**：让公网那一页
-    // 能看出「哪几条是同一个 id」——引擎不允许同 id 并存，玩家一次只能装一条。
-    // 读不到就是 null，页面不画那一行（不猜）。
-    packId: sig.packId ?? null,
-    // 原作者：兼容包取记录里那一栏（发布时预填自包内 pack.json，或维护者手填）；
-    // 普通投稿记录里从来没有这一栏 ⇒ 去**包内 pack.json** 读（同一个来源名 pack.json）。
-    author: sig.author,
-    authorSource: sig.authorSource,           // 'pack.json' / 'maintainer' / null（没有来源就没有名字）
-    // 兼容者（**只存在站点侧记录里**，不进 pack.json）。空字符串 = 未填，是**合法值** ——
-    // 所以这里**不能用 `|| null`**：那会把「未填」和「压根不是兼容包」混成同一个 null，
-    // 公网那一页就没法如实把「未填」那一栏显示出来。
-    compatAuthor: typeof s.compatAuthor === 'string' ? s.compatAuthor : null,
-    compatAuthorSource: s.compatAuthorSource || null,   // 手填（form）还是未填（empty）
-    compatOf: s.compatOf || null,             // 由哪个待审原件改写来（追溯用）
-    compatNote: s.compatNote || null,         // 改了什么
-    // 相对路径：页面在哪个 origin（公网，或隧道里的 127.0.0.1）就打哪个。
-    // 用 BASE_URL 拼绝对地址会让隧道里的页面变成跨域 —— <a href> 时代是跳到公网 IP 被白名单挡掉，
-    // fetch 时代则直接 Failed to fetch。
-    download: `/api/file/${s.id}`,
-    // 只给维护者看的留档入口（公开下载这条路走到它会 403，见 /api/file/ 那一段）。
-    // ⚠️ 只有留档文件**真的在磁盘上**才给这一栏：没有 `orig.zip` 的兼容包（早先手工批准上线、
-    // 以及 `/compat/link` 事后补链的那几条）发出去就是必然 404 的死链。判据见 `origArchiveOf`。
-    archiveDownload: origArchiveOf(s.id),
-  });
-  // ⭐ **公开面过滤器**（2026-10-12 增补，只加不减）：
-  //   · 主判据一个字没改：`state === 'approved'`；
-  //   · **只多一条**：排除「发布者申请自撤、等管理员确认」的那些（`isPubliclyVisible`）。
-  //     「他想删掉」要立刻见效 —— 见 isPubliclyVisible 的完整说明。
-  const approved = allSubs().filter((s) => isPubliclyVisible(s));
-  // 逐条推署名来源（**只读**）。只有普通投稿真会去解一次 zip，而且结果有缓存
-  // （见 packAuthorOf）；兼容包走记录里那两栏，一次 zip 都不读。
-  // Promise.all 保序，所以列表顺序与 filter/map 时代完全一致。
-  const shaped = await Promise.all(approved.map(async (s) => ({ s, o: shape(s, await signatureOf(s)) })));
-  // 分类筛选在**分组之前**做（两组同一条判据），并且**保留三个分区标题**的既有画法：
-  // 服务端只筛数据，页面自己按 KIND_OF 分三块，标题一个没动（需求 ③ 的「保留现有三个分区标题」）。
-  const picked0 = kf.kinds ? shaped.filter((x) => kf.kinds.includes(kindOfRec(x.s))) : shaped;
-  // ⭐ 功能类目筛选（业主 2026-10-14）：与上面那条**各管一个维度**，所以是**串联叠加**，
-  //    不是二选一 —— `?kind=functional&func=utility` = 「既装得上、又是实用工具」。
-  const picked = ff.funcs ? picked0.filter((x) => ff.funcs.includes(funcKindOf(x.s))) : picked0;
-  // ⭐ 关键字搜索（业主 2026-10-15）：**再串一层**（AND）。三个条件各管一件事，
-  //    谁都不顶掉谁；而且与上面两条一样在**分组之前**筛 ⇒ 两组（普通 / 疑似素材）
-  //    同一条判据，不会出现「主列表搜到了、疑似那一组没搜」。
-  const pickedQ = qf.q ? picked.filter((x) => matchesQuery(x.o, x.s, qf.q)) : picked;
-  const body = {
-    mods: pickedQ.filter((x) => !x.s.suspected).map((x) => x.o),
-    flagged: pickedQ.filter((x) => x.s.suspected).map((x) => x.o),
-  };
-  // ⭐ 每类计数（需求 ③：「分区标题旁显示每类计数」）。
-  // **只在不筛的时候给**：筛过之后「functional 有 3 条」这种数会因为筛选而变小，
-  // 反而误导（用户以为站上只有 3 条功能包）。所以筛过时不给 `counts` 字段，
-  // 页面退回按当前这批自己数（那才是屏幕上真实的条数）。
-  // ⚠️ 数的是**主分区（非疑似素材）**里的条数 —— 与页面实际画出来的那三个区块**同一口径**：
-  //    疑似素材在 `/mods` 上另起一块（「含疑似官方素材的 mod」），不并进任何分类区。
-  //    计数若把疑似素材那条也算进「说明包」，就会比用户点进去看到的多 1 条
-  //    （实测线上 115 条里 `e3a5d09eb6d3` 正是 approved + documentation + suspected，
-  //     它进了疑似那一组 ⇒ 计数 22、点进去只有 21）。这种「数对不上」最招人问，所以数同一批。
-  const mainOnly = shaped.filter((x) => !x.s.suspected);
-  // 两个维度**各自一套计数**：技术维度叫 `counts`（老读法一字不改），
-  // 功能维度叫 `counts.func`（新读法）—— 两份都只在**不筛**的时候给。
-  // ⭐ 2026-10-15 加搜索时这一块**一个字节都没动**（业主口径：「别把 counts 也过滤掉」）：
-  //    它数的仍然是 `shaped`（全量已上线），**不按 `q` 收窄**；给不给也只由 kind / func 决定，
-  //    `q` 不参与这个条件 ⇒ 只搜不筛时，`counts` 照旧是全站每类计数。
-  if (!kf.kinds && !ff.funcs) {
-    const funcCounts = {};
-    for (const k of FUNC_KINDS) funcCounts[k] = mainOnly.filter((x) => funcKindOf(x.s) === k).length;
-    body.counts = {
-      functional: mainOnly.filter((x) => kindOfRec(x.s) === 'functional').length,
-      documentation: mainOnly.filter((x) => kindOfRec(x.s) === 'documentation').length,
-      unknown: mainOnly.filter((x) => kindOfRec(x.s) === 'unknown').length,
-      flagged: shaped.length - mainOnly.length,
-      total: mainOnly.length,
-      func: funcCounts,
-    };
-  }
-  body.kinds = kf.kinds;
-  body.funcs = ff.funcs;
-  body.funcKindTitles = FUNC_KIND_TITLES;
-  return body;
-}
-
 /**
  * 发一个「统一皮肤」的页面：把 __CSS__ 换成同源样式表链接、__ADMIN_API__ 换成当前前缀。
  * 两个替换放在一处，页面上就不会漏掉谁 —— 审核前缀是环境变量决定的，漏了就会打到不存在的地址。
  * 审核页还多一个 __VIEW__（当前在哪一页），同样是**白名单校验过**的值。
  * 列表页多一个 __KINDS__（当前分类筛选，同样白名单校验过；只填进 data 属性，不拼 HTML）。
- * 列表页还有 __Q__（当前关键字搜索，2026-10-15）—— ⚠️ 它是**唯一**一个**非闭集**的注入值，
- * 所以**转义后才进 HTML 属性**（见下面 `qAttr`）；`kinds` / `funcs` 走的是白名单那条路。
  * ⭐ __MAX_MB__（2026-10-14 上传断连修复）：上传页要**在本地先判体积**、并把「上限多少 MB」
  *    写进 413 的提示里，所以这个数必须由服务端注入 —— 前端自己写死 100 就会与 `MAX_MB` 漂移。
  */
@@ -1933,13 +1636,10 @@ const readBody = (req, limit) =>
 // ---------------------------------------------------------------- 路由
 
 const server = createServer(async (req, res) => {
+  REQ_OF.set(res, req);
   const url = new URL(req.url, BASE_URL);
   const p = url.pathname;
   const ip = ipOf(req);
-  // ⭐ 让 `send`（文本出口）拿得到本次请求的 `Accept-Encoding`。`send` 的调用点有上百处，
-  //    签名里再塞一个 `req` 要改遍全站；这里登记一次、`send` 自己去查 —— 键是 `res`，
-  //    每个请求一个自己的 res，所以并发下不会串（也就不用碰 `send` 的调用点）。
-  REQ_OF.set(res, req);
 
   // 这一次请求万一在某条上传路径中途失败，它可能已经往数据目录写了临时文件。
   // 登记在这里，交给下面的 finally 兜住 —— 失败路径**一个都不许**在 DATA_DIR 留下 .part 垃圾。
@@ -1963,16 +1663,14 @@ const server = createServer(async (req, res) => {
       //    各管一个维度（技术 / 功能），互不覆盖 —— 与 `/api/mods` 是同一份读法。
       const ff = funcKindFilterOf(url);
       if (ff.error) return sendJson(res, 400, { error: ff.error, funcs: FUNC_KINDS });
-      // ⭐ 关键字搜索（业主 2026-10-15）：`/mods?q=…`。与上面两条**可以叠加**（AND）。
-      //    它**没有** 400 那一档：`q` 是自由文本，没有闭枚举可校验。
+      // ⭐ 关键字搜索（2026-10-15）：`/mods?q=…`。与上面两条**可以叠加**（AND）；自由文本，没有 400 那一档。
       const qf = queryFilterOf(url);
-      // ⭐⭐ **服务端预渲染**（2026-10-15）：`#list` 的内容由服务端按**当前查询**画好一起发出去，
-      //    无 JS 也能看到列表与搜索结果（改前那里恒为「正在载入…」，列表全靠客户端 fetch）。
-      //    ⚠️ 取数 / 过滤 / 计数**调用 `/api/mods` 用的同一个函数**（`collectPublicMods`）——
-      //    绝不在这里把过滤逻辑再写一遍：那样两条路必然漂移，判据就变成两份了。
+      // ⭐⭐ **服务端预渲染**：`#list` 由服务端按当前查询画好一起发出去，无 JS 也能看到列表与搜索结果。
+      //    ⚠️ 取数 / 过滤 / 计数一律调 `/api/mods` 用的同一个函数（collectPublicMods）——
+      //    绝不在这里把过滤逻辑再写一遍：两条路必然漂移，判据就变成两份了。
       const data = await collectPublicMods({ kf, ff, qf });
       const active = { kinds: kf.kinds || [], funcs: ff.funcs || [], q: qf.q || '' };
-      // 预渲染与客户端重渲染用的是**同一个** `renderList`（见 MOD_LIST_RENDERER_SRC）。
+      // 预渲染与客户端重渲染用的是**同一个** renderList（见 MOD_LIST_RENDERER_SRC）。
       const listHtml = renderModListHtml({ mods: data.mods, flagged: data.flagged, active });
       return renderPage(res, 'mods.html', { kinds: active.kinds, funcs: active.funcs, q: active.q, listHtml });
     }
@@ -1989,6 +1687,31 @@ const server = createServer(async (req, res) => {
       }
       return sendAdminPage(res, view);
     }
+    /**
+     * 反馈那两页（2026-10-13 上线；2026-10-14 S1 把这两个口并成**一块**）。
+     *
+     * 位置钉在上游分发链的**末尾**（`/healthz` 之前）—— 这是我方叠加层的固定纪律：
+     * 上游将来自己实现 `/feedback` 或 `…-view` 时**他的先生效**，我这份退化成兜底，不抢命名。
+     * 并成一块的收益就是同步时只可能撞这一处，而不是老住户 `renderPage` 那种「每轮必撞」。
+     *
+     * · `/feedback?mod=<记录编号>` 只是那张**写**反馈的表单；反馈正文与图片只有维护者能看到，
+     *   所以这里不存在任何「看别人反馈」的公开口。
+     * · `/<ADMIN_PATH>/feedback-view` 是审核侧那一页，与审核台**同一道门**（`ADMIN_IPS` + 令牌 / Basic）。
+     *   它是**另一个页面**，不是审核台的第四个视图 —— `ADMIN_VIEWS` 白名单仍然只有
+     *   `main / approved / rejected`，`?view=<坏值>` 那条 404 判据一个字没动，
+     *   `selftest-admin.mjs` 里那几条（三页相加 + 已隐藏 = 全部、坏 view 照旧 404）不受影响。
+     *   为什么不塞进 `admin.html`：那一页是一整个内联 `<script>`，它只要在顶层抛一次错，
+     *   后面所有 `onclick` 与自动载入就全哑（2026-10-11 的 TDZ 事故就是这么来的，
+     *   `selftest-admin.mjs` 治的就是这一类）。反馈这块**单独一页**，两边互不带下去。
+     */
+    if (req.method === 'GET' && p === '/feedback') {
+      return renderFeedbackPage(res, 'feedback.html', { fbMod: url.searchParams.get('mod') || '' });
+    }
+    if (req.method === 'GET' && p === `/${ADMIN_PATH}/feedback-view`) {
+      if (!adminAllowed(req)) return sendJson(res, 403, { error: '这个地址不在管理白名单里（ADMIN_IPS）' });
+      if (!isAdmin(req)) return askForLogin(res);
+      return renderFeedbackPage(res, 'feedback-admin.html');
+    }
     if (req.method === 'GET' && p === '/healthz') {
       return sendJson(res, 200, { ok: true, at: nowIso(), submissions: allSubs().length });
     }
@@ -2001,14 +1724,140 @@ const server = createServer(async (req, res) => {
       // ⭐ 功能类目筛选（可选，同上）：`?func=gameplay` 或 `?func=gameplay,utility`。
       const ff = funcKindFilterOf(url);
       if (ff.error) return sendJson(res, 400, { error: ff.error, funcs: FUNC_KINDS });
-      // ⭐ 关键字搜索（业主 2026-10-15）：`?q=…`，与上面两条**叠加**（AND 语义）。
-      //    ⚠️ **不往响应里加 `q` 这一栏**：不传 `q` 时这条响应必须与改前**逐字节相同**
-      //    （老读法、老判据、老快照都能直接比），所以没搜的时候一个字节都不多给。
+      const shape = (s, sig) => ({
+        id: s.id, name: s.name, note: s.note, uploadedAt: s.uploadedAt, size: s.size,
+        homepage: s.homepage || null, suspected: s.suspected === true,
+        suspectedReasons: s.suspectedReasons || [],
+        // 兼容包：**两个署名分开给**，谁也不覆盖谁。公网列表那一页照这两栏分别显示。
+        // 普通投稿这两栏里通常只有原作者（没有「兼容者」这回事）——但**原作者照给**：
+        // 来源是包内的 pack.json，见 signatureOf（推导，不回写记录）。
+        kind: s.kind || 'submission',
+        // **另一种** kind：这条包「**装上到底会不会生效**」（指令③④）。与上面那个 `kind`
+        // （compat / submission，说的是这条记录**怎么来的**）是两回事，所以**故意不复用同一个键**：
+        //   functional    装上即生效 —— 站上每条都过了三道核：① `pack.json` 在 ZIP 根
+        //                 （否则解压进 workshop 目录根本不被装载）② 在引擎 0.16.0 的干净 workshop
+        //                 根**单独装载 errors=0** ③ `pack.json` 的 `api`/`game` 区间与当前
+        //                 MOD_API_VERSION / 上游版本相容；
+        //   documentation 说明包 / 参考 / 补丁 —— **装上不会启用任何功能**；
+        //   unknown       安装器形态等，判不了就**不放进真功能区**。
+        // ⚠️ 记录里没有这一栏（还没分类的、或日后新批的）一律按 **unknown** 给：
+        // 缺省**绝不可能是 functional** —— 否则「下载了 mod 却不能用」会从新记录那里漏回来。
+        packKind: s.packKind || 'unknown',
+        // ⭐⭐ **功能类目**（业主 2026-10-14 裁定的 6 类）—— 这才是「这包是干什么的」那一栏。
+        // 与上面的 `packKind`（技术维度：装上会不会生效）**是两个维度、两个键**，故意不复用。
+        // 缺省 `uncategorized`（未分类）：老记录没有这一栏 ⇒ 落未分类，**绝不猜**。
+        funcKind: funcKindOf(s),
+        funcKindTitle: FUNC_KIND_TITLES[funcKindOf(s)],
+        // 包内 `pack.json` 的 `id`（兼容包取记录里那一栏）。**只用来做一件事**：让公网那一页
+        // 能看出「哪几条是同一个 id」——引擎不允许同 id 并存，玩家一次只能装一条。
+        // 读不到就是 null，页面不画那一行（不猜）。
+        packId: sig.packId ?? null,
+        // ⭐ 会改对局结果（业主口径：`combat: true` 的告知义务「标注清楚就算尽到，不另设闸门」）。
+        // 三态：true=声明了 / false=写死 false / null=没写。来源是包内 `pack.json`（见 signatureOf）。
+        combat: sig.combat === true ? true : (sig.combat === false ? false : null),
+        // ⭐ 契约预检的 blocker（site/packcheck.mjs）：引擎装载期会点名拒的那几条（未知顶层键 /
+        // `api` 类型 / `content` 名单 / 用了会改对局结果的通道却没写 `combat: true`）。
+        // 数组（可能空）——空数组 = 预检没发现 blocker。**读不到 pack.json 时也是空数组**，
+        // 那种情况由 `suspected`/`packKind` 那几条既有判据兜，这里不重复造一个「未知」态。
+        packcheck: Array.isArray(sig.packcheck) ? sig.packcheck : [],
+        // 原作者：兼容包取记录里那一栏（发布时预填自包内 pack.json，或维护者手填）；
+        // 普通投稿记录里从来没有这一栏 ⇒ 去**包内 pack.json** 读（同一个来源名 pack.json）。
+        author: sig.author,
+        authorSource: sig.authorSource,           // 'pack.json' / 'maintainer' / null（没有来源就没有名字）
+        // 兼容者（**只存在站点侧记录里**，不进 pack.json）。空字符串 = 未填，是**合法值** ——
+        // 所以这里**不能用 `|| null`**：那会把「未填」和「压根不是兼容包」混成同一个 null，
+        // 公网那一页就没法如实把「未填」那一栏显示出来。
+        compatAuthor: typeof s.compatAuthor === 'string' ? s.compatAuthor : null,
+        compatAuthorSource: s.compatAuthorSource || null,   // 手填（form）还是未填（empty）
+        compatOf: s.compatOf || null,             // 由哪个待审原件改写来（追溯用）
+        compatNote: s.compatNote || null,         // 改了什么
+        // 相对路径：页面在哪个 origin（公网，或隧道里的 127.0.0.1）就打哪个。
+        // 用 BASE_URL 拼绝对地址会让隧道里的页面变成跨域 —— <a href> 时代是跳到公网 IP 被白名单挡掉，
+        // fetch 时代则直接 Failed to fetch。
+        download: `/api/file/${s.id}`,
+        // 只给维护者看的留档入口（公开下载这条路走到它会 403，见 /api/file/ 那一段）。
+        // ⚠️ 只有留档文件**真的在磁盘上**才给这一栏：没有 `orig.zip` 的兼容包（早先手工批准上线、
+        // 以及 `/compat/link` 事后补链的那几条）发出去就是必然 404 的死链。判据见 `origArchiveOf`。
+        archiveDownload: origArchiveOf(s.id),
+      });
+      // ⭐ **公开面过滤器**（2026-10-12 增补，只加不减）：
+      //   · 主判据一个字没改：`state === 'approved'`；
+      //   · **只多一条**：排除「发布者申请自撤、等管理员确认」的那些（`isPubliclyVisible`）。
+      //     「他想删掉」要立刻见效 —— 见 isPubliclyVisible 的完整说明。
+      const approved = allSubs().filter((s) => isPubliclyVisible(s));
+      // 逐条推署名来源（**只读**）。只有普通投稿真会去解一次 zip，而且结果有缓存
+      // （见 packAuthorOf）；兼容包走记录里那两栏，一次 zip 都不读。
+      // Promise.all 保序，所以列表顺序与 filter/map 时代完全一致。
+      const shaped = await Promise.all(approved.map(async (s) => ({ s, o: shape(s, await signatureOf(s)) })));
+      // 分类筛选在**分组之前**做（两组同一条判据），并且**保留三个分区标题**的既有画法：
+      // 服务端只筛数据，页面自己按 KIND_OF 分三块，标题一个没动（需求 ③ 的「保留现有三个分区标题」）。
+      const picked0 = kf.kinds ? shaped.filter((x) => kf.kinds.includes(kindOfRec(x.s))) : shaped;
+      // ⭐ 功能类目筛选（业主 2026-10-14）：与上面那条**各管一个维度**，所以是**串联叠加**，
+      //    不是二选一 —— `?kind=functional&func=utility` = 「既装得上、又是实用工具」。
+      const picked = ff.funcs ? picked0.filter((x) => ff.funcs.includes(funcKindOf(x.s))) : picked0;
+      // ⭐ 关键字搜索（自有实现，语义对齐上游 2026-10-15）：`?q=…`，与上面两条**叠加**（AND）。
+      //    覆盖 mod 名 / id / 包 id / 备注 / 原作者 / 兼容者 —— 玩家能想到的那几个找 mod 的入口。
+      //    ⚠️ 不传 `q` 时一个字节都不多给（上游同口径：老快照能直接比）。
       const qf = queryFilterOf(url);
-      // ⭐⭐ 取数 / 过滤 / 计数**只有一份实现**（`collectPublicMods`）：`/mods` 的服务端预渲染
-      //     调的是同一个函数 —— 两条路的条目集合因此不可能漂移。
-      //     ⚠️ `counts` 的算法在这一步**一个字节都没动**（见那个函数的注释）。
-      return sendJson(res, 200, await collectPublicMods({ kf, ff, qf }));
+      const pickedQ = qf.q
+        ? picked.filter((x) => {
+            const hay = [x.s.name, x.s.id, x.o.packId, x.s.note, x.o.author, x.o.compatAuthor, x.o.compatOf]
+              .filter(Boolean).join(' ').toLowerCase();
+            return hay.includes(qf.q.toLowerCase());
+          })
+        : picked;
+      const body = {
+        mods: pickedQ.filter((x) => !x.s.suspected).map((x) => x.o),
+        flagged: pickedQ.filter((x) => x.s.suspected).map((x) => x.o),
+      };
+      // ⭐ 公网字段白名单（2026-10-20 安全审计补）。
+      //   上面 shape() 已经只构造公开字段，但那是**被动**防护（靠"不存"）。
+      //   将来若有人在记录里加了敏感字段（投稿者 IP / receipt / pendingClaim / 内部路径…），
+      //   会被 shape() 顺手带出来。这里在出口再 pick 一次：白名单外的一律剥掉。
+      //   ⚠ 这是**只挡不建**：不改 shape()（它被 /mods 页面、mod 站、
+      //      collect-station.mjs、build-index.mjs 多方消费，改了有碰坏下游的风险）。
+      const PUBLIC_MOD_FIELDS = [
+        'id', 'name', 'note', 'uploadedAt', 'size', 'homepage',
+        'suspected', 'suspectedReasons', 'kind', 'packKind', 'funcKind', 'funcKindTitle',
+        'packId', 'author', 'authorSource', 'compatAuthor', 'compatAuthorSource',
+        'compatOf', 'compatNote', 'combat', 'packcheck',
+        'download', 'archiveDownload',
+      ];
+      const pick = (o) => {
+        const out = {};
+        for (const k of PUBLIC_MOD_FIELDS) if (o[k] !== undefined) out[k] = o[k];
+        return out;
+      };
+      body.mods = body.mods.map(pick);
+      body.flagged = body.flagged.map(pick);
+      // ⭐ 每类计数（需求 ③：「分区标题旁显示每类计数」）。
+      // **只在不筛的时候给**：筛过之后「functional 有 3 条」这种数会因为筛选而变小，
+      // 反而误导（用户以为站上只有 3 条功能包）。所以筛过时不给 `counts` 字段，
+      // 页面退回按当前这批自己数（那才是屏幕上真实的条数）。
+      // ⚠️ 数的是**主分区（非疑似素材）**里的条数 —— 与页面实际画出来的那三个区块**同一口径**：
+      //    疑似素材在 `/mods` 上另起一块（「含疑似官方素材的 mod」），不并进任何分类区。
+      //    计数若把疑似素材那条也算进「说明包」，就会比用户点进去看到的多 1 条
+      //    （实测线上 115 条里 `e3a5d09eb6d3` 正是 approved + documentation + suspected，
+      //     它进了疑似那一组 ⇒ 计数 22、点进去只有 21）。这种「数对不上」最招人问，所以数同一批。
+      const mainOnly = shaped.filter((x) => !x.s.suspected);
+      // 两个维度**各自一套计数**：技术维度叫 `counts`（老读法一字不改），
+      // 功能维度叫 `counts.func`（新读法）—— 两份都只在**不筛**的时候给。
+      if (!kf.kinds && !ff.funcs && !qf.q) {
+        const funcCounts = {};
+        for (const k of FUNC_KINDS) funcCounts[k] = mainOnly.filter((x) => funcKindOf(x.s) === k).length;
+        body.counts = {
+          functional: mainOnly.filter((x) => kindOfRec(x.s) === 'functional').length,
+          documentation: mainOnly.filter((x) => kindOfRec(x.s) === 'documentation').length,
+          unknown: mainOnly.filter((x) => kindOfRec(x.s) === 'unknown').length,
+          flagged: shaped.length - mainOnly.length,
+          total: mainOnly.length,
+          func: funcCounts,
+        };
+      }
+      body.kinds = kf.kinds;
+      body.funcs = ff.funcs;
+      body.funcKindTitles = FUNC_KIND_TITLES;
+      return sendJson(res, 200, body);
     }
 
     // ---- 投稿人查自己的状态（要回执令牌）
@@ -2195,6 +2044,169 @@ const server = createServer(async (req, res) => {
           ? '已收到。包里有疑似官方素材（见 flags），它已被单独存放并会公开标注；维护者人工确认后再决定上不上线。'
           : '已收到。维护者会下载下来跑测试，通过后再上线。',
       });
+    }
+
+    // ================================================================
+    // ⭐ **mod 反馈**（`/api/feedback*`，2026-10-13 新增）
+    //
+    // 业主需求四条：① 任何人都能给某个 mod 提交反馈；② 每个 mod 可单独查看、也可多个 mod 合并
+    // 查看；③ 支持 agent 接入；④ 支持文字与图片 —— 但**反馈正文与图片只有网站维护者能看到**。
+    //
+    // 落点与边界**全部照抄站内已有的纪律**，没有新发明：
+    //   · **写端点限流**：复用 `publisherRateLimited`（每 IP 每 10 分钟 60 次）。反馈是「操作」不是
+    //     「上传」，与 `/api/submit` 那个 10/10min 的桶不是一回事。**没有为反馈另开一档阈值** ——
+    //     限流与 agent 配额是单独一份提案，不由这个功能顺带改掉。
+    //   · **一次只认一个 mod**：报文里出现 `ids` / `batch` / `items` / `list` ⇒ 400（§8.1 那条铁律）。
+    //     「合并查看」是**读**侧的事，写侧永远单条。
+    //   · **凭据只存哈希**：图片令牌（决定「谁能往这条反馈上贴图」）盘上只有 sha256，
+    //     明文只在那一个 201 响应里出现一次 —— 与认领码 / 发布者令牌逐字同一套做法。
+    //   · **幂等 + 零删除**：同一个 `dedupe` 键重复提交 ⇒ 返回已有那条、`changed:false`、不写第二笔；
+    //     逐字节相同的图重复贴 ⇒ 不重写。反馈**没有任何删除口**。
+    //
+    // ⚠️ 隐私边界（这条最重要）：**只有** `GET ${ADMIN_API}/feedback*` 能读反馈，
+    //   而它排在 `adminAllowed()` + `isAdmin()` 两道防线**后面**。反馈**不进 `meta.json`**，
+    //   所以 `/api/mods`、`/mods`、`/api/status`、`/api/publisher/*`、`/api/file/*`
+    //   一个都读不到它 —— selftest-feedback 用「公开响应逐字节不变」把这条钉住。
+    // ================================================================
+    if (p === '/api/feedback' || p.startsWith('/api/feedback/')) {
+      const batchKeys = ['ids', 'batch', 'items', 'list'].filter((k) => url.searchParams.has(k));
+      if (batchKeys.length) {
+        return sendJson(res, 400, { error: `一次只收一个 mod 的反馈；报文里出现了批量栏：${batchKeys.join(' / ')}（批量是读侧的能力，写侧没有）` });
+      }
+
+      // ---- ① 提交一条反馈（文字）。公开、无需账号 —— 与 `/api/submit` 同一立场。
+      if (req.method === 'POST' && p === '/api/feedback') {
+        if (publisherRateLimited(ip)) return sendJson(res, 429, { error: '操作太频繁了，过一会儿再来' });
+        const mod = (url.searchParams.get('mod') || '').trim();
+        const dedupe = (url.searchParams.get('dedupe') || '').trim();
+        if (!ID_RE.test(mod)) return sendJson(res, 400, { error: 'mod 形状不对（6–32 位小写字母/数字，放在查询串 ?mod=）' });
+        if (dedupe && !FB_DEDUPE_RE.test(dedupe)) {
+          return sendJson(res, 400, { error: 'dedupe 只能是 6–64 位字母/数字/_/-（它是幂等键，agent 重试时带同一个值）' });
+        }
+        // ⚠️ 只有**公开在架**的 mod 收得到反馈。待审 / 已打回 / 已申请自撤的那些一律不开这一门 ——
+        //   否则「能不能给某条提交反馈」就变成探待审队列的口子。
+        //   不存在与没上线**回同一个 404、同一句话**（与站点那条 `没有这个地址` 逐字相同）。
+        const target = allSubs().find((s) => s.id === mod);
+        if (!target || !isPubliclyVisible(target)) return sendJson(res, 404, { error: '没有这个地址' });
+
+        const declared = Number(req.headers['content-length'] || 0);
+        if (declared && declared > FB_BODY_MAX) {
+          return sendJson(res, 413, { error: `反馈报文 ${(declared / 1024).toFixed(0)} KB，上限 ${(FB_BODY_MAX / 1024).toFixed(0)} KB` });
+        }
+        const rawBody = await readBody(req, FB_BODY_MAX);
+        let parsed = null;
+        try { parsed = JSON.parse(rawBody.toString('utf8') || '{}'); }
+        catch { return sendJson(res, 400, { error: '反馈必须是 JSON', code: 'FB_BAD_BODY' }); }
+        const norm = normalizeFeedback(parsed);
+        if (norm.error) return sendJson(res, 400, { error: norm.error, code: norm.code });
+
+        const dir = fbDirOf(mod);
+        mkdirSync(dir, { recursive: true });
+        // 幂等：同一个 dedupe 键已有 ⇒ 把那条还给它，**不写第二笔**（agent 网络重试是常态）。
+        if (dedupe) {
+          const hit = listFeedback(mod).find((x) => x.dedupe === dedupe);
+          if (hit) {
+            return sendJson(res, 200, {
+              ok: true, changed: false, feedbackId: hit.id, mod, modName: target.name,
+              at: hit.at, images: (Array.isArray(hit.images) ? hit.images : []).length,
+              note: '这个 dedupe 键已经有一条反馈了，没有写第二笔（重复提交按幂等处理）。',
+            });
+          }
+        }
+        const fbId = idOf();
+        const imageToken = tokenOf();
+        const at = nowIso();
+        const fb = {
+          id: fbId, mod, at, ip,
+          ...norm.fb,
+          dedupe: dedupe || null,
+          images: [],
+          // 明文不落盘：这里只存哈希（见 fbTokHashOf）。
+          imageTokens: [{ h: fbTokHashOf(imageToken), at, by: 'feedback' }],
+        };
+        writeJson(join(dir, `${fbId}.json`), fb);
+        audit('feedbackSubmit', {
+          id: mod, ip, actor: 'public',
+          detail: { fbId, kind: fb.kind, severity: fb.severity, chars: fb.text.length, engineVersion: fb.engineVersion, dedupe: dedupe || null },
+        });
+        return sendJson(res, 201, {
+          ok: true, changed: true, feedbackId: fbId, mod, modName: target.name,
+          state: 'reported', at, images: 0,
+          kind: fb.kind, severity: fb.severity,
+          // ⭐ 图片令牌：明文只在这一个响应里出现一次，盘上只有哈希。
+          imageToken,
+          imagePath: `/api/feedback/image?mod=${mod}&fb=${fbId}`,
+          imageNote: '贴图片时把这串令牌放进 `x-feedback-token` 头。没有它任何人都能往别人这条反馈上塞图，'
+            + '所以这一步不能省；站点只存它的哈希，丢了找不回明文（重新提交一条即可）。',
+          limits: { textMax: FB_TEXT_MAX, shortMax: FB_SHORT_MAX, imgMax: FB_IMG_MAX, imgBytesMax: FB_IMG_BYTES_MAX, bodyBytesMax: FB_BODY_MAX },
+          fields: FB_FIELDS, kinds: FB_KINDS, severities: FB_SEVERITIES,
+          message: '已收到。这条反馈**只有维护者看得到**（正文与图片都不公开）；维护者会连同一个 mod 的几条记录合并起来看。',
+        });
+      }
+
+      // ---- ② 给某条反馈贴一张图片（裸字节 + 图片令牌）。
+      if (req.method === 'POST' && p === '/api/feedback/image') {
+        if (publisherRateLimited(ip)) return sendJson(res, 429, { error: '操作太频繁了，过一会儿再来' });
+        const mod = (url.searchParams.get('mod') || '').trim();
+        const fbId = (url.searchParams.get('fb') || '').trim();
+        if (!ID_RE.test(mod) || !FB_ID_RE.test(fbId)) return sendJson(res, 400, { error: 'mod / fb 形状不对（都是 6–32 位小写字母/数字，放在查询串上）' });
+        const fb = listFeedback(mod).find((x) => x.id === fbId);
+        // 「这条反馈不存在」与「这个 mod 根本没有反馈」不区分 —— 同一句 404，不泄露队列内容。
+        if (!fb) return sendJson(res, 404, { error: '没有这个地址' });
+        const tok = String(req.headers['x-feedback-token'] || '').trim();
+        if (!fbTokenOk(fb, tok)) {
+          return sendJson(res, 401, { error: '需要图片令牌（`x-feedback-token` 头，值是那一次提交反馈的响应里给的 imageToken，只显示一次）' });
+        }
+        const imgs = Array.isArray(fb.images) ? fb.images : [];
+        if (imgs.length >= FB_IMG_MAX) return sendJson(res, 400, { error: `一条反馈最多 ${FB_IMG_MAX} 张图，这一条已经贴满了` });
+        const declared = Number(req.headers['content-length'] || 0);
+        if (declared && declared > FB_IMG_BYTES_MAX) {
+          return sendJson(res, 413, { error: `图片 ${(declared / 1024 / 1024).toFixed(1)} MB，单张上限 ${(FB_IMG_BYTES_MAX / 1024 / 1024).toFixed(0)} MB` });
+        }
+        const body = await readBody(req, FB_IMG_BYTES_MAX);
+        if (!body.length) return sendJson(res, 400, { error: '没有收到文件' });
+        const sniff = sniffImage(body);
+        if (!sniff) {
+          return sendJson(res, 400, {
+            code: 'FB_NOT_AN_IMAGE',
+            error: '只收 PNG / JPEG / GIF / WEBP（这个文件头认不出来）。SVG 与 HTML **不收** —— 那是脚本面不是图片面。',
+          });
+        }
+        const sha = createHash('sha256').update(body).digest('hex');
+        const dup = imgs.find((i) => i.sha256 === sha);
+        if (dup) {
+          return sendJson(res, 200, {
+            ok: true, changed: false, feedbackId: fbId, mod,
+            image: fbImageMeta(dup), images: imgs.length,
+            note: '这张图与已经贴上的第 ' + dup.n + ' 张**逐字节相同**，没有写第二份。',
+          });
+        }
+        const n = imgs.reduce((m, i) => Math.max(m, Number(i.n) || 0), 0) + 1;
+        const file = `${fbId}-${n}.${sniff.ext}`;
+        // 与 `/api/submit` 同一条纪律：先落 `DATA_DIR` 根下的临时名，全过了才搬进记录目录；
+        // 任何失败路径由请求处理器的 finally 收掉（DATA_DIR 根下不许留下散文件）。
+        const tmp = join(DATA_DIR, `${fbId}-${n}.fbimg.part`);
+        writeFileSync(tmp, body);
+        partToClean = tmp;
+        renameSync(tmp, join(fbDirOf(mod), file));
+        partToClean = null;
+        const rec = { n, file, bytes: body.length, sha256: sha, mediaType: sniff.mediaType, at: nowIso() };
+        // 只往 images 那一栏**追加一笔**，其余字段（正文、kind、severity、令牌哈希）一字不动。
+        writeJson(join(fbDirOf(mod), `${fbId}.json`), { ...fb, images: [...imgs, rec] });
+        audit('feedbackImage', {
+          id: mod, ip, actor: 'public',
+          detail: { fbId, n, bytes: body.length, mediaType: sniff.mediaType },
+        });
+        return sendJson(res, 201, {
+          ok: true, changed: true, feedbackId: fbId, mod,
+          image: fbImageMeta(rec),
+          images: [...imgs, rec].map(fbImageMeta),
+          note: '图片已贴上这一条反馈。**不公开** —— 只有维护者能从管理口取它（`GET ' + ADMIN_API + '/feedback/file`）。',
+        });
+      }
+
+      // 反馈**没有公开读口**（业主口径：只有维护者能看到）；读它请走管理口那两条。
+      return sendJson(res, 404, { error: '没有这个反馈端点' });
     }
 
     // ================================================================
@@ -2886,6 +2898,224 @@ const server = createServer(async (req, res) => {
         // ⭐ 审核台要一眼看到「发布者自撤待确认」那一条（裁定 ② / 需求 B）。
         //    只**加**一个字段，`submissions` 的形状与从前逐字相同（既有页面读法不受影响）。
         return sendJson(res, 200, { submissions: subs, withdrawQueue: withdrawQueue().map((s) => ({ id: s.id, name: s.name, at: s.withdrawRequestedAt ?? null, reason: s.withdrawReason ?? null })) });
+      }
+
+      // ================================================================
+      // ⭐ **mod 反馈：只有维护者能读**（`GET ${ADMIN_API}/feedback`、`.../feedback/file`）
+      //
+      // 走到这里已经过了 `adminAllowed()`（ADMIN_IPS）+ `isAdmin()`（令牌 / Basic）两道 ——
+      // 反馈的正文与图片**只有这一条路**能看到，公开面与发布者面一个都读不到它。
+      //
+      // 三种读法（业主需求 ②「每个 mod 可单独查看，也可多个 mod 合并查看」+ ③ agent 接入）：
+      //   · `?mod=<编号>`               单独看一条记录（最窄的那一档）
+      //   · `?mod=a,b,c`                **合并**看几条（读侧批量；写侧永远单条，见 §8.1）
+      //   · `?group=<编号>`             把「同一款 mod」的几条记录并起来看（同 packId + compatOf 链）
+      //   · `?all=1&cursor=<偏移>&limit=<50>` 全量翻页 —— agent 做汇总用这一条
+      // 一次请求只**读**、不改任何记录：反馈没有决定类端点（要处理它请当作审核的一部分人工做）。
+      // ================================================================
+      if (req.method === 'GET' && p === `${ADMIN_API}/feedback/file`) {
+        const mod = (url.searchParams.get('mod') || '').trim();
+        const fbId = (url.searchParams.get('fb') || '').trim();
+        const n = Number(url.searchParams.get('n') || '');
+        if (!ID_RE.test(mod) || !FB_ID_RE.test(fbId) || !Number.isInteger(n) || n < 1 || n > FB_IMG_MAX) {
+          return sendJson(res, 400, { error: `mod / fb 要是 6–32 位小写字母数字，n 要是 1–${FB_IMG_MAX}` });
+        }
+        const fb = listFeedback(mod).find((x) => x.id === fbId);
+        const img = fb && (Array.isArray(fb.images) ? fb.images : []).find((i) => Number(i.n) === n);
+        if (!img) return sendJson(res, 404, { error: '没有这张图片' });
+        const file = join(fbDirOf(mod), String(img.file || ''));
+        if (!existsSync(file)) return sendJson(res, 404, { error: '没有这张图片' });
+        // 发的时候**重新嗅一次头**，content-type 只认磁盘上的字节 —— 不读扩展名、也不读记录里那一栏。
+        // （落盘与读取之间文件若被别的途径换过，这里就是最后一道；认不出来就 404，一个字节都不发。）
+        let head = null;
+        try { head = readFileSync(file).subarray(0, 16); } catch { return sendJson(res, 404, { error: '读不了这张图片' }); }
+        const sniffed = sniffImage(head);
+        if (!sniffed) return sendJson(res, 404, { error: '认不出这张图的文件头，不发' });
+        return sendFbImage(res, file, sniffed.mediaType);
+      }
+
+      if (req.method === 'GET' && p === `${ADMIN_API}/feedback`) {
+        const modParam = (url.searchParams.get('mod') || '').trim();
+        const groupParam = (url.searchParams.get('group') || '').trim();
+        const wantAll = url.searchParams.get('all') === '1';
+        const batchKeys = ['ids', 'batch', 'items', 'list'].filter((k) => url.searchParams.has(k));
+        if (batchKeys.length) {
+          return sendJson(res, 400, { error: `合并查看请用 mod=a,b（逗号分隔）或 group=<编号>；报文里出现了：${batchKeys.join(' / ')}` });
+        }
+        const all = allSubs();
+        const byId = new Map(all.map((s) => [s.id, s]));
+        let ids = [];
+        let mode = '';
+        if (wantAll) { ids = all.map((s) => s.id); mode = 'all'; } else if (groupParam) {
+          if (!ID_RE.test(groupParam)) return sendJson(res, 400, { error: 'group 形状不对（6–32 位小写字母/数字）' });
+          if (!byId.has(groupParam)) return sendJson(res, 404, { error: '没有这条投稿' });
+          const index = await fbGroupIndex();
+          ids = fbGroupMembers(index, groupParam);
+          mode = 'group';
+        } else if (modParam) {
+          const parts = modParam.split(',').map((s) => s.trim()).filter(Boolean);
+          if (!parts.length) return sendJson(res, 400, { error: 'mod 是空的（要给记录编号，多个用逗号分隔）' });
+          const bad = parts.filter((x) => !ID_RE.test(x));
+          if (bad.length) return sendJson(res, 400, { error: `mod 形状不对：${bad.join(' / ')}（6–32 位小写字母/数字）` });
+          if (parts.length > FB_MODS_MAX) return sendJson(res, 400, { error: `一次最多合并看 ${FB_MODS_MAX} 个 mod（要更多请用 ?all=1 翻页）` });
+          ids = [...new Set(parts)];
+          mode = 'merged';
+        } else {
+          return sendJson(res, 400, { error: `要给一个读法：?mod=<编号>[,<编号>…]（单条或合并）· ?group=<编号>（折叠同一款）· ?all=1（全量翻页，agent 用）` });
+        }
+        // 折叠索引：groupKey 与 members 都来自同一份判据（同 packId / compatOf 双向链）。
+        const index = await fbGroupIndex();
+        // 按处理状态筛（闭集，可逗号多选）：**不认识的值直接 400，不悄悄忽略** ——
+        // 与 `?kind=` 那一条同一口径（「我筛了但结果没变」是查不出来的误会）。
+        const stateRaw = String(url.searchParams.get('state') || '').trim();
+        let stateWanted = null;
+        if (stateRaw) {
+          const parts = stateRaw.split(',').map((s) => s.trim()).filter(Boolean);
+          const bad = parts.filter((s) => !FB_STATES.includes(s));
+          if (bad.length) {
+            return sendJson(res, 400, { error: `state 只能是 ${FB_STATES.join(' / ')}（可以多选：逗号分隔）。不认识的值：${bad.join(' / ')}` });
+          }
+          if (parts.length) stateWanted = [...new Set(parts)];
+        }
+        const limitRaw = Number(url.searchParams.get('limit') || FB_PAGE_DEFAULT);
+        const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, FB_PAGE_MAX) : FB_PAGE_DEFAULT;
+        const cursorRaw = Number(url.searchParams.get('cursor') || 0);
+        const offset = Number.isInteger(cursorRaw) && cursorRaw >= 0 ? cursorRaw : 0;
+
+        const mods = ids.map((id) => {
+          const s = byId.get(id);
+          const fbs = s ? listFeedback(id) : [];
+          return {
+            id,
+            name: s ? s.name : null,
+            exists: !!s,
+            area: s ? s.area : null,
+            state: s ? s.state : null,
+            kind: s ? s.kind : null,
+            packKind: s ? kindOfRec(s) : null,
+            packId: s ? index.packIdOf.get(id) ?? null : null,
+            groupKey: s ? index.byRec.get(id) ?? null : null,
+            feedbackCount: fbs.length,
+            // 还没看过的条数（缺省读成 `new`）—— 审核台那一格与导航徽标都用它。
+            feedbackNew: fbs.filter((x) => fbStateOf(x) === 'new').length,
+            imageCount: fbs.reduce((n, x) => n + (Array.isArray(x.images) ? x.images.length : 0), 0),
+          };
+        });
+        let items = [];
+        for (const id of ids) {
+          const s = byId.get(id);
+          for (const fb of listFeedback(id)) {
+            const imgs = Array.isArray(fb.images) ? fb.images : [];
+            items.push({
+              id: fb.id, mod: id, modName: s ? s.name : null,
+              area: s ? s.area : null, state: s ? s.state : null,
+              packId: s ? index.packIdOf.get(id) ?? null : null,
+              groupKey: s ? index.byRec.get(id) ?? null : null,
+              at: fb.at, kind: fb.kind, severity: fb.severity,
+              // 处理状态（维护者侧那一栏）。老文件里没有这一栏 ⇒ 读成 `new`（不回填、不猜）。
+              state: fbStateOf(fb), stateAt: fb.stateAt ?? null, stateReason: fb.stateReason ?? null,
+              text: fb.text, engineVersion: fb.engineVersion ?? null, contact: fb.contact ?? null,
+              ip: fb.ip ?? null, dedupe: fb.dedupe ?? null,
+              images: imgs.map((i) => ({ ...fbImageMeta(i), url: `${ADMIN_API}/feedback/file?mod=${id}&fb=${fb.id}&n=${i.n}` })),
+            });
+          }
+        }
+        // 时间倒序（最近的一条先看），与审核台列表那一口径一致。
+        items.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+        // 状态筛在**翻页之前**做：`?all=1&state=new` 的 cursor 要数的是「筛过之后的那一批」，
+        // 否则翻两页就会跳过或重复未处理的条目。
+        const shown = stateWanted ? items.filter((x) => stateWanted.includes(x.state)) : items;
+        const paged = wantAll ? shown.slice(offset, offset + limit) : shown;
+        const groups = {};
+        for (const m of mods) {
+          if (!m.groupKey) continue;
+          if (!groups[m.groupKey]) groups[m.groupKey] = [];
+          groups[m.groupKey].push(m.id);
+        }
+        const tally = (key, list = items) => list.reduce((acc, x) => { acc[x[key]] = (acc[x[key]] || 0) + 1; return acc; }, {});
+        return sendJson(res, 200, {
+          ok: true, mode, at: nowIso(),
+          items: paged,
+          mods,
+          groups,
+          counts: {
+            records: ids.length,
+            missing: mods.filter((m) => !m.exists).map((m) => m.id),
+            items: shown.length,               // **筛过之后**的条数（屏幕上真实那一批）
+            matched: items.length,             // 没筛之前一共几条（「筛掉了多少」要能对证）
+            shown: paged.length,
+            filtered: stateWanted ? stateWanted.join(',') : null,
+            byKind: tally('kind', shown),
+            bySeverity: tally('severity', shown),
+            byState: tally('state', shown),
+            withImages: shown.filter((x) => x.images.length).length,
+            imageFiles: shown.reduce((n, x) => n + x.images.length, 0),
+          },
+          limits: { modsMax: FB_MODS_MAX, pageMax: FB_PAGE_MAX, imgMax: FB_IMG_MAX, textMax: FB_TEXT_MAX },
+          cursor: wantAll && offset + paged.length < shown.length ? String(offset + paged.length) : null,
+          privacy: '这一份响应含反馈正文与图片地址，**只在管理口内**（过 ADMIN_IPS + 令牌/Basic 才发得出）。'
+            + '公开面（/api/mods、/mods、/api/status、/api/publisher/*）读不到这里的任何一个字节。',
+        });
+      }
+
+      // 标状态：`new`（没看过）/ `read`（看过了）/ `doing`（在办）/ `done`（办完）。
+      // **一次只认一条**（`id` + `fb` 都要明确写出）—— AGENTS.md §8.1 那一族端点的铁律，
+      // 报文里出现 `ids` / `batch` / `items` / `list` 一律 400。幂等：目标值已经是它 ⇒ `changed:false`，
+      // **不写盘、不留第二笔流水**。只动状态那一栏，正文 / 图片 / 图片令牌哈希一个字节都不碰。
+      if (req.method === 'POST' && p === `${ADMIN_API}/fb-state`) {
+        const raw = await readBody(req, 16 * 1024);
+        let inObj = {};
+        try { inObj = JSON.parse(raw.toString('utf8') || '{}'); } catch { return sendJson(res, 400, { error: 'JSON 读不了' }); }
+        const batchKeys = ['ids', 'batch', 'items', 'list'].filter((k) => k in inObj);
+        if (batchKeys.length) {
+          return sendJson(res, 400, {
+            error: `本端点只认一条明确指定的反馈（id + fb），不收「一批」（多了这些键：${batchKeys.join(' / ')}）。要标 N 条就发 N 次，每条单独核对。`,
+          });
+        }
+        const id = String(inObj.id || '');
+        const fbId = String(inObj.fb || '');
+        const state = String(inObj.state || '');
+        const reason = inObj.reason == null ? null : String(inObj.reason).trim();
+        if (!ID_RE.test(id)) return sendJson(res, 400, { error: 'id 形状不对（投稿编号：6–32 位小写字母/数字）' });
+        if (!FB_ID_RE.test(fbId)) return sendJson(res, 400, { error: 'fb 形状不对（反馈编号：6–32 位小写字母/数字）' });
+        if (!FB_STATES.includes(state)) {
+          return sendJson(res, 400, { error: `state 只能是 ${FB_STATES.join(' / ')}` });
+        }
+        if (reason && reason.length > FB_REASON_MAX) {
+          return sendJson(res, 400, { error: `理由太长（最多 ${FB_REASON_MAX} 字，这一条 ${reason.length} 字）` });
+        }
+        const dir = fbDirOf(id);
+        if (!dir) return sendJson(res, 404, { error: '没有这条投稿' });
+        const file = join(dir, `${fbId}.json`);
+        const rec = readJson(file);
+        // 「这条反馈不存在」与「它不属于这个 mod」回同一句话 —— 不做存在性探针。
+        if (!rec || String(rec.mod || '') !== id) return sendJson(res, 404, { error: '没有这条反馈' });
+        const cur = fbStateOf(rec);
+        const sameReason = reason === null || reason === (rec.stateReason ?? null);
+        if (cur === state && sameReason) {
+          return sendJson(res, 200, {
+            ok: true, changed: false, id, fb: fbId, state, at: rec.stateAt ?? null,
+            note: `这一条已经是 ${state} 了，没有写第二笔（幂等）。`,
+          });
+        }
+        const at = nowIso();
+        const hist = Array.isArray(rec.stateHistory) ? rec.stateHistory : [];
+        writeJson(file, {
+          ...rec,
+          state,
+          stateAt: at,
+          stateBy: 'admin',
+          stateReason: reason ?? (rec.stateReason ?? null),
+          stateHistory: [...hist, { at, from: cur, to: state, by: 'admin', reason: reason ?? null }],
+        });
+        audit('fbState', {
+          id, ip, actor: 'admin', admin: true,
+          detail: { fb: fbId, from: cur, to: state, hasReason: !!reason },
+        });
+        return sendJson(res, 200, {
+          ok: true, changed: true, id, fb: fbId, from: cur, state, at,
+          untouched: '正文 / 图片 / 图片令牌哈希 一字未动；只改状态这一栏（流水只加不减）。',
+        });
       }
 
       if (req.method === 'GET' && p.startsWith(`${ADMIN_API}/detail/`)) {
@@ -4461,6 +4691,12 @@ server.listen(PORT, HOST, () => {
   console.log(`  以新为准 ${ADMIN_API}/supersede（同一个 pack.id 的新版上线后，把旧的转 superseded + replacedBy；`
     + '只认一对、必须同 pack.id、不得成环；下架不删文件）');
   console.log(`  手工发码 ${ADMIN_API}/issue-claim（老记录认领 / 令牌丢失找回；明文只出现一次，盘上只存哈希）`);
+  console.log(`  提交反馈 POST /api/feedback?mod=<编号>[&dedupe=<幂等键>]（公开、无账号；正文 JSON，限流同发布者那一档）`);
+  console.log(`            POST /api/feedback/image?mod=&fb=（裸字节 + x-feedback-token；只收 PNG/JPEG/GIF/WEBP，一条最多 ${FB_IMG_MAX} 张）`);
+  console.log(`  看反馈   GET ${ADMIN_API}/feedback?mod=<编号> | ?mod=a,b（合并）| ?group=<编号>（折叠同款）| ?all=1&cursor=&limit=`);
+  console.log(`            GET ${ADMIN_API}/feedback/file?mod=&fb=&n= —— **反馈正文与图片只有维护者能读**`);
+  console.log(`  反馈页面 ${BASE_URL}/${ADMIN_PATH}/feedback-view（审核台导航里那一格「反馈」；同一道门）`);
+  console.log(`  标状态   POST ${ADMIN_API}/fb-state（id + fb 一条一次；new/read/doing/done；幂等、不写第二笔）`);
   console.log(`  数据目录 ${DATA_DIR}`);
   console.log(`  审计日志 ${AUDIT_LOG}（追加式 JSONL；不记令牌明文）`);
   console.log(`  上传上限 ${(MAX_BYTES / 1048576).toFixed(0)} MB`);
@@ -4472,3 +4708,477 @@ server.listen(PORT, HOST, () => {
   }
   if (TRUST_PROXY) console.log('  （TRUST_PROXY=1：按 x-forwarded-for 判客户端地址 —— 仅当确实挂在反代后面时才该这样）');
 });
+
+
+// ===== 同步自上游（2026-10-15 搜索 + 服务端预渲染）=====
+// 这三块是 renderPage 新占位符（__Q__ / __LIST_RENDER__ / __LIST_HTML__）依赖的实现。
+// ⚠ MOD_LIST_RENDERER_SRC 用 Function.prototype.toString()：本文件从此**不能压缩/混淆**。
+function queryFilterOf(url) {
+  const raw = url.searchParams.get('q');
+  if (raw == null) return { q: null };
+  const q = String(raw).trim();
+  if (!q) return { q: null };
+  return { q }
+/** 一条记录是否命中关键字。⚠️ 这是**本地那份** collectPublicMods 依赖的函数：
+ *  它在 `mods/index.json` 之外自带一份 helper 副本，副本里调了 matchesQuery，但文件里一直没定义
+ *  ⇒ 谁把 /api/mods 接到 collectPublicMods 就会 ReferenceError。判据按本地口径（7 字段）。 */
+function matchesQuery(o, s, q) {
+  const needle = String(q).toLowerCase();
+  return [o.name, o.id, o.note, o.packId, o.author, o.compatAuthor, o.compatOf]
+    .some((v) => v != null && String(v).toLowerCase().includes(needle));
+};
+}
+
+/* ============================================================================
+ * ⭐ 公开列表「一行 mod 怎么画」——**只有这一份实现**，两个调用方：
+ *   ① **服务端**：`/mods` 路由用它把列表**预渲染**进 `#list`（无 JS 也看得到列表与搜索结果）；
+ *   ② **浏览器**：同一个函数被 `toString()` 注进页面（`renderPage` 换 `__LIST_RENDER__`），
+ *      客户端 fetch 回来之后**用它重渲染** —— 绝不写两套行渲染逻辑。
+ *
+ * ⚠️ 纪律（改这个函数之前先读）：
+ *   · 函数体里**不许出现任何 Node API，也不许引用模块作用域里的变量** —— 它要被 `toString()`
+ *     原样搬到浏览器里跑；需要的东西一律由参数传进来（`D` 是最小 DOM 适配器 `{ el, text }`）。
+ *   · 文案一个字都不要在这里重写：它就是页面上原来那一份（空结果三路、分区标题、徽标）。
+ *   · 数据由 `data` 传进来，形状就是 `/api/mods` 的响应（`mods` / `flagged`），
+ *     外加 `active`（当前 kind / func / q）—— 空结果那一行要说清是**按什么**空的。
+ * ==========================================================================*/
+function makeModListRenderer() {
+  // ---- 「装上会不会生效」这一栏（指令③④）----------------------------------------
+  // 与 `m.kind`（compat / submission）**不是一回事**：`kind` 说的是这条**记录是怎么来的**
+  // （兼容改写来的，还是原样投上来的）；这里说的是**装上到底会不会生效**。两者正交，所以分开画。
+  //   functional    真功能   —— 装上即生效（pack.json 在 ZIP 根 + 干净根单独装载 errors=0）；
+  //   documentation 说明包   —— **装上不会启用任何功能**，下载下来是给你看的；
+  //   unknown       安装器 / 补丁形态 —— ZIP 根没有 pack.json，不能直接丢进 workshop 目录。
+  // ⚠️ 记录里缺这一栏一律按 **unknown** 画：**缺省绝不可能是「真功能」** ——
+  // 否则新批一条没分类的记录，又会在「真功能」区里漏出一个装不上的包。
+  const KIND_OF = (m) => (m.packKind === 'functional' || m.packKind === 'documentation') ? m.packKind : 'unknown';
+  const KIND_TITLE = { functional: '真功能 mod', documentation: '说明包', unknown: '其他（未分类 / 安装器·补丁形态）' };
+  const KIND_HINT = {
+    functional: '这些包**装上即生效**：pack.json 在 ZIP 根，并已在引擎 0.16.0 的干净 workshop 根**单独装载过，errors=0**。',
+    documentation: '**说明包（装上不会启用任何功能）**：参考 / 说明 / 补丁留档。下载下来是给你看的，不是给你装的。',
+    unknown: '这些包**没有通过「真功能」的那三道核**（或者本身就是安装器 / 补丁形态，ZIP 根没有 pack.json）：**不保证装上即生效**，下之前请先看包内说明。',
+  };
+  const KIND_BADGE = {
+    functional: ['badge ok', '真功能'],
+    documentation: ['badge info', '说明包（装上不会启用任何功能）'],
+    unknown: ['badge warn', '未核实是否装上即生效'],
+  };
+
+  // ---- ⭐⭐ 功能类目（业主 2026-10-14 裁定的 6 类）--------------------------------
+  // 与上面那一栏是**两个维度**，故意分开画：
+  //   · 上面那栏 = 技术维度「装上到底会不会生效」；
+  //   · 这一栏 = 功能维度「这包是干什么的」—— **业主说「现在分类不对，要按功能分」指的就是这一栏**。
+  // 缺省一律 `uncategorized`（未分类）：老记录没有这一栏 ⇒ 落未分类，**绝不替它猜一个真功能类**。
+  const FUNC_OF = (m) => (FUNC_BADGE[m && m.funcKind] ? m.funcKind : 'uncategorized');
+  const FUNC_TITLE = {
+    gameplay: '游戏玩法', expansion: '拓展包', utility: '实用工具',
+    assets: '素材替换', documentation: '说明文档', uncategorized: '未分类',
+  };
+  const FUNC_HINT = {
+    gameplay: '这一类的包**改的是玩法本身**：回合流程、对局规则、角色/技能的判定逻辑。',
+    expansion: '这一类的包**往里加东西**：新角色、新卡、新关卡、整合式的内容扩充。',
+    utility: '这一类的包**只办事、不改玩法**：面板、查询、设置、批量操作这类工具。',
+    assets: '这一类的包**换的是素材**：立绘、图标、音效、字体、界面皮肤 —— 玩法逻辑一个字不动。',
+    documentation: '这一类的包**装上不会启用任何功能**，是说明 / 参考 / 资料：下载下来是给你看的，不是给你装的。',
+    uncategorized: '**还没归类**（老记录默认落这里，等维护者一条一条看）。这里**不代表它不是好包** —— '
+      + '只代表分类这一栏还没人填过，请不要据此判断质量。',
+  };
+  const FUNC_BADGE = {
+    gameplay: ['badge ok', '游戏玩法'], expansion: ['badge ok', '拓展包'],
+    utility: ['badge ok', '实用工具'], assets: ['badge info', '素材替换'],
+    documentation: ['badge info', '说明文档'], uncategorized: ['badge warn', '未分类'],
+  };
+  // 功能类目的**固定顺序**（页面分区按它走；不按条数排序，免得每次刷新跳来跳去）。
+  const FUNC_ORDER = ['gameplay', 'expansion', 'utility', 'assets', 'documentation', 'uncategorized'];
+
+  // ---- 「同一个 pack id」的成对记录（指令㉑）--------------------------------------
+  // 引擎**不允许同 id 的两个包并存**：目录名与 `pack.json` 的 `id` 不一致即 `PACK_ID_MISMATCH` 整包被拒；
+  // 实测同一 workshop 根放两份 id 相同的包，只会装载 1 条、后者**静默覆盖**前者。
+  // ⇒ 玩家**一次只能装一条**。这件事以前只写在备注里，不看备注就不知道 —— 所以在卡片上直接点出来。
+  // **拿不到 pack.json id 的记录（packId 是 null）一律不猜、不画**。
+  function sameIdPeers(all, m) {
+    if (!m.packId) return [];
+    return all.filter((x) => x.id !== m.id && x.packId === m.packId);
+  }
+
+  /** 一张卡片。返回 `{ panel, body }` —— 调用方要往 body 里补画一行（疑似素材的命中特征）时用得上。 */
+  function card(m, flagged, peers, D) {
+    const c = D.el('div', 'panel' + (flagged ? ' brackets' : ''));
+    if (flagged) c.style.borderLeft = '4px solid var(--gold)';
+    const body = D.el('div', 'panel__body');
+    const head = D.el('div', 'flex');
+    const h = D.el('h2'); h.style.margin = '0'; h.textContent = m.name;
+    head.append(h);
+    // 兼容改写版：这是「谁由谁改来」的那个改写版，原件只留档、不在这里发。
+    if (m.kind === 'compat') head.append(D.el('span', 'badge ok', flagged ? '兼容版 · 含疑似素材' : '兼容改写版'));
+    // 「装上会不会生效」这个徽标**每一条都画**（含疑似素材那一组）：说明包与安装器形态
+    // 必须在名字旁边就看得出来，不能等下完了才发现装不上。
+    const kb = KIND_BADGE[KIND_OF(m)];
+    head.append(D.el('span', kb[0], kb[1]));
+    // ⭐ 功能类目徽标（业主 2026-10-14）：与上面那个技术徽标**并排画**，两个维度都看得见。
+    const fb = FUNC_BADGE[FUNC_OF(m)];
+    head.append(D.el('span', fb[0], fb[1]));
+    if (flagged) head.append(D.el('span', 'badge warn', '含疑似官方素材'));
+    // ⭐ 会改对局结果（2026-10-14）：业主口径是「标注清楚就算尽到，不另设闸门」⇒ 只画中性徽标，解释放下面一行。
+    if (m.combat === true) head.append(D.el('span', 'badge warn', '会改对局结果'));
+    body.append(head);
+    body.append(D.el('div', 'kv dim', `${(m.size / 1048576).toFixed(2)} MB · 上传于 ${String(m.uploadedAt).slice(0, 10)} · 编号 ${m.id}`));
+
+    // ⭐ 会改对局结果的那一行解释（与徽标配套）：说清「改了什么」而不是只丢一个词。
+    if (m.combat === true) {
+      body.append(D.el('div', 'kv dim',
+        '⚠ 这个包会改对局结果（`combat: true`）—— 它可能改变伤害 / 命中 / 胜负判定，'
+        + '不是纯界面或素材包。装之前请先看它的备注与 PROVENANCE.md。'));
+    }
+    // ⭐ 契约预检（site/packcheck.mjs）：引擎装载期会点名拒的那几条，**下载之前**就摆出来。
+    if (m.packcheck && m.packcheck.length) {
+      body.append(D.el('div', 'kv warn',
+        '⚠ 预检发现这个包可能装载失败：'
+        + m.packcheck.map((c) => c.detail).join('；')
+        + '（以引擎装载结果为准）'));
+    }
+
+    // 同 id 提示（指令㉑）：同一行里把「另一条是谁」和「为什么一次只能装一条」都说清。
+    if (peers && peers.length) {
+      body.append(D.el('div', 'kv dim',
+        `⚠ 与 ${peers.map((p) => `「${p.name}」（编号 ${p.id}）`).join('、')} 同为 pack id 「${m.packId}」`
+        + ` —— 引擎不允许同 id 的两个包并存，装第二份会覆盖第一份，所以一次只能装一条。`));
+    }
+
+    // 两个署名**分开两栏**显示，谁也不覆盖谁：
+    // 原作者来自包自带的 pack.json（兼容包发布时预填、普通投稿由站点在读的时候现读，都不改记录）；
+    // 兼容者是站点侧记的（包里的元数据一个字节没动）。
+    // 两栏都带标签，免得只看到一个名字被误当成作者。
+    // 兼容改写版**一定要显示兼容者这一栏**，哪怕它是空的 —— 空就写「未填」。
+    // 把这一栏藏掉，会让人误以为这就是原件自己发的包。
+    // 反过来，**普通投稿没有「兼容」这回事** —— 那一栏整栏不画：画一个「（未记）」会让人
+    // 以为有个兼容者没填，那不是事实。普通投稿只画「原作者」这一栏。
+    const isCompat = m.kind === 'compat';
+    if (m.author || isCompat) {
+      const box = D.el('div', 'sigbox');
+      const sig = D.el('div', 'sig');
+      sig.append(D.el('span', 'sigk', '原作者'));
+      sig.append(D.el('span', 'sigv', m.author || '（未记）'));
+      if (isCompat) {
+        sig.append(D.el('span', 'sigk', '兼容改写者'));
+        sig.append(D.el('span', 'sigv', m.compatAuthor ? m.compatAuthor : '（未填）'));
+      }
+      box.append(sig);
+      if (isCompat) {
+        box.append(D.el('div', 'sighint', '原作说明与署名原样保留自包内的 pack.json；'
+          + '兼容改写是另一个人做的，记在站点侧，没有改动包里的元数据。'));
+        if (!m.compatAuthor) {
+          box.append(D.el('div', 'sighint', '「兼容改写者」这一栏**未填** —— 如实显示，站点没有代填任何名字。'));
+        }
+      }
+      body.append(box);
+    }
+    // 再补一行「这条是从哪条投稿改写来的」（业主 2026-10-11 批准加这一行）。
+    // 它说的是**记录之间的沿革**，不是人 —— 与上面那两栏署名是两回事：
+    // 原作者 / 兼容改写者说的是「谁做的」，这一行说的是「这条记录由哪条记录改来」。
+    // 所以文案里点明「不是原作者署名」，免得被误读成第三个署名。
+    // `compatOf` 有值才画；为空（早先手工批准上线的那几条兼容包就是空的）**整行不画** ——
+    // 不留「未知」「空」之类的占位：不画就是如实说「没有这条链」。
+    if (m.compatOf) {
+      const line = D.el('div', 'kv dim compatof', '由投稿 ' + m.compatOf + ' 改写来（记录沿革，不是原作者署名）');
+      line.id = 'compatof-' + m.id;
+      body.append(line);
+    }
+    // 「兼容说明」与「备注」是两个来源不同的栏位：
+    //   · `compatNote` 是站点侧的「兼容说明」（管理端点 `/compat/note` 改它）；
+    //   · `note` 是记录自己的备注栏。
+    // 站点的**存储层**在发布兼容包时会把同一段文案**同时写进两栏**（`server.mjs` 里那是有意为之，
+    // 本页不碰存储层、也不碰任何记录的数据），于是**两栏逐字相同**成了常态。
+    // 两栏都画 = 同一段字画两遍。所以这里只做**渲染层的去重**，判据一句话：
+    //   两栏都非空且（规范化空白后）逐字相同 ⇒ **只画一次**；只有一栏非空 ⇒ 画那一栏；
+    //   两栏都空 ⇒ **这一块不画**。两栏内容**不同**时两段都画（不相同就不是重复，不许并掉）。
+    // 相等判定先规范化（两端 trim + 连续空白折叠成单空格），免得只差空格还画两遍；
+    // **展示用原文**，不改写正文一个字。
+    // 相同时画 `compatNote`：它是「兼容说明」的语义栏，且带得出「兼容说明：」这个标签 ——
+    // 只画 `note` 会丢掉这个语义。
+    const noteKey = (v) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+    const cNote = noteKey(m.compatNote);
+    const pNote = noteKey(m.note);
+    if (cNote) {
+      body.append(D.el('div', 'note', '兼容说明：' + m.compatNote));
+      if (pNote && pNote !== cNote) body.append(D.el('div', 'note', m.note));
+    } else if (pNote) {
+      body.append(D.el('div', 'note', m.note));
+    }
+
+    // 按钮文案也照实写：说明包点下去不会被当成「装上去就生效的功能包」。
+    const kk = KIND_OF(m);
+    const dlLabel = kk === 'documentation' ? '下载说明包 zip（不会启用任何功能）'
+      : kk === 'unknown' ? '下载 zip（未核实是否装上即生效）'
+        : (m.kind === 'compat' ? '下载兼容改写版 zip' : '下载 zip');
+    const a = D.el('a', 'btn btn--primary', dlLabel);
+    a.href = m.download;
+    a.style.marginTop = '10px';
+    body.append(a);
+    if (m.homepage) {
+      const s = D.el('div', 'kv dim');
+      s.style.marginTop = '8px';
+      s.append(D.text('原件来源：'));
+      const hh = D.el('a', null, m.homepage);
+      hh.href = m.homepage; hh.rel = 'noopener noreferrer nofollow';
+      s.append(hh);
+      body.append(s);
+    }
+    // 反馈入口（2026-10-13）：链接里只带**编号** —— 那一页只是「写反馈」的表单，
+    // 反馈正文与图片都不公开（只有维护者能在审核口读到），所以这里不存在泄露别人反馈的问题。
+    const fbBtn = D.el('a', 'btn', '提交反馈');
+    fbBtn.href = `/feedback?mod=${encodeURIComponent(m.id)}`;
+    fbBtn.style.marginTop = '10px';
+    body.append(fbBtn);
+    c.append(body);
+    return { panel: c, body };
+  }
+
+  /**
+   * 把一批数据画进 `listEl`。返回**命中条数**（`mods` + `flagged` 的和）——
+   * 页面拿它画「搜索「x」· 命中 N 条」那一行，屏幕上那个数就与这里画的**同一个数**。
+   *
+   * 主分区**按功能类目**分（业主 2026-10-14：「现在分类不对，要按功能分」）：
+   * 每一区一条判据、固定顺序，标题旁给条数；技术维度（装上会不会生效）**仍然画在每条卡片的徽标上**
+   * —— 两个维度正交，谁都不吞掉谁。`说明文档` 自成一区 ⇒ 业主那条
+   * 「说明包不能混在功能包里」的要求**照旧成立**。
+   */
+  function renderList(listEl, data, D) {
+    const mods = (data && data.mods) || [];
+    const flagged = (data && data.flagged) || [];
+    const active = (data && data.active) || {};
+    const ACTIVE = active.kinds || [];
+    const ACTIVE_FUNC = active.funcs || [];
+    const ACTIVE_Q = active.q || '';
+    listEl.textContent = '';
+    // 同 id 的「另一条」可能落在**任何一组**里（含疑似素材那一组），所以并起来找。
+    const all = mods.concat(flagged);
+    if (!mods.length && !flagged.length) {
+      // 空结果要**如实说清是按什么筛空的**。⭐ 搜索也进这一行（业主 2026-10-15）：
+      // 搜了没命中时写「当前搜索（搜索「x」）下没有…」，而不是让人以为站上一条都没有。
+      // ⚠️ 没搜索时那两句**逐字保持原样**（老判据照旧）。
+      const conds = [...ACTIVE.map((k) => KIND_TITLE[k] || k), ...ACTIVE_FUNC.map((k) => FUNC_TITLE[k] || k)];
+      listEl.append(D.el('p', 'dim', ACTIVE_Q
+        ? `当前搜索（${[`搜索「${ACTIVE_Q}」`, ...conds].join(' + ')}）下没有已上线的包。`
+        : (conds.length
+          ? `当前筛选（${conds.join(' + ')}）下没有已上线的包。`
+          : '还没有通过审核的包。')));
+      return all.length;
+    }
+    for (const k of FUNC_ORDER) {
+      const arr = mods.filter((m) => FUNC_OF(m) === k);
+      if (!arr.length) continue;
+      listEl.append(D.el('h2', 'sec', `${FUNC_TITLE[k]}（${arr.length}）`));
+      listEl.append(D.el('p', 'sub', FUNC_HINT[k]));
+      for (const m of arr) listEl.append(card(m, false, sameIdPeers(all, m), D).panel);
+    }
+    // 疑似素材**照旧单独一组、明确标注**：这一组说的是「素材版权」，与上面三区**正交** ——
+    // 一条既可以是真功能，也可以带疑似素材。所以它不并进任何分区，只把分类徽标照实画在每条上。
+    if (flagged.length) {
+      const box = D.el('div', 'warnbox');
+      box.append(D.el('h3', null, `含疑似官方素材的 mod（${flagged.length}）`));
+      box.append(D.el('div', null, '这些包在自动检查里命中了「像官方解包素材」的特征（Spine 模型、官方立绘/语音路径等），' +
+        '维护者已人工看过并放行。它们不是干净的工坊包：里面的素材版权与可用范围请自行判断，' +
+        '也请勿据此再分发素材本身。仓库正式收录的 packs/ 不含这类素材。'));
+      listEl.append(box);
+      for (const m of flagged) {
+        const built = card(m, true, sameIdPeers(all, m), D);
+        if (m.suspectedReasons && m.suspectedReasons.length) {
+          built.body.append(D.el('div', 'kv dim', '命中的特征：' + m.suspectedReasons.join('、')));
+        }
+        listEl.append(built.panel);
+      }
+    }
+    return all.length;
+  }
+
+  return {
+    renderList,
+    KIND_OF, KIND_TITLE, KIND_BADGE, KIND_HINT,
+    FUNC_OF, FUNC_TITLE, FUNC_BADGE, FUNC_HINT, FUNC_ORDER,
+    sameIdPeers,
+  };
+}
+
+/** 上面那一份渲染实现的**单例**（服务端这一侧用它预渲染 `#list`）。 */
+const MOD_LIST_RENDERER = makeModListRenderer();
+/**
+ * 注进页面的那一段：就是上面那个函数的**源码文本**，就地调用一次得到同一个渲染器。
+ * ⚠️ 之所以用 `toString()` 而不是「页面里再写一份」：这个项目忌讳判据两份实现 ——
+ *    两份必然漂移（改了一处忘了另一处，服务端预渲染与客户端重渲染就会各画各的）。
+ * ⚠️ 代价：`server.mjs` **不能被压缩 / 混淆**再跑（`toString()` 拿到的会是压缩后的文本）。
+ *    本项目零构建、直接跑源码，所以这条成立；哪天要打包，这里必须一起改。
+ */
+const MOD_LIST_RENDERER_SRC = `(${makeModListRenderer.toString()})()`;
+
+/* ---------------------------------------------------------------------------
+ * 服务端侧的**最小 DOM 适配器**：只为了让上面那一个渲染函数在 Node 里跑出 HTML。
+ * ⚠️ 它不是浏览器、也不打算是：只实现渲染函数用到的那几个成员
+ *   （createElement / createTextNode / className / textContent / append / setAttribute /
+ *    style / href / rel / id），然后序列化成 HTML。
+ * ⚠️ **转义是这里的事**：页面那边走 `textContent`，浏览器替它转义；服务端拼字符串就得自己转。
+ *    文本转 `& < >`，属性值再加 `"` —— 少一个就是一个反射型 XSS 口子（`/mods` 的 `q`
+ *    已经是转义过的白名单外自由文本，但记录里的 `name` / `note` 同样是自由文本）。
+ * -------------------------------------------------------------------------*/
+const htmlEscText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const htmlEscAttr = (s) => htmlEscText(s).replace(/"/g, '&quot;');
+/** CSS 属性名 camelCase → kebab-case（`borderLeft` → `border-left`）。 */
+const cssKebab = (k) => k.replace(/[A-Z]/g, (ch) => '-' + ch.toLowerCase());
+const htmlNode = (tag) => {
+  const n = { tag, cls: '', id: '', href: '', rel: '', attrs: {}, style: {}, children: [] };
+  n.append = (...kids) => { for (const x of kids) n.children.push(x); };
+  n.setAttribute = (k, v) => { n.attrs[k] = String(v); };
+  Object.defineProperty(n, 'className', { get: () => n.cls, set: (v) => { n.cls = String(v); } });
+  Object.defineProperty(n, 'textContent', {
+    get: () => n.children.map((x) => (x.text != null ? String(x.text) : '')).join(''),
+    set: (v) => { n.children = (v === '' || v == null) ? [] : [{ text: String(v) }]; },
+  });
+  return n;
+};
+const htmlSerialize = (x) => {
+  if (x.text != null) return htmlEscText(x.text);
+  const styleKeys = Object.keys(x.style);
+  const attrs = [
+    x.cls ? ` class="${htmlEscAttr(x.cls)}"` : '',
+    x.id ? ` id="${htmlEscAttr(x.id)}"` : '',
+    x.href ? ` href="${htmlEscAttr(x.href)}"` : '',
+    x.rel ? ` rel="${htmlEscAttr(x.rel)}"` : '',
+    ...Object.entries(x.attrs).map(([k, v]) => ` ${k}="${htmlEscAttr(v)}"`),
+    styleKeys.length
+      ? ` style="${htmlEscAttr(styleKeys.map((k) => `${cssKebab(k)}:${x.style[k]}`).join(';'))}"` : '',
+  ].join('');
+  return `<${x.tag}${attrs}>${x.children.map(htmlSerialize).join('')}</${x.tag}>`;
+};
+/** 服务端调用方：用**同一个渲染函数**把 `#list` 的内容画成 HTML 字符串。 */
+const renderModListHtml = (data) => {
+  const D = {
+    el: (tag, cls, text) => {
+      const n = htmlNode(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    },
+    text: (t) => ({ text: String(t) }),
+  };
+  const root = htmlNode('div');
+  MOD_LIST_RENDERER.renderList(root, data, D);
+  return root.children.map(htmlSerialize).join('');
+};
+
+/**
+ * ⭐ 公开面的**取数 + 三道筛选 + 计数** —— **只有这一份实现**，两个调用方：
+ *   · `GET /api/mods`（JSON，客户端 fetch 与第三方读的入口）；
+ *   · `GET /mods`（同一个结果**预渲染**进 HTML，无 JS 也看得到）。
+ * ⚠️ 这两条路**必须逐条一致**，所以过滤与计数一律在这里做完，调用方一个字节都不再筛。
+ * ⚠️ `counts` 的算法**一个字节都没动**（2026-10-15 加搜索时定的口径照旧）：
+ *    它数的是 `shaped`（全量已上线），**不按 `q` 收窄**；给不给也只由 kind / func 决定。
+ */
+async function collectPublicMods({ kf, ff, qf }) {
+  const shape = (s, sig) => ({
+    // ⭐ 本地口径：`sig` 是**包内 pack.json 的读时结论**（不是记录里的字段）。
+    //   卡片要在下载之前就说清 ① 这包会改对局结果（`combat: true` 的告知义务）
+    //   ② 契约预检（site/packcheck.mjs）已经点名的问题。上游那份 shape 没有这两栏。
+    combat: sig.combat === true ? true : (sig.combat === false ? false : null),
+    packcheck: Array.isArray(sig.packcheck) ? sig.packcheck : [],
+    id: s.id, name: s.name, note: s.note, uploadedAt: s.uploadedAt, size: s.size,
+    homepage: s.homepage || null, suspected: s.suspected === true,
+    suspectedReasons: s.suspectedReasons || [],
+    // 兼容包：**两个署名分开给**，谁也不覆盖谁。公网列表那一页照这两栏分别显示。
+    // 普通投稿这两栏里通常只有原作者（没有「兼容者」这回事）——但**原作者照给**：
+    // 来源是包内的 pack.json，见 signatureOf（推导，不回写记录）。
+    kind: s.kind || 'submission',
+    // **另一种** kind：这条包「**装上到底会不会生效**」（指令③④）。与上面那个 `kind`
+    // （compat / submission，说的是这条记录**怎么来的**）是两回事，所以**故意不复用同一个键**：
+    //   functional    装上即生效 —— 站上每条都过了三道核：① `pack.json` 在 ZIP 根
+    //                 （否则解压进 workshop 目录根本不被装载）② 在引擎 0.16.0 的干净 workshop
+    //                 根**单独装载 errors=0** ③ `pack.json` 的 `api`/`game` 区间与当前
+    //                 MOD_API_VERSION / 上游版本相容；
+    //   documentation 说明包 / 参考 / 补丁 —— **装上不会启用任何功能**；
+    //   unknown       安装器形态等，判不了就**不放进真功能区**。
+    // ⚠️ 记录里没有这一栏（还没分类的、或日后新批的）一律按 **unknown** 给：
+    // 缺省**绝不可能是 functional** —— 否则「下载了 mod 却不能用」会从新记录那里漏回来。
+    packKind: s.packKind || 'unknown',
+    // ⭐⭐ **功能类目**（业主 2026-10-14 裁定的 6 类）—— 这才是「这包是干什么的」那一栏。
+    // 与上面的 `packKind`（技术维度：装上会不会生效）**是两个维度、两个键**，故意不复用。
+    // 缺省 `uncategorized`（未分类）：老记录没有这一栏 ⇒ 落未分类，**绝不猜**。
+    funcKind: funcKindOf(s),
+    funcKindTitle: FUNC_KIND_TITLES[funcKindOf(s)],
+    // 包内 `pack.json` 的 `id`（兼容包取记录里那一栏）。**只用来做一件事**：让公网那一页
+    // 能看出「哪几条是同一个 id」——引擎不允许同 id 并存，玩家一次只能装一条。
+    // 读不到就是 null，页面不画那一行（不猜）。
+    packId: sig.packId ?? null,
+    // 原作者：兼容包取记录里那一栏（发布时预填自包内 pack.json，或维护者手填）；
+    // 普通投稿记录里从来没有这一栏 ⇒ 去**包内 pack.json** 读（同一个来源名 pack.json）。
+    author: sig.author,
+    authorSource: sig.authorSource,           // 'pack.json' / 'maintainer' / null（没有来源就没有名字）
+    // 兼容者（**只存在站点侧记录里**，不进 pack.json）。空字符串 = 未填，是**合法值** ——
+    // 所以这里**不能用 `|| null`**：那会把「未填」和「压根不是兼容包」混成同一个 null，
+    // 公网那一页就没法如实把「未填」那一栏显示出来。
+    compatAuthor: typeof s.compatAuthor === 'string' ? s.compatAuthor : null,
+    compatAuthorSource: s.compatAuthorSource || null,   // 手填（form）还是未填（empty）
+    compatOf: s.compatOf || null,             // 由哪个待审原件改写来（追溯用）
+    compatNote: s.compatNote || null,         // 改了什么
+    // 相对路径：页面在哪个 origin（公网，或隧道里的 127.0.0.1）就打哪个。
+    // 用 BASE_URL 拼绝对地址会让隧道里的页面变成跨域 —— <a href> 时代是跳到公网 IP 被白名单挡掉，
+    // fetch 时代则直接 Failed to fetch。
+    download: `/api/file/${s.id}`,
+    // 只给维护者看的留档入口（公开下载这条路走到它会 403，见 /api/file/ 那一段）。
+    // ⚠️ 只有留档文件**真的在磁盘上**才给这一栏：没有 `orig.zip` 的兼容包（早先手工批准上线、
+    // 以及 `/compat/link` 事后补链的那几条）发出去就是必然 404 的死链。判据见 `origArchiveOf`。
+    archiveDownload: origArchiveOf(s.id),
+  });
+  // ⭐ **公开面过滤器**（2026-10-12 增补，只加不减）：
+  //   · 主判据一个字没改：`state === 'approved'`；
+  //   · **只多一条**：排除「发布者申请自撤、等管理员确认」的那些（`isPubliclyVisible`）。
+  //     「他想删掉」要立刻见效 —— 见 isPubliclyVisible 的完整说明。
+  const approved = allSubs().filter((s) => isPubliclyVisible(s));
+  // 逐条推署名来源（**只读**）。只有普通投稿真会去解一次 zip，而且结果有缓存
+  // （见 packAuthorOf）；兼容包走记录里那两栏，一次 zip 都不读。
+  // Promise.all 保序，所以列表顺序与 filter/map 时代完全一致。
+  const shaped = await Promise.all(approved.map(async (s) => ({ s, o: shape(s, await signatureOf(s)) })));
+  // 分类筛选在**分组之前**做（两组同一条判据），并且**保留三个分区标题**的既有画法：
+  // 服务端只筛数据，页面自己按 KIND_OF 分三块，标题一个没动（需求 ③ 的「保留现有三个分区标题」）。
+  const picked0 = kf.kinds ? shaped.filter((x) => kf.kinds.includes(kindOfRec(x.s))) : shaped;
+  // ⭐ 功能类目筛选（业主 2026-10-14）：与上面那条**各管一个维度**，所以是**串联叠加**，
+  //    不是二选一 —— `?kind=functional&func=utility` = 「既装得上、又是实用工具」。
+  const picked = ff.funcs ? picked0.filter((x) => ff.funcs.includes(funcKindOf(x.s))) : picked0;
+  // ⭐ 关键字搜索（业主 2026-10-15）：**再串一层**（AND）。三个条件各管一件事，
+  //    谁都不顶掉谁；而且与上面两条一样在**分组之前**筛 ⇒ 两组（普通 / 疑似素材）
+  //    同一条判据，不会出现「主列表搜到了、疑似那一组没搜」。
+  const pickedQ = qf.q ? picked.filter((x) => matchesQuery(x.o, x.s, qf.q)) : picked;
+  const body = {
+    mods: pickedQ.filter((x) => !x.s.suspected).map((x) => x.o),
+    flagged: pickedQ.filter((x) => x.s.suspected).map((x) => x.o),
+  };
+  // ⭐ 每类计数（需求 ③：「分区标题旁显示每类计数」）。
+  // **只在不筛的时候给**：筛过之后「functional 有 3 条」这种数会因为筛选而变小，
+  // 反而误导（用户以为站上只有 3 条功能包）。所以筛过时不给 `counts` 字段，
+  // 页面退回按当前这批自己数（那才是屏幕上真实的条数）。
+  // ⚠️ 数的是**主分区（非疑似素材）**里的条数 —— 与页面实际画出来的那三个区块**同一口径**：
+  //    疑似素材在 `/mods` 上另起一块（「含疑似官方素材的 mod」），不并进任何分类区。
+  //    计数若把疑似素材那条也算进「说明包」，就会比用户点进去看到的多 1 条
+  //    （实测线上 115 条里 `e3a5d09eb6d3` 正是 approved + documentation + suspected，
+  //     它进了疑似那一组 ⇒ 计数 22、点进去只有 21）。这种「数对不上」最招人问，所以数同一批。
+  const mainOnly = shaped.filter((x) => !x.s.suspected);
+  // 两个维度**各自一套计数**：技术维度叫 `counts`（老读法一字不改），
+  // 功能维度叫 `counts.func`（新读法）—— 两份都只在**不筛**的时候给。
+  // ⭐ 2026-10-15 加搜索时这一块**一个字节都没动**（业主口径：「别把 counts 也过滤掉」）：
+  //    它数的仍然是 `shaped`（全量已上线），**不按 `q` 收窄**；给不给也只由 kind / func 决定，
+  //    `q` 不参与这个条件 ⇒ 只搜不筛时，`counts` 照旧是全站每类计数。
+  if (!kf.kinds && !ff.funcs) {
+    const funcCounts = {};
+    for (const k of FUNC_KINDS) funcCounts[k] = mainOnly.filter((x) => funcKindOf(x.s) === k).length;
+    body.counts = {
+      functional: mainOnly.filter((x) => kindOfRec(x.s) === 'functional').length,
+      documentation: mainOnly.filter((x) => kindOfRec(x.s) === 'documentation').length,
+      unknown: mainOnly.filter((x) => kindOfRec(x.s) === 'unknown').length,
+      flagged: shaped.length - mainOnly.length,
+      total: mainOnly.length,
+      func: funcCounts,
+    };
+  }
+  body.kinds = kf.kinds;
+  body.funcs = ff.funcs;
+  body.funcKindTitles = FUNC_KIND_TITLES;
+  return body;
+}

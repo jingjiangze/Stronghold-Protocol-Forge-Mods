@@ -1,0 +1,35 @@
+{
+ "updated": "2026-10-20",
+ "note": "MOD 管理器下载页的加速器清单。prefix 模式：把 GitHub asset 完整 URL 接在 prefix 后面。页面只对 cors=true 的镜像做浏览器 Range 探测（跨域探测要求 ACAO），其余按本文件的历史测量值排序——浏览器测不到就报「不可用」会误伤可用镜像。",
+ "repo": "jingjiangze/Stronghold-Protocol-Forge",
+ "assetHint": "Stronghold-Protocol-Forge-modmgr-*-lite.zip",
+ "mirrors": [
+  {
+   "id": "ghproxy",
+   "name": "gh-proxy.com",
+   "mode": "prefix",
+   "prefix": "https://gh-proxy.com/",
+   "cors": true,
+   "range": true,
+   "measuredMs": 982
+  },
+  {
+   "id": "ghproxynet",
+   "name": "ghproxy.net",
+   "mode": "prefix",
+   "prefix": "https://ghproxy.net/",
+   "cors": false,
+   "range": true,
+   "measuredMs": 1558
+  },
+  {
+   "id": "ghfast",
+   "name": "ghfast.top",
+   "mode": "prefix",
+   "prefix": "https://ghfast.top/",
+   "cors": false,
+   "range": true,
+   "measuredMs": 2016
+  }
+ ]
+}

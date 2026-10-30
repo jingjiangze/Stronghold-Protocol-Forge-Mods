@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>给一个 mod 提交反馈 · 卫戍协议 Forge 工坊包</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%230c0f0e'/%3E%3Cpath fill='%234ed8af' d='M5 3h3v2h2V3h4v2h2V3h3v5l-2 2v7l2 2v2H5v-2l2-2v-7L5 8z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="__CSS__">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="/">工坊包 <b>·</b> 上传站 <span class="sub2">SP MODSITE</span></a>
+  <nav class="navlinks">
+    <a href="/">上传</a>
+    <a href="/mods">已上线</a>
+    <a href="/mine">我的投稿</a>
+  </nav>
+</header>
+
+<section class="panel brackets panel--glow">
+  <div class="panel__head">
+    <div class="panel__titles">
+      <span class="panel__title">给一个 mod 提交反馈</span>
+      <span class="panel__sub">问题、不兼容、想改进的地方，都可以写；能配图就配图</span>
+    </div>
+  </div>
+  <div class="panel__body">
+    <p class="sub"><b>这条反馈只有网站维护者看得到</b> —— 正文与图片都<b>不公开</b>：
+      「已上线」那一页、公开下载口、以及「我的投稿」那一页都读不到它。
+      维护者在审核台里可以<b>按单个 mod 看</b>，也可以把<b>几个 mod 合起来看</b>
+      （同一个包 id 的几条记录、以及「原件 ↔ 兼容改写版」那两条会并成一组）。</p>
+    <p class="sub">要反馈的是<b>包本身的问题</b>。要投稿或换包体请去
+      <a href="/">上传页</a>与<a href="/mine">我的投稿</a>；写包的规矩见
+      <a href="https://github.com/XiaMo233M/Stronghold-Protocol-Forge-Mods/blob/main/SKILL.md">SKILL.md</a>。</p>
+
+    <div class="field">
+      <label class="field__label" for="mod">mod 的编号 <span class="field__hint">必填。就是「已上线」那一页每张卡片最后写的那个「编号」</span></label>
+      <input id="mod" type="text" value="__FB_MOD__" placeholder="例如 c07bbd471791" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="kind">这是哪一类</label>
+      <select id="kind">
+        <option value="bug">问题（装不上 / 报错 / 行为和说明不符）</option>
+        <option value="compat">兼容性（与别的包、与引擎版本冲不上的地方）</option>
+        <option value="content">内容意见（数值、文案、界面）</option>
+        <option value="other" selected>其他</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="severity">影响程度</label>
+      <select id="severity">
+        <option value="info">只是想说一句</option>
+        <option value="annoying" selected>碍事，但还能用</option>
+        <option value="blocking">挡住了，用不了</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="text">正文 <span class="field__hint">必填，最多 2000 字。写清「在哪个版本、做了什么、看到什么」最有用</span></label>
+      <div class="field__box field__box--area brackets">
+        <textarea id="text" maxlength="2000" placeholder="引擎 / 客户端版本：&#10;我做了什么：&#10;看到什么（照着弹的提示原文抄最好）：&#10;expected 应该是什么："></textarea>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="engineVersion">版本 <span class="field__hint">选填。引擎版本 / 客户端构建号</span></label>
+      <input id="engineVersion" type="text" maxlength="80" placeholder="例如 0.16.0 或 f638115c25cd-20">
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="contact">怎么回你 <span class="field__hint">选填，<b>只有维护者看得到</b>。留空就是不留</span></label>
+      <input id="contact" type="text" maxlength="80" placeholder="例如 群里我的昵称">
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="files">图片 <span class="field__hint">选填，最多 4 张、单张不超过 2 MB；只收 PNG / JPEG / GIF / WEBP（截图直接贴就行）</span></label>
+      <input id="files" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple>
+    </div>
+
+    <button id="go" class="btn btn--primary btn--block">提交反馈</button>
+    <div class="out" id="out"></div>
+
+    <p class="dim kv" style="margin-top:14px">给脚本 / AI agent 用的：这两个写入口不需要账号 ——
+      <code>POST /api/feedback?mod=&lt;编号&gt;</code>（JSON 正文）与
+      <code>POST /api/feedback/image?mod=&amp;fb=</code>（图片裸字节 + <code>x-feedback-token</code> 头）。
+      读口挂在管理令牌下。完整规格与错误码见仓库的
+      <a href="https://github.com/XiaMo233M/Stronghold-Protocol-Forge-Mods/blob/main/docs/FEEDBACK-API.md">docs/FEEDBACK-API.md</a>。</p>
+  </div>
+</section>
+
+<script>
+// 这一页**只用 textContent 画字**，不把任何返回值拼进 HTML —— 与公开列表那一页同一个口径
+// （那页的 `el()` 也是这样建的）。反馈正文是用户自由文本，绝不进 innerHTML。
+const $ = (id) => document.getElementById(id);
+const out = (msg, cls) => {
+  const box = $('out');
+  box.textContent = '';
+  const line = document.createElement('p');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  box.append(line);
+  return box;
+};
+const line = (box, msg, cls) => {
+  const p = document.createElement('p');
+  if (cls) p.className = cls;
+  p.textContent = msg;
+  box.append(p);
+};
+
+const IMG_MAX = 4;
+const IMG_BYTES_MAX = 2 * 1024 * 1024;
+
+$('go').onclick = async () => {
+  const mod = $('mod').value.trim();
+  const text = $('text').value.trim();
+  const files = Array.from($('files').files || []);
+  if (!/^[a-z0-9]{6,32}$/.test(mod)) { out('先填对 mod 的编号（「已上线」那一页每张卡片末尾那个「编号」）。'); return; }
+  if (!text) { out('正文是空的 —— 写一句看到什么再提交。'); return; }
+  if (files.length > IMG_MAX) { out(`图片最多 ${IMG_MAX} 张，现在选了 ${files.length} 张。`); return; }
+  const tooBig = files.find((f) => f.size > IMG_BYTES_MAX);
+  if (tooBig) { out(`「${tooBig.name}」有 ${(tooBig.size / 1024 / 1024).toFixed(1)} MB，单张上限 2 MB —— 截一小点再贴。`); return; }
+
+  $('go').disabled = true;
+  const box = out('提交中…');
+  let fb = null;
+  let token = '';
+  try {
+    const r = await fetch(`/api/feedback?mod=${encodeURIComponent(mod)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        kind: $('kind').value,
+        severity: $('severity').value,
+        engineVersion: $('engineVersion').value.trim() || undefined,
+        contact: $('contact').value.trim() || undefined,
+      }),
+    });
+    fb = await r.json().catch(() => null);
+    if (!r.ok) {
+      $('go').disabled = false;
+      out(`没提交上：${(fb && fb.error) || ('HTTP ' + r.status)}`, 'kv');
+      return;
+    }
+    token = fb.imageToken || '';
+    line(box, fb.changed === false ? '这条已经提交过了（幂等命中），没有写第二笔。' : `收到了。反馈编号 ${fb.feedbackId}。`, 'kv');
+  } catch {
+    $('go').disabled = false;
+    out('网络断了，再试一次。');
+    return;
+  }
+
+  // 图片逐张贴：任何一张失败都单独报出来，**不回滚**已经贴上的（站点整条链零删除）。
+  let posted = 0;
+  for (const f of files) {
+    try {
+      const buf = await f.arrayBuffer();
+      const r = await fetch(`/api/feedback/image?mod=${encodeURIComponent(mod)}&fb=${encodeURIComponent(fb.feedbackId)}`, {
+        method: 'POST',
+        headers: { 'content-type': f.type || 'application/octet-stream', 'x-feedback-token': token },
+        body: buf,
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) { line(box, `图片「${f.name}」没贴上：${(j && j.error) || ('HTTP ' + r.status)}`, 'kv'); continue; }
+      posted++;
+      line(box, j.changed === false ? `图片「${f.name}」与已贴的那张相同，没有重写。` : `图片「${f.name}」已贴上（第 ${j.image.n} 张）。`, 'dim');
+    } catch {
+      line(box, `图片「${f.name}」传失败了，可以再提交一次这条反馈（正文不会重复写）。`, 'kv');
+    }
+  }
+  line(box, files.length
+    ? `图文都在这条反馈里了（贴上 ${posted} / ${files.length} 张）。正文与图片**只有维护者看得到**。`
+    : '正文已收到。内容与图片**只有维护者看得到**；他能把几个 mod 的反馈合起来看。', 'kv');
+  $('go').disabled = false;
+};
+</script>
+</body>
+</html>

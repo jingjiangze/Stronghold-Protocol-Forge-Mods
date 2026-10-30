@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上传 mod · 卫戍协议 MOD 站</title>
+<meta name="description" content="把工坊包提交到 MOD 站：fork 后提 PR，CI 自动校验，维护者审核通过才合并上线。">
+<style>
+:root{
+  color-scheme:dark;
+  --bg-0:#0c0f0e; --bg-1:#141816; --bg-2:#1e2421; --bg-3:#252c29;
+  --bg-glass:rgba(16,20,18,.82);
+  --line:#2f3a35; --line-2:#3e4b45; --line-3:#58675f;
+  --mint-500:#4ed8af; --mint-400:#59f4ca; --mint-600:#35d8b4; --mint-700:#2a9e7f;
+  --mint-a10:rgba(78,216,175,.10); --mint-a20:rgba(78,216,175,.20);
+  --gold:#ffc600; --gold-a20:rgba(255,198,0,.2);
+  --amber:#f6a329; --red:#e73118; --ice:#9fd4ff; --ice-a20:rgba(159,212,255,.2);
+  --text-hi:#f2f2f2; --text-md:#c3cbc7; --text-lo:#8a948f; --text-dim:#5d6863;
+  --text-on-mint:#06110d;
+  --font-cjk:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --font-label:"Bahnschrift","DIN Alternate","Roboto Condensed",var(--font-cjk);
+  --font-mono:"Cascadia Mono",ui-monospace,Consolas,monospace;
+  --radius:4px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-0);color:var(--text-md);font:14px/1.7 var(--font-cjk);
+  -webkit-font-smoothing:antialiased}
+a{color:var(--mint-400);text-decoration:none}
+a:hover{color:var(--mint-500)}
+code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-radius:3px;color:var(--ice)}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px 80px}
+
+/* 顶栏 */
+.top{position:sticky;top:0;z-index:20;background:var(--bg-glass);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.top__in{max-width:880px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:baseline;gap:10px;color:var(--text-hi)}
+.brand b{font:600 15px var(--font-label);letter-spacing:.06em}
+.brand span{font-size:11.5px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase}
+.top__nav{margin-left:auto;display:flex;gap:6px}
+.navlink{padding:7px 13px;border-radius:var(--radius);border:1px solid transparent;
+  color:var(--text-md);font-size:13px}
+.navlink:hover{background:var(--bg-2);color:var(--text-hi)}
+.navlink.cta{border-color:var(--mint-700);color:var(--mint-400);background:var(--mint-a10)}
+.navlink.cta:hover{background:var(--mint-600);color:var(--text-on-mint)}
+
+.hero{padding:30px 0 20px}
+.hero h1{margin:0 0 6px;font:600 23px/1.3 var(--font-cjk);color:var(--text-hi)}
+.hero p{margin:0;color:var(--text-lo);font-size:13px}
+
+/* 三步流程条：横向，带序号 */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 22px}
+@media(max-width:700px){.steps{grid-template-columns:1fr}}
+.step{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 15px;position:relative}
+.step__n{font:600 11px var(--font-label);letter-spacing:.1em;color:var(--mint-500);
+  text-transform:uppercase;margin:0 0 6px}
+.step__t{font:600 13.5px var(--font-cjk);color:var(--text-hi);margin:0 0 5px}
+.step__d{font-size:12px;color:var(--text-lo);margin:0;line-height:1.65}
+.step__d em{color:var(--gold);font-style:normal}
+
+/* 通道选择：分段控件 */
+.seg{display:flex;gap:0;margin:0 0 16px;border:1px solid var(--line-2);border-radius:var(--radius);
+  overflow:hidden;background:var(--bg-1)}
+.seg button{flex:1;padding:11px 8px;background:transparent;border:0;border-right:1px solid var(--line);
+  color:var(--text-md);font:13px var(--font-cjk);cursor:pointer;line-height:1.4}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--bg-2);color:var(--text-hi)}
+.seg button.on{background:var(--mint-a20);color:var(--mint-400);box-shadow:inset 0 -2px 0 var(--mint-500)}
+.seg small{display:block;font-size:11px;color:var(--text-dim);margin-top:2px}
+.seg button.on small{color:var(--mint-700)}
+
+.panel{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 18px;margin:0 0 16px}
+.panel[hidden]{display:none}
+.panel h2{font:600 12.5px var(--font-label);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-lo);margin:0 0 12px}
+ol,ul{margin:0;padding-left:20px;font-size:13px}
+li{margin:7px 0}
+li b{color:var(--text-hi);font-weight:600}
+pre{white-space:pre-wrap;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;font:12px/1.75 var(--font-mono);color:var(--text-md);overflow:auto;margin:10px 0 0}
+.btn{display:inline-block;padding:10px 22px;border-radius:var(--radius);font-size:13.5px;
+  border:1px solid var(--mint-700);background:var(--bg-2);color:var(--mint-400)}
+.btn:hover{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
+.btn.alt{border-color:var(--line-2);color:var(--text-md);background:transparent}
+.btn.alt:hover{background:var(--bg-2);color:var(--text-hi)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0}
+
+.note{border-left:2px solid var(--gold);padding:2px 0 2px 12px;font-size:12.5px;
+  color:var(--text-md);margin:14px 0 0;line-height:1.7}
+.note.bad{border-left-color:var(--red)}
+.note.ok{border-left-color:var(--mint-600)}
+.note b{color:var(--text-hi)}
+
+/* 规范：可折叠小节 */
+details.rules{border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-1);
+  margin:0 0 8px;overflow:hidden}
+details.rules summary{cursor:pointer;padding:12px 16px;font:600 13px var(--font-cjk);
+  color:var(--text-hi);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+details.rules summary::-webkit-details-marker{display:none}
+details.rules summary::before{content:"▸";color:var(--text-dim);font-size:11px}
+details.rules[open] summary::before{content:"▾"}
+details.rules summary:hover{background:var(--bg-2)}
+details.rules .body{padding:0 16px 14px;font-size:12.5px;color:var(--text-md);line-height:1.75}
+details.rules .body ul{padding-left:20px;margin:0}
+details.rules .body li{margin:6px 0}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0 0}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #242c38;vertical-align:top}
+th{color:var(--text-lo);font-weight:500}
+.dim{color:var(--text-dim)}
+
+footer{margin:40px 0 0;padding-top:18px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--text-dim);line-height:1.9}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top__in">
+    <a class="brand" href="./"><b>MOD 站</b><span>卫戍协议</span></a>
+    <nav class="top__nav">
+      <a class="navlink" href="./">mod 列表</a>
+      <a class="navlink" href="manager">MOD 管理器</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>上传 mod</h1>
+    <p>提 PR 到 mod 仓库 → CI 自动校验 → <b>维护者审核通过才合并</b>。不需要装 git，也不需要任何 token。</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <p class="step__n">① Fork</p>
+      <p class="step__t">复制到你自己的账号</p>
+      <p class="step__d">在 GitHub 点一下 <b>Fork</b>，得到属于你的副本。之后的改动都发生在你自己的仓里。</p>
+    </div>
+    <div class="step">
+      <p class="step__n">② 上传</p>
+      <p class="step__t">放进 <code>incoming/</code></p>
+      <p class="step__d">目录名用 mod 的名字，里面放 <code>mod.zip</code> 与 <code>SOURCE.md</code>（写清五件事）。</p>
+    </div>
+    <div class="step">
+      <p class="step__n">③ 等审核</p>
+      <p class="step__t">CI 绿了也还合不了</p>
+      <p class="step__d">CI 只证明「包没坏」。缺维护者审批时 PR 显示 <em>Review required</em>，GitHub 直接拦住。</p>
+    </div>
+  </div>
+
+  <div class="seg" id="seg">
+    <button class="on" data-k="a">方式 A · 网页<small>≤ 25 MB，不用 git</small></button>
+    <button data-k="b">方式 B · git<small>25–100 MB</small></button>
+    <button data-k="c">方式 C · 上传站<small>不想碰 GitHub</small></button>
+  </div>
+
+  <div class="panel" id="p-a">
+    <h2>方式 A · GitHub 网页（推荐）</h2>
+    <ol>
+      <li>打开 <a id="repoA" href="#">mod 仓库</a>，点右上角 <b>Fork</b> → <b>Create fork</b>。</li>
+      <li>进你 fork 里的 <code>incoming/</code> → <b>Add file ▾ → Create new file</b>。</li>
+      <li>文件名填 <code>incoming/&lt;mod 名字&gt;/SOURCE.md</code> —— <b>打斜杠会自动建目录</b>。
+          内容照抄 <a id="tpl" href="#">SOURCE 模板</a>。</li>
+      <li>回到该目录 → <b>Add file ▾ → Upload files</b> → 把 <code>mod.zip</code> 拖进去（支持拖整个文件夹）。</li>
+      <li><b>Commit changes</b> → GitHub 会引导你 <b>Create pull request</b> 回原仓库。</li>
+      <li>等 <code>mod-gate</code> 变绿，然后<b>等维护者审核</b>。</li>
+    </ol>
+    <div class="row">
+      <a class="btn" id="forkBtn" href="#">① 去 Fork</a>
+      <a class="btn alt" id="upBtn" href="#">直接打开上传页</a>
+    </div>
+    <div class="note">
+      <b>为什么 fork 而不是直接改？</b>你没有原仓库的写权限——这是设计如此。fork + PR 让改动先经 CI 与人工审核，才进入公开站。
+    </div>
+    <div class="note">
+      <b>传完请核对文件列表。</b>把 <code>mod.zip</code> 与 <code>SOURCE.md</code> 都拖进去后，
+      确认提交页的文件清单里<b>两个都在</b>再点提交。若 zip 没出现在清单里，说明它被忽略了 ——
+      换方式 B（git）或方式 C（上传站）。
+    </div>
+    <div class="note bad">
+      <b>PR 合并 ≠ mod 已上线。</b>合并后包落在仓库 <code>incoming/</code> 里等维护者处理；
+      要让它出现在上面这个站上，还需维护者做完兼容、经上传站审核上线。
+    </div>
+  </div>
+
+  <div class="panel" id="p-b" hidden>
+    <h2>方式 B · git（25–100 MB）</h2>
+    <p class="dim" style="margin:0;font-size:12.5px">推到<b>你自己的 fork</b>，不需要任何 token（fork 是你自己的仓）：</p>
+    <div class="note">
+      <b>这条路有两个前提</b>：① 本机装了 Git；② <code>git clone</code> 会下载整个仓库（约 60.9 MB）。
+      不满足的话，超过 25 MB 请用<b>方式 C（上传站）</b>。
+    </div>
+    <pre>git clone https://github.com/&lt;你的账号&gt;/Stronghold-Protocol-Forge-Mods.git
+cd Stronghold-Protocol-Forge-Mods
+mkdir -p "incoming/&lt;mod 名字&gt;"
+cp /path/to/mod.zip "incoming/&lt;mod 名字&gt;/"
+# 照着模板写 incoming/&lt;mod 名字&gt;/SOURCE.md（五件事）
+git add "incoming/&lt;mod 名字&gt;"
+git commit -m "上传 &lt;mod 名字&gt;"
+git push</pre>
+    <div class="note bad">
+      <b>推完请确认 zip 真的在列表里。</b>本仓的 <code>.gitignore</code> 忽略 <code>*.zip</code>，
+      已为 <code>incoming/</code>、<code>mods/</code>、<code>packs/</code> 三处开了放行。
+      若 <code>git status</code> 里看不到你的 <code>mod.zip</code>，说明放行规则被改坏了 —— 那就先别推，开 issue 告知。
+    </div>
+    <p class="dim" style="margin:10px 0 0;font-size:12px">
+      然后在 GitHub 上开 PR 回 <code id="baseName">jingjiangze/Stronghold-Protocol-Forge-Mods</code> 的 <code>master</code>。
+    </p>
+    <div class="note">
+      大包走 git 而不是网页，是因为 **GitHub 网页上传单文件上限 25 MB**（平台硬限，绕不过）。
+    </div>
+  </div>
+
+  <div class="panel" id="p-c" hidden>
+    <h2>方式 C · 上传站</h2>
+    <ol>
+      <li>打开 <a id="station" href="#">上传站</a>，填「mod 名 + 备注」，选 zip，点上传（≤100 MB）。</li>
+      <li>会给你一个<b>认领码</b>（只显示一次，存好）——用它可改包、撤回。</li>
+      <li>维护者审过后，用服务端「过审 → 代提 PR」推进仓库，再走同一条 CI + 审核 + 合并。</li>
+    </ol>
+    <div class="note ok">
+      <b>包超过 25 MB 时，这条是唯一省事的路。</b>方式 A 有 GitHub 网页 25 MB 硬限；
+      方式 B 要先装 Git 并下载整个仓库（约 60.9 MB）。上传站不用装任何东西，填表选文件即可。
+    </div>
+    <div class="note bad">
+      <b>三种方式的终点不同，别误解。</b>方式 A/B 提的 PR 合并后，包落在仓库的
+      <code>incoming/</code> 里等维护者处理；要让它出现在上面这个站上，还需维护者做完兼容、
+      经上传站审核上线。也就是说：<b>PR 合并 ≠ mod 已上线</b>。
+    </div>
+  </div>
+
+  <h2 style="font:600 12.5px var(--font-label);letter-spacing:.08em;text-transform:uppercase;
+    color:var(--text-lo);margin:26px 0 10px">上传规范</h2>
+
+  <details class="rules" open>
+    <summary>一、包的形态</summary>
+    <div class="body"><ul>
+      <li>一个 mod 一个目录；<b>目录名 = mod 名字</b>，不要多套一层。</li>
+      <li><code>pack.json</code>（工坊包）或 <code>plugin.json</code>（插件包）必须在 <b>zip 根</b>；允许一层包裹目录。</li>
+      <li>单个文件 ≤ 32 MB（引擎 zip 读取上限，超了引擎自带导入路径会拒收）。</li>
+      <li>整个 zip ≤ 200 MB（引擎 <code>PLUGIN_LIMITS.pluginBytes</code>）。</li>
+    </ul></div>
+  </details>
+
+  <details class="rules">
+    <summary>二、SOURCE.md 要写清的五件事</summary>
+    <div class="body"><ul>
+      <li><b>原件叫什么、从哪来</b>（可追溯的链接或来源）。</li>
+      <li><b>原作者是谁</b>（用原作者的名字，不要写成你的）。</li>
+      <li><b>原件的许可</b>（如 GPL-3.0-or-later / 未声明）。</li>
+      <li><b>你改了什么</b>：具体到文件、数据、数值，不要只写「优化了一些东西」。</li>
+      <li><b>自带素材哪来的</b>（自绘 / 从游戏客户端导出 / 第三方，各自标注）。</li>
+    </ul></div>
+  </details>
+
+  <details class="rules">
+    <summary>三、素材与版权</summary>
+    <div class="body"><ul>
+      <li>夹带游戏官方素材<b>照收，但必须如实标注</b> —— 未标注才是问题。</li>
+      <li>含官方素材的包会在站上醒目标记，并写明「版权归鹰角网络 / Yostar，仅供非商业个人使用」。</li>
+      <li>原作者明确禁止再分发的，不要提交。</li>
+    </ul></div>
+  </details>
+
+  <details class="rules">
+    <summary>四、CI 会自动挡掉的</summary>
+    <div class="body">
+      <table>
+        <thead><tr><th>判据</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>类型认不出</td><td>zip 中央目录里既无 <code>pack.json</code> 也无 <code>plugin.json</code></td></tr>
+          <tr><td>整档 CRC 失败</td><td>zip 损坏（传输中断 / 重复压缩）</td></tr>
+          <tr><td>超过 200 MB</td><td>引擎装载上限</td></tr>
+          <tr><td>索引不一致</td><td>改了 <code>mods/</code> 下 zip 却没同步 <code>mods/index.json</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details class="rules">
+    <summary>五、维护者审核会看什么</summary>
+    <div class="body"><ul>
+      <li>署名对不对（原作者 ≠ 兼容改写者，要分开写）。</li>
+      <li>说明里有没有讲清「装上会生效什么」—— <b>说明包不收</b>，只收能装的真功能包。</li>
+      <li>会不会和存量包撞 <code>pack.json</code> 的 <code>id</code>（引擎不允许同 id 并存）。</li>
+    </ul>
+    <div class="note bad" style="margin-top:12px">
+      <b>CI 绿 ≠ 已审核。</b>它只能证明「形状对、没损坏」，装不装得上还要维护者在引擎里实测。
+      合并前缺审批时 GitHub 会直接拦住 PR。
+    </div></div>
+  </details>
+
+  <details class="rules">
+    <summary>本地自查（可选）</summary>
+    <div class="body">
+      <p class="dim" style="margin:0 0 8px">用管理器自带的校验器先过一遍，判据与 CI 对齐：</p>
+      <pre>node tools/mod.mjs check &lt;包目录或 zip&gt;      # 只出报告，不写文件
+node tools/mod.mjs import &lt;包&gt; --dry-run     # 看类型与 blocker</pre>
+    </div>
+  </details>
+
+  <footer>
+    提 PR 后 CI 会跑 <code>mod-gate</code>（类型 / CRC / 大小 / 索引一致性）与 <code>mod-compat</code>（静态契约预检）。
+    两者都绿 + 维护者审批通过，才允许合并。
+    <br>
+    <a href="./">← 返回 mod 列表</a> · <a id="repo" href="#">仓库</a> · <a id="spec" href="#">UPLOAD.md 原文</a>
+  </footer>
+</div>
+
+<script>
+'use strict';
+// 本页**不含任何 token**，也不发写请求：它只把 GitHub 的 fork+PR 流程指给作者。
+// 提 PR 用的是作者自己的 GitHub 账号 —— 这条路不需要维护者发任何凭证给任何人。
+const REPO = 'jingjiangze/Stronghold-Protocol-Forge-Mods';
+const STATION = 'http://47.103.14.217:25570/';
+
+const $ = (id) => document.getElementById(id);
+const set = (id, href, text) => { const e = $(id); if (e) { e.href = href; if (text) e.textContent = text; } };
+const gh = (p) => 'https://github.com/' + REPO + p;
+
+set('repoA', gh(''));
+set('repo', gh(''));
+set('tpl', gh('/blob/master/incoming/SOURCE.template.md'));
+set('spec', gh('/blob/master/UPLOAD.md'));
+set('forkBtn', gh('/fork'));
+set('upBtn', gh('/upload/master/incoming'));
+set('station', STATION, '上传站');
+$('baseName').textContent = REPO;
+
+// 分段切换：一次只显示一个通道
+$('seg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-k]');
+  if (!btn) return;
+  for (const b of $('seg').querySelectorAll('button')) b.classList.toggle('on', b === btn);
+  for (const k of ['a', 'b', 'c']) $('p-' + k).hidden = (k !== btn.dataset.k);
+});
+
+// 按网速/包体积给个默认通道的建议：URL 带 ?size=30 之类就自动切过去
+(() => {
+  const m = /[?&]mb=(\d+(?:\.\d+)?)/.exec(location.search);
+  if (!m) return;
+  const mb = Number(m[1]);
+  const k = mb <= 25 ? 'a' : (mb <= 100 ? 'b' : 'c');
+  const btn = $('seg').querySelector('button[data-k="' + k + '"]');
+  if (btn) btn.click();
+})();
+</script>
+</body>
+</html>

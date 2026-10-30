@@ -6,7 +6,7 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `sticker-pack` · 1.0.0 |
-| ② 原作者 | 逆向自 wei.isomer319.xyz / sp.isomer319.xyz（社区节点 `/community-emotes/`）· 打包 jingjiangze（来源：**未声明**） |
+| ② 原作者 | 逆向自 wei.isomer319.xyz / sp.isomer319.xyz（社区节点 `/community-emotes/`） |
 | ③ 原件许可 | **未声明** |
 | ④ 兼容改写者 | Mo233 |
 | ⑤ 来源 | 站上记录 `81bf8a15aced` · 由原件 `0a4dfe9f6f99` 改写 |

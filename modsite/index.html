@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOD 站 · 卫戍协议</title>
+<meta name="description" content="卫戍协议工坊包（mod）索引：查看、筛选、搜索、下载。">
+<style>
+/* 设计 token 与 dl 站 / 上传站同一套（research 06 §12：近黑绿灰 + 薄荷强调 + 金价 + 括号边框）。
+   改这里的值要同时看 site/pages/mods.html —— 三个站必须看起来是同一个产品。 */
+:root{
+  color-scheme:dark;
+  --bg-0:#0c0f0e; --bg-1:#141816; --bg-2:#1e2421; --bg-3:#252c29;
+  --bg-glass:rgba(16,20,18,.82);
+  --line:#2f3a35; --line-2:#3e4b45; --line-3:#58675f;
+  --mint-500:#4ed8af; --mint-400:#59f4ca; --mint-600:#35d8b4; --mint-700:#2a9e7f;
+  --mint-a10:rgba(78,216,175,.10); --mint-a20:rgba(78,216,175,.20);
+  --gold:#ffc600; --gold-a20:rgba(255,198,0,.2);
+  --amber:#f6a329; --red:#e73118; --ice:#9fd4ff; --ice-a20:rgba(159,212,255,.2);
+  --text-hi:#f2f2f2; --text-md:#c3cbc7; --text-lo:#8a948f; --text-dim:#5d6863;
+  --text-on-mint:#06110d;
+  --font-cjk:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --font-label:"Bahnschrift","DIN Alternate","Roboto Condensed",var(--font-cjk);
+  --font-mono:"Cascadia Mono",ui-monospace,Consolas,monospace;
+  --radius:4px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-0);color:var(--text-md);font:14px/1.65 var(--font-cjk);
+  -webkit-font-smoothing:antialiased}
+a{color:var(--mint-400);text-decoration:none}
+a:hover{color:var(--mint-500)}
+code{font:12px var(--font-mono);background:var(--bg-2);padding:1px 5px;border-radius:3px;color:var(--ice)}
+
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
+
+/* ---- 顶栏 ---- */
+.top{position:sticky;top:0;z-index:20;background:var(--bg-glass);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.top__in{max-width:1080px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:baseline;gap:10px;color:var(--text-hi)}
+.brand b{font:600 15px var(--font-label);letter-spacing:.06em}
+.brand span{font-size:11.5px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase}
+.top__nav{margin-left:auto;display:flex;gap:6px;align-items:center}
+.navlink{padding:7px 13px;border-radius:var(--radius);border:1px solid transparent;
+  color:var(--text-md);font-size:13px}
+.navlink:hover{background:var(--bg-2);color:var(--text-hi)}
+.navlink.cta{border-color:var(--mint-700);color:var(--mint-400);background:var(--mint-a10)}
+.navlink.cta:hover{background:var(--mint-600);color:var(--text-on-mint)}
+
+/* ---- 页头 ---- */
+.hero{padding:30px 0 22px}
+.hero h1{margin:0 0 6px;font:600 23px/1.3 var(--font-cjk);color:var(--text-hi)}
+.hero p{margin:0;color:var(--text-lo);font-size:13px}
+
+/* ---- 管理器入口：比卡片更醒目 ---- */
+.mgr{display:flex;align-items:center;gap:18px;margin:0 0 20px;padding:16px 18px;
+  border:1px solid var(--mint-700);border-radius:var(--radius);
+  background:linear-gradient(120deg,var(--mint-a10),transparent 60%),var(--bg-1)}
+.mgr:hover{border-color:var(--mint-500);background:linear-gradient(120deg,var(--mint-a20),transparent 60%),var(--bg-1)}
+.mgr__t{font:600 15px var(--font-cjk);color:var(--mint-400);margin:0 0 3px}
+.mgr__s{font-size:12.5px;color:var(--text-lo);margin:0}
+.mgr__go{margin-left:auto;flex:0 0 auto;padding:9px 20px;border-radius:var(--radius);
+  border:1px solid var(--mint-700);color:var(--mint-400);font-size:13px;white-space:nowrap;
+  background:var(--bg-2)}
+.mgr:hover .mgr__go{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
+
+/* ---- 工具条 ---- */
+/* 次要入口条：比 .mgr 轻，不抢主下载按钮的视觉 */
+.snap{display:flex;align-items:center;gap:14px;margin:0 0 18px;padding:12px 16px;
+  border:1px dashed var(--line-2);border-radius:var(--radius);background:transparent}
+.snap:hover{border-color:var(--mint-700);background:var(--bg-1)}
+.snap__t{font:600 13px var(--font-cjk);color:var(--text-md);margin:0}
+.snap__s{font-size:11.5px;color:var(--text-dim);margin:2px 0 0;line-height:1.6}
+.snap__go{margin-left:auto;flex:0 0 auto;font-size:12px;color:var(--mint-400);white-space:nowrap}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.search{flex:1;min-width:200px;position:relative}
+.search input{
+  width:100%;padding:10px 12px 10px 34px;border-radius:var(--radius);
+  border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-hi);
+  font:13px var(--font-cjk)}
+.search input::placeholder{color:var(--text-dim)}
+.search input:focus{outline:none;border-color:var(--mint-700);box-shadow:0 0 0 2px var(--mint-a10)}
+.search::before{content:"";position:absolute;left:12px;top:50%;width:12px;height:12px;
+  margin-top:-7px;border:2px solid var(--text-dim);border-radius:50%}
+.search::after{content:"";position:absolute;left:21px;top:50%;width:2px;height:5px;
+  margin-top:3px;background:var(--text-dim);transform:rotate(-45deg)}
+select{padding:10px 12px;border-radius:var(--radius);border:1px solid var(--line-2);
+  background:var(--bg-1);color:var(--text-hi);font:13px var(--font-cjk)}
+select:focus{outline:none;border-color:var(--mint-700)}
+.count{font-size:12px;color:var(--text-dim);margin-left:2px}
+
+/* ---- 功能筛选条（对齐上传站 mods.html 的 funcbar） ---- */
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+.bar__label{font:11.5px var(--font-label);letter-spacing:.06em;color:var(--text-dim);
+  text-transform:uppercase;margin-right:4px}
+.chip{padding:5px 11px;border-radius:20px;border:1px solid var(--line-2);color:var(--text-md);
+  font-size:12px;cursor:pointer;background:transparent;font-family:inherit}
+.chip:hover{border-color:var(--line-3);color:var(--text-hi)}
+.chip.on{background:var(--mint-a20);border-color:var(--mint-500);color:var(--mint-400)}
+.chip i{font-style:normal;color:var(--text-dim);margin-left:5px}
+.chip.on i{color:var(--mint-600)}
+
+/* ---- 列表 ---- */
+.sec{margin:22px 0 0}
+.sec__h{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.sec__h h2{margin:0;font:600 12.5px var(--font-label);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-lo)}
+.sec__h .line{flex:1;height:1px;background:var(--line)}
+
+/* 两列网格：卡片两两并排，段头留在网格外（跨满整行）。
+   stretch（默认）= 同一行的两张卡拉成**一样高**并对齐；
+   align-items:start 则各按内容高度 —— 业主要求等宽等髙，所以用 stretch。 */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+/* min-width:0 是必须的：grid item 默认 min-width:auto，遇到长串（无空格 URL / 长英文名）
+   会把格子撑破，两列宽度就不等了。0 + flex column 让它先收缩、由内容换行去。 */
+.card{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;min-width:0;display:flex;flex-direction:column;
+  overflow-wrap:anywhere;word-break:break-word}
+.card:hover{border-color:var(--line-2)}
+.card--flag{border-left:3px solid var(--gold)}
+.card__head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px;
+  min-width:0}
+.card__name{margin:0;font:600 14.5px var(--font-cjk);color:var(--text-hi);
+  min-width:0;overflow-wrap:anywhere}
+.card__kv{font-size:12px;color:var(--text-dim);margin:0 0 8px}
+.card__kv code{background:transparent;color:var(--text-dim);padding:0}
+
+/* 徽标 */
+.badge{display:inline-block;padding:1.5px 7px;border-radius:3px;font-size:11px;
+  letter-spacing:.02em;border:1px solid;max-width:100%;
+  overflow-wrap:anywhere}
+.badge.ok{border-color:var(--mint-700);color:var(--mint-400);background:var(--mint-a10)}
+.badge.dim{border-color:var(--line-2);color:var(--text-lo)}
+.badge.warn{border-color:var(--amber);color:var(--amber);background:rgba(246,163,41,.1)}
+.badge.ice{border-color:rgba(159,212,255,.4);color:var(--ice);background:var(--ice-a20)}
+
+/* 署名两栏 */
+.sig{display:flex;gap:22px;flex-wrap:wrap;padding:9px 12px;margin:8px 0 0;
+  background:var(--bg-2);border-radius:var(--radius);border:1px solid var(--line)}
+.sig__k{font:10.5px var(--font-label);letter-spacing:.06em;color:var(--text-dim);
+  text-transform:uppercase;display:block;margin-bottom:1px}
+.sig__v{font-size:12.5px;color:var(--text-md);min-width:0;overflow-wrap:anywhere}
+.sig__hint{font-size:11.5px;color:var(--text-dim);margin:6px 0 0;line-height:1.6}
+
+/* 折叠：备注 / 校验值 */
+details.note,details.sha{margin:8px 0 0}
+details.note summary,details.sha summary{
+  cursor:pointer;font-size:12px;color:var(--text-lo);list-style:none;
+  display:inline-flex;align-items:center;gap:5px;user-select:none}
+details.note summary::-webkit-details-marker,details.sha summary::-webkit-details-marker{display:none}
+details.note summary::before,details.sha summary::before{
+  content:"▸";font-size:10px;color:var(--text-dim)}
+details[open].note summary::before,details[open].sha summary::before{content:"▾"}
+details.note summary:hover,details.sha summary:hover{color:var(--mint-400)}
+.note__body{font-size:12.5px;color:var(--text-md);margin:8px 0 0;padding:10px 12px;
+  overflow-wrap:anywhere;word-break:break-word;
+  background:var(--bg-2);border-radius:var(--radius);border-left:2px solid var(--line-2);
+  white-space:pre-wrap;word-break:break-word}
+.sha__body{font:11.5px var(--font-mono);color:var(--ice);margin:6px 0 0;word-break:break-all}
+
+.card__foot{display:flex;align-items:center;gap:12px;margin:10px 0 0;padding-top:10px;
+  margin-top:auto;
+  border-top:1px solid var(--line)}
+.size{font:12px var(--font-mono);color:var(--text-lo)}
+.dl{margin-left:auto;padding:7px 18px;border-radius:var(--radius);
+  border:1px solid var(--mint-700);background:var(--bg-2);color:var(--mint-400);
+  font-size:13px;white-space:nowrap}
+.dl:hover{background:var(--mint-600);color:var(--text-on-mint);border-color:var(--mint-600)}
+.dl[data-busy]{opacity:.65;pointer-events:none}
+
+/* 下载线路 + 进度：线路只决定「从哪儿取」，字节仍按目录里的 SHA256 在浏览器内校验后才落盘 */
+#line{max-width:200px}
+#dlstat{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;display:none;
+  min-width:min(340px,92vw);max-width:min(560px,92vw);padding:12px 16px;border-radius:var(--radius);
+  border:1px solid var(--mint-700);background:var(--bg-2);box-shadow:0 10px 30px #0008;
+  font-size:13px;line-height:1.6}
+#dlstat.on{display:block}
+#dlstat b{color:var(--mint-400);font-weight:600}
+#dlstat b.bad{color:#f88}
+#dlstat .dim{color:var(--text-lo);font-size:12px}
+#dlstat .bar{height:4px;margin-top:8px;border-radius:2px;background:var(--line);overflow:hidden}
+#dlstat .bar i{display:block;height:100%;width:0;background:var(--mint-600);transition:width .15s}
+
+/* 「不兼容 / 参考件」分组：虚线 + 琥珀边，视觉上就与能装的 mod 区分开 */
+.refsec{margin:26px 0 0}
+.refsec__h{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.refsec__h h2{margin:0;font:600 12.5px var(--font-label);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--amber)}
+.refsec__h .line{flex:1;height:1px;background:var(--line)}
+.refcard{background:transparent;border:1px dashed var(--line-2);border-radius:var(--radius);
+  padding:13px 15px;margin:0 0 8px}
+.refcard:hover{border-color:var(--amber)}
+.refcard__head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 5px}
+.refcard__name{margin:0;font:600 14px var(--font-cjk);color:var(--text-hi)}
+.refcard__kv{font-size:11.5px;color:var(--text-dim);margin:0 0 6px}
+.refwarn{font-size:12.5px;color:var(--amber);margin:0;line-height:1.7}
+.empty{padding:44px 20px;text-align:center;color:var(--text-dim);font-size:13px}
+.empty b{display:block;color:var(--text-lo);margin-bottom:6px;font-weight:500}
+
+/* ---- 页脚 ---- */
+footer{margin:44px 0 0;padding-top:20px;border-top:1px solid var(--line);display:grid;gap:16px}
+.fblock{font-size:12.5px;color:var(--text-dim);line-height:1.9}
+.fblock b{display:block;color:var(--text-lo);font:600 11px var(--font-label);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.fblock .dim{color:var(--text-dim)}
+
+/* 窄屏单列：两列在 820px 以下会挤，卡片里的备注/署名读起来更差 */
+@media(max-width:820px){
+  .grid{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .top__nav .navlink:not(.cta){display:none}
+  .mgr{flex-wrap:wrap}
+  .mgr__go{margin-left:0;width:100%;text-align:center}
+  .bar__label{width:100%;margin:0 0 2px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top__in">
+    <a class="brand" href="./"><b>MOD 站</b><span>卫戍协议</span></a>
+    <nav class="top__nav">
+      <a class="navlink" href="manager">MOD 管理器</a>
+      <a class="navlink cta" href="upload">上传 mod</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>工坊包</h1>
+    <p id="sub">正在载入索引…</p>
+  </div>
+
+  <a class="mgr" href="manager">
+    <div>
+      <p class="mgr__t">MOD 管理器</p>
+      <p class="mgr__s" id="mgrVer">服务端 + <code>/mod</code> 页面 + CLI · 不含游戏素材</p>
+    </div>
+    <span class="mgr__go">下载 →</span>
+  </a>
+
+  <a class="snap" href="manager#ai-snapshot">
+    <div>
+      <p class="snap__t">引擎 AI 组件快照</p>
+      <p class="snap__s">
+        <code>sim/ai.js</code> 战斗 AI + <code>match/bot.js</code> 布阵规划器的源码（不是训练模型）·
+        <b>引擎层不兼容</b>，需放回完整引擎树
+      </p>
+    </div>
+    <span class="snap__go">查看 →</span>
+  </a>
+
+  <div class="tools">
+    <div class="search">
+      <input type="search" id="q" placeholder="搜名称 / id / 作者 / 备注…" autocomplete="off">
+    </div>
+    <select id="sort">
+      <option value="">默认排序</option>
+      <option value="name">按名称</option>
+      <option value="size-desc">按体积 ↓</option>
+      <option value="new">按版本</option>
+    </select>
+    <select id="line" title="下载线路：直连 GitHub 或经镜像。无论走哪条，字节都要对得上目录里的 SHA256 才会保存。">
+      <option value="auto">下载线路：自动</option>
+      <option value="">直连 GitHub</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="bar" id="funcbar"></div>
+
+  <div id="list"><div class="empty">载入中…</div></div>
+
+  <section class="refsec" id="refs" hidden>
+    <div class="refsec__h">
+      <h2>不兼容 / 参考件</h2><span class="line"></span>
+      <span class="count" id="refsCount"></span>
+    </div>
+    <p class="dim" style="margin:0 0 10px;font-size:12px;line-height:1.7">
+      这些件<b>装不上引擎</b>，只作参考：要么依赖闭包太大（≈整个引擎），要么不是工坊包形态。
+      下载后按包内路径放回<b>版本相同</b>的完整检出，不要当 mod 装。
+    </p>
+    <div id="refsList"></div>
+  </section>
+
+  <div id="dlstat" role="status" aria-live="polite"></div>
+
+  <footer>
+    <div class="fblock">
+      <b>上传投稿</b>
+      <a href="upload">怎么上传</a>
+      <span class="dim">· fork 后提 PR，CI 自动校验，维护者审核通过才合并</span>
+    </div>
+    <div class="fblock">
+      <b>开源地址</b>
+      <a id="repo" href="#">mod 仓库</a>
+      <span class="dim">（GPL-3.0，本页与索引生成器源码都在里面）</span>
+    </div>
+    <div class="fblock">
+      <b>关于这份索引</b>
+      由 GitHub Actions 从 <code>mods/index.json</code> + 各包 <code>PROVENANCE.md</code> 预生成
+      （<code>mods.json</code>）。本页不查第三方接口：列表只读同源静态文件。
+      下载直链由 <span id="store"></span> 提供；点「下载」时才按上面的「下载线路」依次取
+      （直连 GitHub / 镜像），拿到的字节要与目录里的 <code>SHA256</code> 一致才会保存 ——
+      镜像只换线路，不换内容。
+    </div>
+  </footer>
+</div>
+
+<script>
+'use strict';
+// 纯静态：只读一个预生成的 mods.json。
+// 理由：浏览器匿名 api.github.com 只有 60 次/小时，raw 可达性按 URL 波动；
+// 把 API 调用挪到 Actions 侧（GITHUB_TOKEN 1000/h），浏览器只读静态文件 —— 省额度也稳。
+const CFG = {
+  store: 'GitHub Releases',
+  repo: 'jingjiangze/Stronghold-Protocol-Forge-Mods',
+  engineRepo: 'jingjiangze/Stronghold-Protocol-Forge',
+};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const mb = (n) => (Number(n) / 1048576).toFixed(2) + ' MB';
+const flat = (x) => Array.isArray(x) ? x.join('\n') : (x == null ? '' : String(x));
+// PROVENANCE 里缺失字段写的是 **未声明**，那不是作者名，页面上当「没有」处理
+const real = (v) => { const s = String(v ?? '').trim(); return s && s !== '**未声明**' ? s : ''; };
+
+$('repo').href = 'https://github.com/' + CFG.repo;
+$('repo').textContent = CFG.repo;
+$('store').textContent = CFG.store;
+document.title = 'MOD 站 · 卫戍协议 · ' + CFG.repo;
+
+// 管理器版本（拿不到就保留静态文案，不报错、不影响列表）
+fetch('https://api.github.com/repos/' + CFG.engineRepo + '/releases/latest', {
+  headers: { accept: 'application/vnd.github+json' },
+}).then((r) => (r.ok ? r.json() : null)).then((rel) => {
+  if (!rel || !rel.tag_name) return;
+  const zip = (rel.assets || []).find((a) => a.name.endsWith('-lite.zip'));
+  const el = $('mgrVer');
+  if (el) el.textContent = rel.tag_name + (zip ? ' · ' + (zip.size / 1048576).toFixed(1) + ' MB' : '')
+    + ' · 服务端 + /mod 页面 + CLI · 不含游戏素材';
+}).catch(() => {});
+
+// 功能类目：与上传站 mods.html 的 FUNC_ORDER 同一套词表
+const FUNC_TITLE = {
+  gameplay: '游戏玩法', expansion: '扩展内容', utility: '实用工具',
+  assets: '素材替换', documentation: '说明文档', uncategorized: '未分类',
+};
+const FUNC_ORDER = ['gameplay', 'expansion', 'utility', 'assets', 'documentation', 'uncategorized'];
+const funcOf = (m) => (FUNC_TITLE[m.funcKind] ? m.funcKind : 'uncategorized');
+
+let ALL = [];
+let ACTIVE_FUNC = '';
+
+function renderFuncBar() {
+  const counts = {};
+  for (const m of ALL) { const k = funcOf(m); counts[k] = (counts[k] || 0) + 1; }
+  const bar = $('funcbar');
+  const parts = ['<span class="bar__label">按功能</span>'];
+  parts.push('<button class="chip' + (ACTIVE_FUNC === '' ? ' on' : '') + '" data-f="">全部<i>' + ALL.length + '</i></button>');
+  for (const k of FUNC_ORDER) {
+    if (!counts[k]) continue;   // 没数据的类目不画空按钮
+    parts.push('<button class="chip' + (ACTIVE_FUNC === k ? ' on' : '') + '" data-f="' + k + '">'
+      + esc(FUNC_TITLE[k]) + '<i>' + counts[k] + '</i></button>');
+  }
+  bar.innerHTML = parts.join('');
+}
+
+function card(m) {
+  const name = esc(m.name || m.id);
+  const author = real(m.author);
+  const compat = real(m.compatAuthor);
+  const isCompat = m.isCompat === true;
+  const note = flat(m.note || m.notes).trim();
+  const flagged = m.category === 'unknown';
+  const badges = [];
+  if (m.category === 'functional') badges.push('<span class="badge ok">真功能</span>');
+  else if (flagged) badges.push('<span class="badge warn">未核实</span>');
+  if (isCompat) badges.push('<span class="badge ice">兼容改写版</span>');
+  const fk = funcOf(m);
+  if (fk !== 'uncategorized') badges.push('<span class="badge dim">' + esc(FUNC_TITLE[fk]) + '</span>');
+  if (m.license) badges.push('<span class="badge dim">' + esc(m.license) + '</span>');
+
+  // 署名：原作者有就画；兼容改写者只在兼容包上画，缺了写「（未填）」
+  const sig = [];
+  if (author) sig.push('<div><span class="sig__k">原作者</span><span class="sig__v">' + esc(author) + '</span></div>');
+  if (isCompat) sig.push('<div><span class="sig__k">兼容改写者</span><span class="sig__v">'
+    + (compat ? esc(compat) : '（未填）') + '</span></div>');
+
+  return '<article class="card' + (flagged ? ' card--flag' : '') + '">\n'
+    + '    <div class="card__head">\n'
+    + '      <h3 class="card__name">' + name + '</h3>\n      ' + badges.join('') + '\n'
+    + '    </div>\n'
+    + '    <p class="card__kv">' + (m.sizeBytes ? mb(m.sizeBytes) : '')
+    + (m.version ? ' · v' + esc(m.version) : '')
+    + (m.id ? ' · <code>' + esc(m.id) + '</code>' : '') + '</p>\n'
+    + (sig.length
+      ? '    <div class="sig">' + sig.join('') + '</div>\n'
+        + (isCompat ? '    <p class="sig__hint">原作署名与说明原样保留自包内 <code>pack.json</code>；兼容改写是另一个人做的，记在站侧，不改包内元数据。</p>\n' : '')
+      : '')
+    + (note ? '    <details class="note"><summary>备注</summary><div class="note__body">' + esc(note) + '</div></details>\n' : '')
+    + (m.sha256 ? '    <details class="sha"><summary>SHA256</summary><div class="sha__body">' + esc(m.sha256) + '</div></details>\n' : '')
+    + '    <div class="card__foot">\n'
+    + '      <span class="size">' + (m.fileCount ? esc(m.fileCount) + ' 个文件' : '') + '</span>\n'
+    + (m.download
+      ? '      <a class="dl" href="' + esc(m.download) + '" rel="noopener"'
+        + ' data-dl="' + esc(m.id + (m.version ? '-v' + m.version : '')) + '"'
+        + (m.sha256 ? ' data-sha="' + esc(m.sha256) + '"' : '') + '>下载</a>\n'
+      : '      <span class="size">无下载直链</span>\n')
+    + '    </div>\n'
+    + '  </article>';
+}
+
+function render() {
+  const q = ($('q').value || '').trim().toLowerCase();
+  const sort = $('sort').value;
+  let hit = ALL.filter((m) => {
+    if (ACTIVE_FUNC && funcOf(m) !== ACTIVE_FUNC) return false;
+    if (!q) return true;
+    return [m.id, m.name, m.note, m.notes, m.packId, m.author, m.compatAuthor, m.license]
+      .filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
+  // 默认排序：新发布的优先（addedAt 降序；没有时间的老条目落到末尾，保持原顺序）
+  // ⚠ 这段是他人提交（b5242607 / PR #14）加的，曾被我误覆盖两次 —— 改动本文件前务必
+  //    先 `gh api .../contents/modsite/index.html?ref=master` 取回当前版本再在其上改，
+  //    不要用本地旧副本整份覆盖。
+  if (sort === '') hit = hit.slice().sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  else if (sort === 'name') hit = hit.slice().sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'zh'));
+  else if (sort === 'size-desc') hit = hit.slice().sort((a, b) => (b.sizeBytes || 0) - (a.sizeBytes || 0));
+  else if (sort === 'new') hit = hit.slice().sort((a, b) => String(b.version || '').localeCompare(String(a.version || ''), 'zh', { numeric: true }));
+
+  $('count').textContent = hit.length === ALL.length ? '共 ' + ALL.length + ' 个' : hit.length + ' / ' + ALL.length + ' 个';
+  const list = $('list');
+  if (!hit.length) {
+    list.innerHTML = '<div class="empty"><b>没有匹配的 mod</b>试试换个关键词，或点上面「全部」。</div>';
+    return;
+  }
+  // 按功能类目分段（与上传站同一信息架构）
+  const groups = FUNC_ORDER
+    .map((k) => ({ k: k, items: hit.filter((m) => funcOf(m) === k) }))
+    .filter((g) => g.items.length);
+  list.innerHTML = groups.map((g) =>
+    '<section class="sec">\n    <div class="sec__h"><h2>' + esc(FUNC_TITLE[g.k]) + '</h2>'
+    + '<span class="line"></span><span class="count">' + g.items.length + '</span></div>\n'
+    + '<div class="grid">' + g.items.map(card).join('') + '</div>\n'
+    + '  </section>').join('\n');
+}
+
+/** 「不兼容 / 参考件」的卡片：不画下载按钮到列表主区，而是明确写清为什么装不上。 */
+function refCard(m) {
+  const c = m.compatibility || {};
+  const bad = c.verdict && c.verdict !== 'self-contained';
+  const closure = m.closure || null;
+  const rows = closure
+    ? Object.entries(closure).map(([k, v]) => `${k}：${v.files} 文件 / ${v.lines} 行 / ${v.kb} KB`).join('；')
+    : '';
+  return '<article class="refcard">\n'
+    + '    <div class="refcard__head">\n'
+    + '      <h3 class="refcard__name">' + esc(m.name || m.id) + '</h3>\n'
+    + '      <span class="badge ' + (bad ? 'warn' : 'dim') + '">'
+    + (bad ? '装不上 · 参考件' : '自包含 · 参考件') + '</span>\n'
+    + '    </div>\n'
+    + '    <p class="refcard__kv">' + (m.version ? 'v' + esc(m.version) + ' · ' : '')
+    + (m.author ? esc(m.author) + ' · ' : '') + (m.license ? esc(m.license) : '') + '</p>\n'
+    + '    <p class="refwarn">⛔ ' + esc(c.reason || '不能直接装上引擎。')
+    + (rows ? '　闭包：' + esc(rows) : '') + '</p>\n'
+    + (m.note ? '    <details class="note"><summary>说明</summary><div class="note__body">'
+      + esc(String(m.note)) + '</div></details>\n' : '')
+    + '    <div class="card__foot">\n'
+    + '      <span class="size">' + (m.zip && m.zip.bytes ? (m.zip.bytes / 1024).toFixed(0) + ' KB' : '') + '</span>\n'
+    + (m.download
+      ? '      <a class="dl" href="' + esc(m.download) + '" rel="noopener"'
+        + ' data-dl="' + esc((m.id || 'source') + '-source') + '"'
+        + (m.sha256 ? ' data-sha="' + esc(m.sha256) + '"' : '') + '>下载源码</a>\n'
+      : '')
+    + '    </div>\n'
+    + '  </article>';
+}
+
+/** 渲染「不兼容 / 参考件」分组（读 extras.json，与正常 mod 列表分开）。 */
+function renderRefs(items) {
+  const box = $('refs');
+  if (!box) return;
+  if (!items || !items.length) { box.hidden = true; return; }
+  box.hidden = false;
+  $('refsCount').textContent = items.length;
+  $('refsList').innerHTML = items.map(refCard).join('\n');
+}
+
+// 索引/参考件加载：带超时 + 换新连接重试。
+// 到 Cloudflare 边缘的这一跳在本机直连时会 40–110s 或被中途重置（`Failed to fetch`），
+// 而数据本身在边缘是好的（curl 三路透都能 200）——所以这不是「索引没生成」，是网络抖。
+// 重试每次是新连接，有机会换到另一条 CF IP / 非劣化路由；超时用 AbortController 兜住「卡住不返回」。
+async function fetchJSON(url, { attempts = 3, timeoutMs = 20000 } = {}) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } catch (e) {
+      lastErr = e;
+      // 404 不是瞬时故障，重试也没用，立刻放弃（这才是「索引没生成」的真判据）
+      if (e && /HTTP 404/.test(String(e.message || e))) break;
+      if (i < attempts - 1) await new Promise((res) => setTimeout(res, 600 * (i + 1))); // 退避后再换连接重试
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastErr || new Error('载入失败');
+}
+
+async function loadIndex() {
+  $('sub').textContent = '载入中…';
+  $('list').innerHTML = '<div class="empty">正在载入索引…</div>';
+  try {
+    // 参考件单独一份 JSON：不经闸门，也不混进正常列表；失败只跳过它，不拖累主列表
+    try { renderRefs(((await fetchJSON('extras.json', { attempts: 2, timeoutMs: 12000 })).items) || []); } catch (e) { /* 参考件加载失败不影响主列表 */ }
+    const j = await fetchJSON('mods.json');
+    ALL = (Array.isArray(j) ? j : (j.mods || []))
+      // 说明包不进站点（上游入库闸门 + 索引生成器都已排除，这里是第三道展示层兜底）
+      .filter((m) => m.category !== 'documentation');
+    $('sub').textContent = ALL.length + ' 个工坊包 · 索引由 Actions 预生成 · 下载走 ' + CFG.store;
+    renderFuncBar();
+    render();
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    // 只有真 404 才指向 Actions；网络层 reject/超时是链路问题，别甩锅给 Actions 没生成
+    const missing = /HTTP 404/.test(msg);
+    $('sub').textContent = '索引载入失败';
+    $('list').innerHTML = '<div class="empty"><b>索引载入失败</b> · ' + esc(msg)
+      + (missing
+        ? '<br>站点没有 mods.json —— 请确认索引已由 Actions 生成。'
+        : '<br>到站点索引的网络连接被中断或超时（不是索引缺失）。已自动重试仍未成功，可稍后手动重试或换网络。')
+      + (missing ? '' : '<br><button type="button" id="retryIndex">重试</button>') + '</div>';
+    const btn = $('retryIndex');
+    if (btn) btn.addEventListener('click', loadIndex);
+  }
+}
+loadIndex();
+
+$('q').addEventListener('input', render);
+$('sort').addEventListener('change', render);
+$('funcbar').addEventListener('click', (e) => {
+  const btn = e.target.closest('.chip');
+  if (!btn) return;
+  ACTIVE_FUNC = btn.dataset.f || '';
+  renderFuncBar();
+  render();
+});
+
+// ---- 下载线路（2026-10-30）--------------------------------------------------------------------
+// 为什么：所有下载直链都指向 raw.githubusercontent.com，而它在不少网络上**整段不通**（实测裸连
+// 25 s 直接 000，同域名给显式 IPv4 却 1.1 s 就回）。旧实现是一个裸 <a href> —— 线路一挂，点「下载」
+// 只换来一张浏览器错误页，连「换条路」的余地都没有。
+//
+// 现在：点下载才按线路依次取（fetch 的失败是可捕获的，<a> 的失败不可捕获），拿到的字节在**浏览器里**
+// 按目录里的 sha256 验过才保存；验不过就拒存并换下一条线路。镜像只换线路、不换内容 —— 这与客户端
+// /mod 管理器里的口径完全一致（那边是 sha256 强制 + 主机白名单）。
+//
+// 只接管 raw.githubusercontent.com 的直链；同源文件（extras/）仍由浏览器直接下载。
+// 没开 CORS 的镜像读不到字节（无法校验），选中它时明确交回浏览器并说清「这条不校验」。
+const LINE_KEY = 'sp-modsite-line';
+const RAW_RE = /^https:\/\/raw\.githubusercontent\.com\//;
+const LINE_PER_TRY_MS = 90000;
+const DIRECT_LINE = { id: '', name: '直连', prefix: '', cors: true };
+let MIRRORS = [];     // [{id,name,prefix,cors}] ← mirrors.json（与 MOD 管理器下载页同一份清单）
+let LINE = 'auto';    // 'auto' | ''（直连） | 某个镜像 id
+
+try { LINE = localStorage.getItem(LINE_KEY) || 'auto'; } catch (e) { /* 隐私模式下拿不到就按自动 */ }
+
+/** 每行一条线路。自动模式只把**能跨域读字节**的排在前面 —— 读不到就没法校验 sha256。 */
+function linesFor(auto) {
+  const usable = MIRRORS.filter((m) => m.cors !== false);
+  if (auto) return [DIRECT_LINE].concat(usable);
+  if (LINE === '') return [DIRECT_LINE];
+  const one = MIRRORS.find((m) => m.id === LINE);
+  return one ? [one] : [DIRECT_LINE];
+}
+const routeOf = (url, line) => (line && line.prefix ? line.prefix + url : url);
+
+// 状态条：用递增序号防「上一轮的隐藏定时器」把新一轮的进度条掐掉。
+let STAT_SEQ = 0;
+function showStat(html) {
+  const el = $('dlstat');
+  el.dataset.seq = String(++STAT_SEQ);
+  el.innerHTML = html;
+  el.classList.add('on');
+  return el;
+}
+function hideStat(ms) {
+  const el = $('dlstat');
+  const mine = el.dataset.seq;
+  setTimeout(() => {
+    if (el.dataset.seq === mine) { el.classList.remove('on'); el.innerHTML = ''; }
+  }, ms || 0);
+}
+const fmtMB = (n) => (n / 1048576).toFixed(1) + ' MB';
+const barOf = (pct) => '<div class="bar"><i style="width:' + Math.max(0, Math.min(100, pct)).toFixed(1) + '%"></i></div>';
+
+/** 取一条线路的字节；失败要能区分「HTTP 错 / 超时 / 跨域读不到」。 */
+async function fetchLine(rawUrl, line, onProgress) {
+  const target = routeOf(rawUrl, line);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), LINE_PER_TRY_MS);
+  try {
+    const r = await fetch(target, { cache: 'no-store', signal: ctrl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const total = Number(r.headers.get('content-length') || 0);
+    if (!r.body || !r.body.getReader) {           // 极老的浏览器：整体读
+      const buf = new Uint8Array(await r.arrayBuffer());
+      onProgress(buf.length, total || buf.length);
+      return buf;
+    }
+    const reader = r.body.getReader();
+    const chunks = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      onProgress(got, total);
+    }
+    const out = new Uint8Array(got);
+    let off = 0;
+    for (const c of chunks) { out.set(c, off); off += c.length; }
+    return out;
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error('超时 ' + (LINE_PER_TRY_MS / 1000) + 's');
+    if (e && e.name === 'TypeError') throw new Error('连不上或被跨域拦下');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** 浏览器内 SHA-256。非安全上下文（http 页面）没有 WebCrypto —— 返回空串，调用方如实说「没验」。 */
+async function sha256Hex(bytes) {
+  if (!(window.crypto && window.crypto.subtle && window.crypto.subtle.digest)) return '';
+  const d = await window.crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function saveBytes(bytes, name) {
+  const blob = new Blob([bytes], { type: 'application/zip' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/** 交给浏览器自己下载（不可校验的镜像只能用这条）。用临时 <a>，不改卡片上原本的 href。 */
+function handToBrowser(url) {
+  const a = document.createElement('a');
+  a.href = url; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// 线路清单：与 MOD 管理器下载页共用 mirrors.json。拿不到就只走直连，不影响列表。
+fetch('mirrors.json', { cache: 'no-store' })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((j) => {
+    MIRRORS = ((j && j.mirrors) || []).filter((m) => m && m.prefix);
+    const sel = $('line');
+    for (const m of MIRRORS) {
+      const o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = '经 ' + (m.name || m.id) + (m.cors === false ? '（不校验）' : '');
+      sel.appendChild(o);
+    }
+    sel.value = LINE;
+    if (sel.value !== LINE) { sel.value = 'auto'; LINE = 'auto'; }   // 记住的镜像已下架 ⇒ 回落自动
+  })
+  .catch(() => {});
+
+$('line').addEventListener('change', () => {
+  LINE = $('line').value;
+  try { localStorage.setItem(LINE_KEY, LINE); } catch (e) { /* 存不了就只在本页生效 */ }
+  const one = LINE === 'auto' ? '' : (LINE === '' ? '直连 GitHub' : ((MIRRORS.find((m) => m.id === LINE) || {}).name || LINE));
+  showStat('<b>下载线路：' + esc(LINE === 'auto' ? '自动（依次试直连与镜像）' : one) + '</b>'
+    + '<br><span class="dim">无论走哪条，字节都要对得上目录里的 SHA256 才会保存。</span>');
+  hideStat(5000);
+});
+
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('a.dl');
+  if (!a) return;
+  const raw = a.getAttribute('href') || '';
+  if (!RAW_RE.test(raw)) return;                 // 同源参考件 / 别的 CDN：浏览器照旧直连
+  e.preventDefault();
+  if (a.dataset.busy) return;
+
+  const name = (a.dataset.dl || 'mod') + '.zip';
+  const want = String(a.dataset.sha || '').trim().toLowerCase();
+  const chosen = MIRRORS.find((m) => m.id === LINE);
+  // 显式选了「不回 ACAO」的镜像：读不到字节也就没法校验 —— 交回浏览器，但必须说清楚。
+  if (LINE !== 'auto' && chosen && chosen.cors === false) {
+    showStat('<b>交给浏览器：经 ' + esc(chosen.name) + '</b>'
+      + '<br><span class="dim">该镜像不允许跨域读字节，页面内无法核对 SHA256。请下载后自行比对：'
+      + (want ? '<br>' + esc(want) : '（该条没有 SHA256）') + '</span>');
+    hideStat(9000);
+    handToBrowser(routeOf(raw, chosen));
+    return;
+  }
+
+  const lines = linesFor(LINE === 'auto');
+  const fails = [];
+  const label = a.textContent;
+  a.dataset.busy = '1'; a.textContent = '下载中…';
+  try {
+    for (const line of lines) {
+      const t0 = Date.now();
+      let lastPaint = 0;
+      showStat('<b>' + esc(name) + '</b> · 线路 ' + esc(line.name)
+        + '<br><span class="dim">正在连接…</span>' + barOf(0));
+      try {
+        const bytes = await fetchLine(raw, line, (got, total) => {
+          const now = Date.now();
+          if (now - lastPaint < 120 && (!total || got < total)) return;
+          lastPaint = now;
+          const pct = total ? (got / total) * 100 : 0;
+          showStat('<b>' + esc(name) + '</b> · 线路 ' + esc(line.name)
+            + '<br><span class="dim">' + fmtMB(got) + (total ? ' / ' + fmtMB(total) : '')
+            + ' · ' + ((now - t0) / 1000).toFixed(1) + 's</span>' + barOf(pct));
+        });
+        const got = await sha256Hex(bytes);
+        if (want && got && got !== want) {
+          // 内容对不上 = 这条线路喂了错的字节。拒绝保存，换下一条（也别把半个坏包留给用户）。
+          fails.push(line.name + '→SHA256 不符');
+          continue;
+        }
+        saveBytes(bytes, name);
+        const secs = ((Date.now() - t0) / 1000).toFixed(1);
+        showStat('<b>✓ 已保存 ' + esc(name) + '</b>'
+          + '<br><span class="dim">线路 ' + esc(line.name) + ' · ' + fmtMB(bytes.length) + ' · ' + secs + 's · '
+          + (want ? (got ? 'SHA256 校验通过' : '未校验（当前不是 https 安全上下文）') : '目录未提供 SHA256') + '</span>');
+        hideStat(12000);
+        return;
+      } catch (err) {
+        fails.push(line.name + '→' + String((err && err.message) || err).slice(0, 40));
+      }
+    }
+    showStat('<b class="bad">所有线路都没取到这份文件</b>'
+      + '<br><span class="dim">' + esc(fails.join('；')) + '</span>'
+      + '<br><span class="dim">可以换个线路再试；或用上面的 SHA256 自行核对后直连下载。</span>');
+    hideStat(20000);
+  } finally {
+    delete a.dataset.busy;
+    a.textContent = label;
+  }
+});
+</script>
+</body>
+</html>

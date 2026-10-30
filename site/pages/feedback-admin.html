@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>反馈 · 审核台 · 卫戍协议 Forge 工坊包</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%230c0f0e'/%3E%3Cpath fill='%234ed8af' d='M5 3h3v2h2V3h4v2h2V3h3v5l-2 2v7l2 2v2H5v-2l2-2v-7L5 8z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="__CSS__">
+<style>
+  /* 这一页单独一套样式（不碰审核台那一大段内联脚本）。全是同源、无外链。 */
+  .fbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin-bottom: 12px; }
+  .fbar .field { margin: 0; min-width: 150px; }
+  .fbar .field--grow { flex: 1 1 260px; }
+  .fbar .field__label { font-size: 12.5px; opacity: .8; }
+  .fbar input, .fbar select { width: 100%; }
+  .fbar .chk { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 6px 0; cursor: pointer; }
+  .fbar .chk input { width: auto; margin: 0; }
+  .fbitem { border: 1px solid var(--line, #2a2f2d); border-radius: 4px; padding: 12px 14px; margin: 0 0 12px; }
+  .fbitem.is-new { border-left: 4px solid var(--mint-500, #4ed8af); }
+  .fbitem.is-done { opacity: .72; }
+  .fbhead { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .fbtext { white-space: pre-wrap; word-break: break-word; margin: 6px 0; }
+  .fbimgs { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .fbimgs img { max-height: 150px; max-width: 220px; border: 1px solid var(--line, #2a2f2d); background: #000; }
+  .fbrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  .fbrow input[type=text] { flex: 1 1 200px; }
+  .fbstate.on { border-color: var(--mint-500, #4ed8af); font-weight: 600; }
+  .badge.st-new { border-color: var(--mint-500, #4ed8af); }
+  .badge.st-doing { border-color: var(--amber, #f6a329); }
+  .badge.st-done { border-color: var(--line-3, #58675f); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="/">工坊包 <b>·</b> 上传站 <span class="sub2">SP MODSITE</span></a>
+  <nav class="navlinks">
+    <a href="__ADMIN_PAGE__">审核台</a>
+    <a href="/mods">已上线</a>
+  </nav>
+</header>
+
+<h1>反馈</h1>
+<p class="sub">这一页<b>只有维护者打得开</b>（与审核台同一道门：<code>ADMIN_IPS</code> + 令牌 / 登录框）。
+  投稿人提交的正文与图片<b>不进公开列表、不进 <code>meta.json</code></b>，公开面读不到这里的任何一个字节。
+  接口规格见仓库 <code>docs/FEEDBACK-API.md</code>。</p>
+
+<div class="fbar">
+  <div class="field field--grow">
+    <label class="field__label" for="q">看哪几个 mod</label>
+    <input id="q" type="text" placeholder="留空＝全量翻页；或填记录编号，多个用逗号分隔">
+  </div>
+  <div class="field">
+    <label class="field__label" for="mode">读法</label>
+    <select id="mode">
+      <option value="all" selected>全量（翻页）</option>
+      <option value="mod">按 mod（合并这几条）</option>
+      <option value="group">折叠成一款（同 pack id + 兼容链）</option>
+    </select>
+  </div>
+  <label class="chk"><input type="checkbox" id="sNew" checked>没看过</label>
+  <label class="chk"><input type="checkbox" id="sRead">看过了</label>
+  <label class="chk"><input type="checkbox" id="sDoing">在办</label>
+  <label class="chk"><input type="checkbox" id="sDone">办完</label>
+  <button id="go" class="btn btn--primary">载入</button>
+  <button id="more" class="btn" style="display:none">下一页</button>
+</div>
+
+<p class="dim" id="stat">还没载入。</p>
+<div id="list"></div>
+
+<script>
+// 这一页**只用 textContent / DOM 建节点**，任何来自服务端的文本都不拼进 innerHTML ——
+// 与公开列表那一页同一个口径（反馈正文是投稿人自由文本）。
+const $ = (id) => document.getElementById(id);
+const API = '__ADMIN_API__';
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const STATES = ['new', 'read', 'doing', 'done'];
+const ST_LABEL = { new: '没看过', read: '看过了', doing: '在办', done: '办完' };
+let cursor = null;          // 只有「全量」那一档用它
+
+function wantStates() {
+  const on = [];
+  if ($('sNew').checked) on.push('new');
+  if ($('sRead').checked) on.push('read');
+  if ($('sDoing').checked) on.push('doing');
+  if ($('sDone').checked) on.push('done');
+  return on;
+}
+
+async function load(nextCursor) {
+  const mode = $('mode').value;
+  const q = $('q').value.trim();
+  const st = wantStates();
+  if (mode !== 'all' && !q) { $('stat').textContent = '这一档要填记录编号（留空请用「全量」）。'; return; }
+  const p = new URLSearchParams();
+  if (mode === 'all') p.set('all', '1');
+  else if (mode === 'group') p.set('group', q);
+  else p.set('mod', q);
+  if (st.length && st.length < STATES.length) p.set('state', st.join(','));
+  if (mode === 'all') {
+    p.set('limit', '50');
+    if (nextCursor) p.set('cursor', nextCursor);
+  }
+  $('stat').textContent = '载入中…';
+  let r;
+  try {
+    r = await fetch(`${API}/feedback?${p}`, { credentials: 'same-origin' });
+  } catch { $('stat').textContent = '网络断了，再试一次。'; return; }
+  if (r.status === 401) {
+    $('stat').textContent = '这一页要登录：刷新一次浏览器会弹登录框（用户名 admin，密码是服务器上的 ADMIN_TOKEN）。';
+    return;
+  }
+  let j = null;
+  try { j = await r.json(); } catch { /* 非 JSON */ }
+  if (!j || j.ok !== true) { $('stat').textContent = (j && j.error) || ('HTTP ' + r.status); return; }
+  cursor = mode === 'all' ? j.cursor : null;
+  $('more').style.display = cursor ? '' : 'none';
+  const c = j.counts || {};
+  const byState = c.byState || {};
+  $('stat').textContent = `一共 ${c.matched} 条，按当前勾选筛出 ${c.items} 条（画面 ${c.shown} 条）· `
+    + `没看过 ${byState.new || 0} · 看过了 ${byState.read || 0} · 在办 ${byState.doing || 0} · 办完 ${byState.done || 0} · `
+    + `带图 ${c.withImages} 条 / ${c.imageFiles} 张 · 来源 ${(j.mods || []).filter((m) => m.exists)} 条记录`
+    + ((c.missing && c.missing.length) ? ` · 不存在的编号：${c.missing.join(', ')}` : '');
+  const box = $('list');
+  if (!nextCursor) box.textContent = '';
+  for (const it of j.items) box.append(card(it));
+  if (!j.items.length && !nextCursor) box.append(el('p', 'dim', '这批里没有反馈。'));
+}
+
+function card(it) {
+  const wrap = el('div', 'fbitem' + (it.state === 'new' ? ' is-new' : '') + (it.state === 'done' ? ' is-done' : ''));
+  const head = el('div', 'fbhead');
+  head.append(el('span', 'badge st-' + it.state, ST_LABEL[it.state] || it.state));
+  head.append(el('span', 'badge', it.kind));
+  head.append(el('span', 'badge ' + (it.severity === 'blocking' ? 'warn' : 'dim'), it.severity));
+  head.append(el('span', 'dim', `${it.at} · 反馈 ${it.id} · 在 ${it.mod}${it.modName ? `（${it.modName}）` : ''} · ${it.state === 'new' ? '没人看过' : `状态改于 ${it.stateAt || '—'}`}`));
+  wrap.append(head);
+
+  wrap.append(el('div', 'fbtext', it.text));
+  const meta = [];
+  if (it.engineVersion) meta.push(`版本 ${it.engineVersion}`);
+  if (it.contact) meta.push(`回他：${it.contact}`);
+  if (it.ip) meta.push(`来源 IP ${it.ip}`);
+  if (it.dedupe) meta.push(`幂等键 ${it.dedupe}`);
+  if (it.packId) meta.push(`pack id ${it.packId}`);
+  if (it.groupKey) meta.push(`折叠组 ${it.groupKey}`);
+  if (meta.length) wrap.append(el('div', 'kv dim', meta.join(' · ')));
+
+  if (it.images && it.images.length) {
+    const row = el('div', 'fbimgs');
+    for (const im of it.images) {
+      const img = document.createElement('img');
+      img.src = im.url;
+      img.alt = `第 ${im.n} 张`;
+      img.title = `${im.mediaType} · ${(im.bytes / 1024).toFixed(0)} KB · ${im.sha256.slice(0, 12)}`;
+      row.append(img);
+    }
+    wrap.append(row);
+  }
+
+  // 标状态：**一次只这一条**（点了就发一次请求，绝不做「把筛出来的那批循环喂进去」那种脚本）。
+  const bar = el('div', 'fbrow');
+  const reason = el('input');
+  reason.type = 'text';
+  reason.maxLength = 200;
+  reason.placeholder = '理由（选填，会进这一条的流水）';
+  bar.append(reason);
+  for (const s of STATES) {
+    const b = el('button', 'btn fbstate' + (s === it.state ? ' on' : ''), ST_LABEL[s]);
+    b.type = 'button';
+    b.onclick = async () => {
+      b.disabled = true;
+      const r = await fetch(`${API}/fb-state`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ id: it.mod, fb: it.id, state: s, reason: reason.value.trim() || undefined }),
+      });
+      const j = await r.json().catch(() => null);
+      b.disabled = false;
+      if (!r.ok || !j || j.ok !== true) { bar.title = (j && j.error) || ('HTTP ' + r.status); reason.placeholder = bar.title; return; }
+      bar.title = '';
+      wrap.className = 'fbitem' + (j.state === 'new' ? ' is-new' : '') + (j.state === 'done' ? ' is-done' : '');
+      const badge = head.firstElementChild;
+      badge.textContent = ST_LABEL[j.state] || j.state;
+      badge.className = 'badge st-' + j.state;
+      reason.value = '';
+    };
+    bar.append(b);
+  }
+  wrap.append(bar);
+  return wrap;
+}
+
+$('go').onclick = () => load(null);
+$('more').onclick = () => load(cursor);
+window.addEventListener('DOMContentLoaded', () => {
+  // 从审核台/详情页跳过来时可以带 `?mod=` 或 `?group=`，直接载入那一档（省一次手填）。
+  const q = new URLSearchParams(location.search);
+  if (q.get('group')) { $('mode').value = 'group'; $('q').value = q.get('group'); load(null); }
+  else if (q.get('mod')) { $('mode').value = 'mod'; $('q').value = q.get('mod'); load(null); }
+});
+</script>
+</body>
+</html>

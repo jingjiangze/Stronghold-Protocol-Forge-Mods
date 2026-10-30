@@ -1,0 +1,69 @@
+name: 门 — 五个自测 + 叠加层（只读，不写任何分支）
+
+# 为什么和 `sync-upstream-mods.yml` 分开一条：那条的门只在「同步上游」那一轮跑，而且是**合完了再判**；
+# 日常改动（S1 这种把叠加层搬家的）要的是**落地之前**就有一道闸门。
+# 这条工作流一个字节都不写：`permissions: contents: read`，全程没有 push / issue 步骤。
+#
+# 判据与同步那轮逐字同源，免得两套门各自松紧：
+#   · 五个自测**严格串行**（③ compat 与 ④ publisher 同用 PORT 8807，并行会互相抢端口 —— 比抢端口更糟的是
+#     一个连到另一个的实例上，结果不可信）；
+#   · 一条都没跑到也算红；
+#   · README 的自测清单与实际脱节也算红；
+#   · 叠加层对着上游 main 比：挂载点丢 / `noTouch` 违背 ⇒ 红（1），上游抢了我们的名字 ⇒ 只提示不拦（2）。
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selftest-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UPSTREAM_URL: https://github.com/XiaMo233M/Stronghold-Protocol-Forge-Mods.git
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ①–⑤ 五个自测（串行）
+        run: |
+          set -uo pipefail
+          node --version
+          fail=0
+          for t in selftest.mjs selftest-admin.mjs selftest-compat.mjs selftest-publisher.mjs selftest-feedback.mjs; do
+            printf '%-26s ' "$t"
+            rc=0
+            node "site/$t" > "/tmp/$t.log" 2>&1 || rc=$?
+            printf 'rc=%s pass=%s fail=%s\n' "$rc" "$(grep -ac '  ✓' /tmp/$t.log)" "$(grep -ac '✗' /tmp/$t.log)"
+            if [ "$rc" != 0 ]; then
+              echo "::group::$t 的完整输出"
+              cat "/tmp/$t.log"
+              echo "::endgroup::"
+              fail=1
+            fi
+          done
+          if [ "$fail" != 0 ]; then
+            echo "::error::有自测红 —— 净新增失败就是本次改动带进来的"
+            exit 1
+          fi
+          grep -qa 'selftest-feedback.mjs' site/README.md || { echo '::error::README 的自测清单漏了 selftest-feedback'; exit 1; }
+
+      - name: 叠加层（挂载点 + noTouch，都对着上游 main 比）
+        run: |
+          set -uo pipefail
+          git clone -q --depth 1 "$UPSTREAM_URL" ../up
+          node .github/overlay-check.mjs --work . --up ../up
+          rc=$?
+          if [ "$rc" = 2 ]; then
+            echo "::warning::上游已实现同名接口 —— 本次不拦，但要按 overlay.json 的 retireWhen 减我方叠加层"
+            exit 0
+          fi
+          exit $rc

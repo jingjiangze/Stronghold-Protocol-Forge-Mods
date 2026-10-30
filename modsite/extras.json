@@ -1,0 +1,310 @@
+{
+ "generatedAt": "2026-10-30T13:59:21.604Z",
+ "items": [
+  {
+   "id": "asset-cdn",
+   "name": "CDN 资源（源码快照）",
+   "version": "0.2.5",
+   "kind": "reference",
+   "note": "server/http/asset-cdn.js 的源码快照。\n\n未拆成独立包的原因：闭包 2 个文件（还需 shared/ 或 http/config.js 中的 1 个）。",
+   "author": "未声明",
+   "license": "GPL-3.0-or-later",
+   "compatibility": {
+    "verdict": "1-file-closure",
+    "standalone": false,
+    "reason": "闭包 2 个文件（还需 shared/ 或 http/config.js 中的 1 个）。"
+   },
+   "closure": {
+    "asset-cdn.js": {
+     "files": 2,
+     "lines": 107,
+     "kb": 5.1
+    }
+   },
+   "download": "extras/asset-cdn/asset-cdn-source.zip",
+   "zip": {
+    "name": "asset-cdn-source.zip",
+    "bytes": 2271,
+    "sha256": "97e7dffd84af2d144b77e0f699316908ff0b85afffcbfef1a6ac77dfc5cec625"
+   },
+   "files": [
+    {
+     "path": "asset-cdn.js",
+     "bytes": 5189,
+     "lines": 107,
+     "sha256": "f6a0c9fb2f2aa3a3d6d84447f284f7172d57cbeb3c8264b9ac4f6bfca041c858"
+    }
+   ]
+  },
+  {
+   "id": "cluster-rpc",
+   "name": "集群 RPC（源码快照）",
+   "version": "0.2.5",
+   "kind": "reference",
+   "note": "server/cluster/rpc.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件；但属集群内部环（platform↔game-host↔lobby↔directory），单独拆意义不大。",
+   "author": "未声明",
+   "license": "GPL-3.0-or-later",
+   "compatibility": {
+    "verdict": "self-contained",
+    "standalone": true,
+    "reason": "闭包 1 个文件；但属集群内部环（platform↔game-host↔lobby↔directory），单独拆意义不大。"
+   },
+   "closure": {
+    "rpc.js": {
+     "files": 1,
+     "lines": 185,
+     "kb": 10.6
+    }
+   },
+   "download": "extras/cluster-rpc/cluster-rpc-source.zip",
+   "zip": {
+    "name": "cluster-rpc-source.zip",
+    "bytes": 3625,
+    "sha256": "c3a9bef43f4254c535579cfc914a85ba8b288d06c28bc77698c3dd573149a9ee"
+   },
+   "files": [
+    {
+     "path": "rpc.js",
+     "bytes": 10809,
+     "lines": 185,
+     "sha256": "ef67329635686476c8da55faafd4222f3dd1d5f5b8ed63cf464c055bbecbb21b"
+    }
+   ]
+  },
+  {
+   "id": "engine-ai",
+   "name": "引擎 AI 组件 + 布阵学习库链（v2 含种子）",
+   "version": "0.2.5-lineup",
+   "kind": "reference",
+   "note": "v1（ai.js + bot.js + botEmotes.js 源码快照）并入布阵学习库链（采集→落盘→检索，plugins/mota 原深度 + server/mods-lineup.js 桥）与 Hank 胜局种子 180 条（lineups_*.jsonl，布位为合成、阵容/胜负源自 HankDUMPLINGZhong/Stronghold-Protocol-AI@7d4e051b，GPL-3.0 署名见包内 NOTICE-SEEDS.md）。下载件已从 tar 伪 .zip 换成真 zip（PK）。澄清两个常见误读：ai.js 不是机器学习（确定性规则）；bot.js 不是训练模型（用真打一场 Battle 给布局打分）。检索接线现状：humanPlans 在主流部署树无调用点，需按包内 patch/bot-lineup-wiring.md 给 bot.js 打两行补丁、并设 SP_LINEUP_LIBRARY 才生效。",
+   "author": "未声明",
+   "license": "GPL-3.0-or-later",
+   "compatibility": {
+    "verdict": "engine-layer-incompatible",
+    "standalone": false,
+    "reason": "ai.js/bot.js 闭包 14/118 文件，脱离完整引擎树无法运行；学习库链自包含（纯递归闭包 10 文件），但检索接线需按包内 patch/ 文档打补丁。"
+   },
+   "closure": {
+    "sim/ai.js": {
+     "files": 14,
+     "lines": 4839,
+     "kb": 266.7
+    },
+    "match/bot.js": {
+     "files": 118,
+     "lines": 35855,
+     "kb": 1916.2
+    },
+    "plugins/mota/server/lineupLibrary.js": {
+     "files": 10,
+     "lines": 2613,
+     "kb": 136.6
+    }
+   },
+   "download": "extras/engine-ai/engine-ai-snapshot.zip",
+   "zip": {
+    "name": "engine-ai-snapshot.zip",
+    "bytes": 156933,
+    "sha256": "16bb37ceb90b32324155aa69e172669c10fb944169a3791d4ff527d0fb147c3e"
+   },
+   "files": [
+    {
+     "path": "server/sim/ai.js",
+     "bytes": 57773,
+     "lines": 980,
+     "sha256": "310856b2c7d3a453339674b412f33af79af63e428a086b4f6ceb6798e9d22dbd"
+    },
+    {
+     "path": "server/match/bot.js",
+     "bytes": 104293,
+     "lines": 1985,
+     "sha256": "58c880069ad0188f7213a707ff5a86a9ae1a52c4f716cda70f70cbb1fdeebfb0"
+    },
+    {
+     "path": "server/match/botEmotes.js",
+     "bytes": 3450,
+     "lines": 70,
+     "sha256": "d617b26a4db1606cbd6c9d478f5f8c7c53026526b6f13dc7c8d808a735457bf7"
+    },
+    {
+     "path": "server/mods-lineup.js",
+     "bytes": 389,
+     "lines": 5,
+     "sha256": "57c576bbe1efe5d29aa08538ed435b3e7168f8ff952908069523cb735ebde90c"
+    },
+    {
+     "path": "plugins/mota/server/lineupLibrary.js",
+     "bytes": 22341,
+     "lines": 476,
+     "sha256": "eaafe0b5584dd661443afe214a0709882e14c90574556614042cf2257f4adf46"
+    },
+    {
+     "path": "plugins/mota/server/lineupOutbox.js",
+     "bytes": 11436,
+     "lines": 208,
+     "sha256": "e16a8ee2a1b0112f1cf062a89dd7f8e7791811759796bafa87df443ffdb8afd2"
+    },
+    {
+     "path": "plugins/mota/server/lineupSync.js",
+     "bytes": 7558,
+     "lines": 147,
+     "sha256": "9ace3fe529b3d0d7e11b1f8de6ef93ff8af05243aa1e9f998b05e7b4a7c902c4"
+    },
+    {
+     "path": "plugins/mota/server/lineupPublish.js",
+     "bytes": 14553,
+     "lines": 270,
+     "sha256": "3ddb8a830de8d1ecd59b878f48765c914e4f558a44a67d34cb0b670602016e49"
+    },
+    {
+     "path": "plugins/mota/server/match/board.js",
+     "bytes": 14511,
+     "lines": 258,
+     "sha256": "80cef04c104c0a79dae318555dc36501896f590e1ef587f1cd09dc434721e4f8"
+    },
+    {
+     "path": "plugins/mota/server/sim/constants.js",
+     "bytes": 19520,
+     "lines": 271,
+     "sha256": "ce1afca545ab83d26f320ce184ed91551d9764dc4b931614a435070cf61b1abe"
+    },
+    {
+     "path": "plugins/mota/server/sim/dir.js",
+     "bytes": 4788,
+     "lines": 93,
+     "sha256": "2eff762512dfd5960f37e9cdf45bf1e635a11d8a69216602ab4c27ed5172e0ae"
+    },
+    {
+     "path": "plugins/mota/shared/constants.js",
+     "bytes": 22602,
+     "lines": 336,
+     "sha256": "ff48a6fceebbeb9d3eee74725d953c81e3f576a64023e779811cad46b480e323"
+    },
+    {
+     "path": "plugins/mota/shared/highGround.js",
+     "bytes": 2871,
+     "lines": 43,
+     "sha256": "b987b4e79399abf7ba776ff45d01b00d868b37c68a5911f204d2dcd1bb166123"
+    },
+    {
+     "path": "plugins/mota/shared/i18n.js",
+     "bytes": 25349,
+     "lines": 603,
+     "sha256": "0ff38ff54043dcb6abd3259f543b6065c1e7baece77709e89c16e7efc62b41cd"
+    },
+    {
+     "path": "plugins/mota/shared/i18nPacks.js",
+     "bytes": 8935,
+     "lines": 178,
+     "sha256": "f0edec4b9b2d1b4385a7a302c552a5f5039926ddbdb41617048bbc21357727c0"
+    },
+    {
+     "path": "LICENSE",
+     "bytes": 35823,
+     "lines": 675,
+     "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+    },
+    {
+     "path": "data/lineups_mode_single_hard__HARD.jsonl",
+     "bytes": 130938,
+     "lines": 125,
+     "sha256": "805c935fb877196b2d74702f584793fc4bed4e4ececd3a9d19ea0c5a09ea0dda"
+    },
+    {
+     "path": "data/lineups_mode_single_abyss__ABYSS.jsonl",
+     "bytes": 59220,
+     "lines": 57,
+     "sha256": "18c22259070422f2f3946d44f2f3649c1dfdbbe3166092b14f78d03d6931ba34"
+    },
+    {
+     "path": "patch/bot-lineup-wiring.md",
+     "bytes": 1480,
+     "lines": 28,
+     "sha256": "87be967b6923d1634ae0a59edc104b62e6942efa759d34d9aa36cf77a52fc82c"
+    },
+    {
+     "path": "README.md",
+     "bytes": 2035,
+     "lines": 28,
+     "sha256": "d9f4be9061c8ee319d681afad1aa6b31d5a06fca18e7e1e45fd51447605ec933"
+    },
+    {
+     "path": "NOTICE-SEEDS.md",
+     "bytes": 772,
+     "lines": 11,
+     "sha256": "d3e36d3bd5323262d7217af33d4edd62f6e48dace601a06bedefa69c17eb3458"
+    }
+   ]
+  },
+  {
+   "id": "mirror-probe",
+   "name": "镜像源探测（源码快照）",
+   "version": "0.2.5",
+   "kind": "reference",
+   "note": "server/mirrorProbe.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件：可以单独放回同版本 tree 使用。",
+   "author": "未声明",
+   "license": "GPL-3.0-or-later",
+   "compatibility": {
+    "verdict": "self-contained",
+    "standalone": true,
+    "reason": "闭包 1 个文件：可以单独放回同版本 tree 使用。"
+   },
+   "closure": {
+    "mirrorProbe.js": {
+     "files": 1,
+     "lines": 191,
+     "kb": 10.6
+    }
+   },
+   "download": "extras/mirror-probe/mirror-probe-source.zip",
+   "zip": {
+    "name": "mirror-probe-source.zip",
+    "bytes": 4974,
+    "sha256": "7b2e56cb64cd29d28cfb89504e1caba23c84cba2a49d8eebb3b46ed904ebbd59"
+   },
+   "files": [
+    {
+     "path": "mirrorProbe.js",
+     "bytes": 10884,
+     "lines": 191,
+     "sha256": "396010b191c049485f51b4523f55fba198b05c322f48374591cb5af4cc17356c"
+    }
+   ]
+  },
+  {
+   "id": "upstream-watch",
+   "name": "上游 watch（源码快照）",
+   "version": "0.2.5",
+   "kind": "reference",
+   "note": "server/upstreamWatch.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件。",
+   "author": "未声明",
+   "license": "GPL-3.0-or-later",
+   "compatibility": {
+    "verdict": "self-contained",
+    "standalone": true,
+    "reason": "闭包 1 个文件。"
+   },
+   "closure": {
+    "upstreamWatch.js": {
+     "files": 1,
+     "lines": 143,
+     "kb": 7.8
+    }
+   },
+   "download": "extras/upstream-watch/upstream-watch-source.zip",
+   "zip": {
+    "name": "upstream-watch-source.zip",
+    "bytes": 3784,
+    "sha256": "2085a648e0e3be2e9535a2cc11dec3e361d9d8da653b15d37e54311bfd4efd47"
+   },
+   "files": [
+    {
+     "path": "upstreamWatch.js",
+     "bytes": 8028,
+     "lines": 143,
+     "sha256": "4483534549821ed2545cb4fd62ccdce10364b72a7ff018f79c887d0ab76ea4cb"
+    }
+   ]
+  }
+ ]
+}

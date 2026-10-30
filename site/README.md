@@ -215,13 +215,15 @@ node site/selftest.mjs             # ① 公网投稿链（上传 → 下载 →
 node site/selftest-admin.mjs       # ② 审核台 / 公网列表**页面**跑不跑得起来（见下）
 node site/selftest-compat.mjs      # ③ 兼容包整条链 + 反例（临时数据目录，不碰你的数据，不联网）
 node site/selftest-publisher.mjs   # ④ 发布者自助（认领 / 改元数据 / 换包体 / 自撤 / 三档删除 / 功能类目 6 类）+ 管理员确认 + 筛选 + 审计日志
+node site/selftest-feedback.mjs    # ⑤ mod 反馈（提交 / 单看与合并 / 图文 / 仅维护者可读 / 公开面逐字节不变）
+node site/selftest-packcheck.mjs   # ⑥ 契约预检（纯函数：闭集 / 未知键 / api 类型 / content 名单 / combat 告知）
 ```
 
 ⚠️ **四个必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`
 （另外两个各用 8799/8801 与 8809），同时跑会互相抢端口、结果不可信。
-服务器上的绝对路径写法见下面「改完必跑的**四个**自测」。
-
-> ⭐ **§4c「官方 mod」证书（只设计 + 判据，尚未接入站点）**：设计、七道闸、每个字段的来源与三条必现文案见 [`OFFICIAL-MOD.md`](OFFICIAL-MOD.md)；纯逻辑在 `official-mod.mjs`，判据是 `node site/selftest-official-cert.mjs --upstream <上游根>`。⚠️ 这三个文件**不参与部署**（`server.mjs` / `pages/**` 一字未动）—— 要上线得先由业主点头，且先接 W3 / W10 的站侧导入预检（它是闸 1/2/3/5 的证据来源）。
+⑤ `selftest-feedback.mjs` 用 **8811**，与上面四个都不撞，可单独跑。
+⑥ `selftest-packcheck.mjs` **不起服务、不占端口**（纯函数自测），随时可单独跑。
+服务器上的绝对路径写法见下面「改完必跑的**六个**自测」。
 
 `selftest-admin.mjs` 专治一类「接口全好、页面却是死的」故障：审核台是一整个内联 `<script>`，
 它只要在**顶层抛一次错**，后面所有 `onclick` 与自动载入就全都不执行 —— 页面不报错也不崩，
@@ -544,6 +546,41 @@ git add packs/<包 id> && git commit -m "收录 <包 id>（来源：<URL>）" &&
 - ⭐ **两栏的一致性判据只有一份**（`server.mjs` 的 `packKindFor()`）：写 `funcKind` 时技术维度
   **自动归位**（四个真功能类 ⇒ `functional`；`documentation` ⇒ `documentation`；`uncategorized` ⇒ `unknown`）。
   想让它不派生，就在**同一次报文**里再显式给一个 `packKind`（显式值优先）。两栏因此不可能各说各话。
+
+---
+
+### 契约预检（`site/packcheck.mjs`，2026-10-14 起）
+
+**为什么有它**：站点的审核是「人看」，而**契约**（能声明哪些顶层键、`content` 认哪些名字、
+`combat` 该不该写）原本只有**引擎在装载期**才判。于是存在这样一条路：一个 `pack.json` 写了引擎
+不认识的键、或用了 `server.meta` 却没写 `combat: true`，在站上一路绿灯到公开，玩家下载后
+**装的时候才被点名拒**（`PACK_UNKNOWN_FIELD` / `META_NEEDS_COMBAT` …）。
+
+**它做什么**：上传记录被读到时（`signatureOf` 里同一次解 zip 顺带跑），对包内 `pack.json` 跑一遍
+纯函数预检，把结论**如实标在记录上**：
+
+| 码 | 级别 | 判据（逐条对齐引擎） |
+|---|---|---|
+| `PACK_JSON_UNREADABLE` | blocker | 读不到包内 `pack.json`（缺条目 / 超 1 MB / 不是 JSON） |
+| `PACK_UNKNOWN_FIELD` | blocker | 顶层键不在引擎 `PACK_FIELDS`（**36 键**）里 —— 引擎装载期整包拒 |
+| `BAD_API_TYPE` | blocker | `api` 不是字符串（区间语义留给引擎，见下） |
+| `CONTENT_NOT_ARRAY` / `CONTENT_UNKNOWN_FILE` | blocker | `content` 不是数组 / 里有引擎不认识的数据文件名（**14 个**） |
+| `COMBAT_UNDECLARED` | blocker | 用了 `server.meta` / `server.battle` / `server.modules[].matchClass` 却没写 `combat: true` |
+| `COMBAT_DECLARED` | info | 写了 `combat: true` —— 提醒把这件事标注到站上备注（告知义务，见 AGENTS.md §5.1） |
+
+**三条边界（刻意，别"顺手"扩）**：
+1. **不做区间比对**。`api` 的区间语义由引擎 `shared/packs.js appVersionMatches` 判；站侧复刻一份
+   就是**第二份实现**，两边一漂移就会出现「站说能装、引擎说不能」。本仓纪律是**只有一份实现**
+   （见 `approveGate` 的注释），所以这里只看 `api` 的**类型**。
+2. **不拦上传**。结论进记录、随卡片展示；收不收仍由审核台的人定（§3：素材/口径的取舍是人判的）。
+3. **不改包**。只读 `pack.json` 这一条，绝不回写 zip（自测里有一条专门钉"跑完入参一字不变"）。
+
+**公开面新增两栏**（`GET /api/mods` 的每一条）：
+- `combat`：`true` / `false` / `null`（没写）。公网卡片对 `true` 画一个中性徽标
+  「会改对局结果」+ 一行解释 —— 业主口径是「标注清楚就算尽到，**不另设闸门**」。
+- `packcheck`：预检里 **blocker** 那几条（数组，可能为空）。非空时卡片直接摆出「可能装载失败」
+  的警示行，**下载之前**就看得见。空数组 ≠ 认证通过（读不到 `pack.json` 时也是空数组）。
+
 - ⚠️ **老记录一个都没回填**：87 条没有 `funcKind` 的记录**读出来就是「未分类」**，
   由维护者在审核详情页的「功能类目」下拉里**一条一条**归类（`POST /api/<ADMIN_PATH>/funkind`，
   一次一个 id、闭枚举、写 `revisions` + `audit`）。**系统不替任何人猜分类。**
@@ -629,6 +666,59 @@ ADMIN_TOKEN=… node site/migrate-funkind.mjs --data … --write --base http://1
 
 公开面的可见性判据只有一条：`isPubliclyVisible = state === 'approved' && withdrawRequested !== true`。
 
+## mod 反馈：提交、单独看与合并看（2026-10-13 新增）
+
+业主需求四条：① 任何人都能给某个 mod 提交反馈；② 每个 mod 可单独查看、也可多个 mod 合并查看；
+③ 支持 agent 接入；④ 支持文字与图片 —— 而**反馈正文与图片只有网站维护者看得到**。
+完整接口规格（字段、限制、错误码、agent 用法）在 [`../docs/FEEDBACK-API.md`](../docs/FEEDBACK-API.md)，
+这一节只讲**站上怎么点、怎么读**。
+
+| 动作 | 端点 | 鉴权 |
+|---|---|---|
+| 提交反馈（文字） | `POST /api/feedback?mod=<记录编号>[&dedupe=<幂等键>]` | **无**（公开，与 `/api/submit` 同一立场） |
+| 贴一张图 | `POST /api/feedback/image?mod=&fb=`（裸字节 + `x-feedback-token` 头） | 图片令牌 |
+| 看反馈 | `GET /api/<ADMIN_PATH>/feedback?mod=` \| `?mod=a,b` \| `?group=` \| `?all=1` | 管理口两道（`ADMIN_IPS` + 令牌 / Basic） |
+| 取某一张图 | `GET /api/<ADMIN_PATH>/feedback/file?mod=&fb=&n=` | 同上 |
+| 标处理状态 | `POST /api/<ADMIN_PATH>/fb-state`（`{id, fb, state, reason?}`） | 同上 |
+| **维护者看的那一页** | `GET /<ADMIN_PATH>/feedback-view`（审核台导航里多了「反馈」那一格） | 同上 |
+| 人手填的表单页 | `GET /feedback?mod=<记录编号>`（`/mods` 每张卡片有「提交反馈」入口） | 无 |
+
+四条要点：
+
+- **只有维护者能读，而且结构上就漏不出去**：反馈写在**被反馈那条记录的 `feedback/` 子目录**里，
+  **不进 `meta.json`**；而公开面（`/api/mods`、`/mods`、`/api/status`、`/api/publisher/*`、`/api/file/*`）
+  读的就是 `meta.json`。`selftest-feedback.mjs` 用「写完反馈后 `/api/mods` **逐字节不变**」把这条钉住。
+  公开面也**没有**任何读反馈的路：`GET /api/feedback` ⇒ 404。
+- **「同一款 mod」要折叠着看**：站上一份 mod 常常是几条记录 —— 同一个 `pack.json.id` 的两条
+  （引擎不允许同 id 并存），以及原件 + 兼容改写版（`compatOf` 那条链）。按记录编号分组会把反馈
+  劈成几半，所以读侧判据是 **同 `packId` ∪ `compatOf` 双向链**，`?group=<编号>` 一次给全组。
+- **图片只收栅格图**（PNG / JPEG / GIF / WEBP，按**文件头**判），**SVG 与 HTML 一律 400** ——
+  站点没有 CSP 响应头，一张内嵌脚本的 SVG 就是持久型 XSS，而它看起来完全「像一张图」。
+  单张 ≤2 MB、一条 ≤4 张；站点零依赖 ⇒ **不转码、不缩图**，存进去的字节 = 发出来的字节；
+  发的时候**再嗅一次头**才定 `content-type`，认不出就 404、一个字节都不发。
+- **状态与页面**：`new / read / doing / done` 四档 —— 文件里**没有**这一栏就读成 `new`（不回填、不猜；
+  缺省绝不可能是 `done`，否则「没人看过」会被统计成「办完了」）。标状态**一次只认一条**（`id` + `fb` 都要明确写出，
+  出现 `ids`/`batch`/`items`/`list` ⇒ 400，与 §8.1 同一条铁律），幂等（目标值已是它 ⇒ `changed:false`、不留第二笔流水），
+  **只动状态那一栏**：正文 / 图片 / 令牌哈希不碰。读侧配 `?state=new`（可多选）与 `counts.byState` / `mods[].feedbackNew`。
+  维护者那一页是 `GET /<ADMIN_PATH>/feedback-view`：**单独一页，不是审核台的第四个视图** ——
+  `ADMIN_VIEWS` 白名单仍然只有 `main / approved / rejected`（坏 `?view=` 照旧 404，`selftest-admin.mjs` 那条断言没动）。
+  为什么不塞进 `admin.html`：那一页是一整个内联 `<script>`，顶层抛一次错就把后面所有绑定点全带哑
+  （2026-10-11 的 TDZ 事故就是这类），分开才互不牵连。
+
+落盘形态（备份照旧只备份 `DATA_DIR`）：
+
+```
+<区>/<记录编号>/feedback/<反馈编号>.json      正文 + 元数据 + 图片清单 + **图片令牌哈希** + 状态与流水
+<区>/<记录编号>/feedback/<反馈编号>-<序>.<ext> 图片原字节
+```
+
+反馈**不住在 `DATA_DIR` 根、也不新开区**：它落在被反馈那条记录的目录里面。根下依旧只有上游那几个目录
+（`submissions/` `flagged/` `compat/`，加上 2026-10-14 硬删用的 `tombstones/`），`selftest-feedback.mjs` 钉的就是这个。
+图片令牌与认领码、发布者令牌同一套做法：**盘上只有 sha256**（域分隔前缀
+`sp-modsite/feedback-image-token/v1:`），明文只在提交那一次的响应里出现一回，`audit.jsonl` 里
+一个凭据字节都不写。写端点复用发布者那一档限流（每 IP 每 10 分钟 60 次）；
+**没有为反馈另开阈值** —— agent 配额与限流是单独一份提案。
+反馈**没有删除口、也没有「标记已处理」那类决定端点**（那需要新的操作纪律，见 FEEDBACK-API §7 待裁决）。
 
 ## 数据与备份
 
@@ -639,26 +729,28 @@ ADMIN_TOKEN=… node site/migrate-funkind.mjs --data … --write --base http://1
   - `tombstones/<编号>.json` —— ⚠️ **只给硬删（档 3）用**：物理删除前先落的墓碑（id / 包名 / 包内 id / sha256 / 大小 / 删掉的文件清单 / 时间 / actor / ip / 理由）。
     **它不参与任何业务读**（公开面、审核台都不读），只有两个用途：事后查、以及让 `/restore` 能区分「被物理删过（410）」与「压根没这条（404）」
   - `audit.jsonl` —— 只追加的跨记录事件流
+  - 三个区的每一条都可能多一个 `<编号>/feedback/`子目录 —— **mod 反馈**（`<反馈编号>.json` + 图片原字节），
+    只有管理口读得到，公开面不看它；⚠️ 它住在记录目录**里面**，所以「硬删（档 3）」会连反馈一起物理删掉
 - **备份就备份这一个目录**；没有数据库
 - 想清掉一条投稿：删掉对应目录即可（公开列表会立刻少一条）
 - 想**一次清掉所有疑似素材**：`rm -rf <DATA_DIR>/flagged`（它们本来就是为了便于整体处理才分开存的）
 
 ## 更新服务器上这一个服务
 
-运行时代码只有 `server.mjs` / `review.mjs` / `zip.mjs` 三个 `.mjs`，加一个 `pages/`（4 个 `.html` + `theme.css`）；目录里另有四个**部署用的** `selftest*.mjs`，同一次一起传（另有两个 `selftest-precheck.mjs` / `selftest-official-cert.mjs` 需要**上游根与引擎检出**，**不参与部署**）。更新时**先备份、再换文件、再重启**，全程只碰 `/opt/sp-modsite` 与 `sp-modsite.service`：
+运行时代码只有 `server.mjs` / `review.mjs` / `zip.mjs` / `feedback.mjs` 四个 `.mjs`，加一个 `pages/`（6 个 `.html` + `theme.css`）；目录里另有五个 `selftest*.mjs`，同一次一起传。更新时**先备份、再换文件、再重启**，全程只碰 `/opt/sp-modsite` 与 `sp-modsite.service`：
 
 ```bash
 # ① 备份 + 记下旧版哈希（可回滚的硬条件）
 TS=$(date +%Y%m%d-%H%M%S)
 cp -a /opt/sp-modsite /opt/sp-modsite.bak-$TS
-sha256sum /opt/sp-modsite/{server.mjs,review.mjs,zip.mjs} | tee /opt/sp-modsite.bak-$TS.sha256
+sha256sum /opt/sp-modsite/{server.mjs,review.mjs,zip.mjs,feedback.mjs} | tee /opt/sp-modsite.bak-$TS.sha256
 ```
 
 ```powershell
 # ② 本机（Windows）传上去。--exclude runtime 免得动服务器上自装的 Node
-scp site\server.mjs site\review.mjs site\zip.mjs sp:/opt/sp-modsite/
+scp site\server.mjs site\review.mjs site\zip.mjs site\feedback.mjs sp:/opt/sp-modsite/
 scp site\pages\*.html site\pages\theme.css sp:/opt/sp-modsite/pages/
-scp site\selftest.mjs site\selftest-admin.mjs site\selftest-compat.mjs site\selftest-publisher.mjs sp:/opt/sp-modsite/
+scp site\selftest.mjs site\selftest-admin.mjs site\selftest-compat.mjs site\selftest-publisher.mjs site\selftest-feedback.mjs sp:/opt/sp-modsite/
 ```
 
 ```bash
@@ -669,6 +761,8 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/healthz
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/mods
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/theme.css
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/feedback        # 200 = 反馈表单页在
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/api/feedback    # 必须 404 = 反馈**没有**公开读口
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:25570/review-2228      # 401 = 登录框在，正常
 
 # ④ 回滚（一条）
@@ -721,62 +815,7 @@ cp -a /opt/sp-modsite.bak-<时间戳>/. /opt/sp-modsite/ && systemctl restart sp
 失败路径真的走分类函数。**在改前的文件上这一节必须红**（index 10 条 + mine 8 条），改后必须全绿；
 `site/selftest-admin.mjs` 的 DOM 桩也必须提供 `AbortController`（否则页面点上传会 ReferenceError）。
 
-### 响应压缩（gzip）：一处出口、只压文本、绝不压下载流（2026-10-15）
-
-**起因**：`/mods` 改成服务端预渲染后，未压缩实体从 20,101 字节涨到 **197,905 字节**
-（那是加压缩时的实测；今天同一页已经是 **207,820 字节** —— 列表又长了几条），
-而站点前置没有 gzip ⇒ 每看一次列表多传约 178 KB。
-修法用 Node **内置** zlib，**零依赖**（`server.mjs:78` 只多 import 一个 `gzipSync`）。
-
-**唯一压缩点**：`send()`（`server.mjs:1312`）里的 `encodeBody()`（`:1298`）。
-站点所有**文本**响应（页面 / JSON / 样式表）都走 `send` ⇒「一处写、全站生效」，
-不用逐个路由挂。`send` 拿得到本次请求靠 `REQ_OF`（`:1939`，键是 `res`，并发下不会串）。
-
-| 口径 | 落点 | 说明 |
-|---|---|---|
-| 压哪些类型 | `COMPRESSIBLE_TYPE`（`:1274`） | `text/*`、`application/json` / `javascript` / `xml` / `manifest+json` / `ld+json`、`image/svg+xml`。⚠️ **`text/event-stream` 明确排除**：流式响应压了就再也吐不出来 |
-| **绝不压下载流** | `sendFile`（`:1820`） | `/api/file/*` 的 **zip 走另一个出口**，压根不经过 `send`；那条路自己写 `content-length` 再 `pipe` 文件流，压了就会让「下载下来的字节 / `content-length` / 文件 sha256」三方全对不上 |
-| `Vary` | `:1302` | **一律带 `Accept-Encoding`**，与「这一次到底压没压」**无关** —— 同一地址对不同客户端给的内容确实不同，中间缓存必须按它分桶 |
-| `<1KB` 不压 | `GZIP_MIN_BYTES = 1024`（`:1272`，判在 `:1303`） | 省 CPU，也免得为几十字节白加一层头；压完反而更大也退回原文（`:1306`） |
-| 压缩级别 | `:1305` `gzipSync(body)` | **用默认 level 6**（实测：不传 level 与显式 `level: 6` 输出**逐字节相同**） |
-| `content-length` | `:1308` | 写**压缩后**的长度，绝不用压缩前的 |
-| **brotli** | —— | **未做**：`server.mjs` 里没有 brotli 字样。要做得先量它值不值，别顺手加 |
-
-**为什么是 level 6，不是 9**（**服务端 Node v22.11.0 实测**，`/mods` 明文 207,820 字节，20 次平均）：
-level 6 ⇒ **60,824 字节 / 4.24 ms 每次**；level 9 ⇒ 60,634 字节 / 4.38 ms。
-**多压 190 字节（0.09 个百分点），换来更贵的 CPU** ⇒ 不值。
-（本机 Node v24.21.0 上同样 20 次平均：2.03 ms vs 2.22 ms —— 结论一样。）
-
-**压缩结果未缓存**：每个请求现压。服务端实测 **4.24 ms/次**（207,820 字节的 `/mods`；小页更快），
-量级就是「每请求约 2–5 ms」。要缓存得先解决 `Vary` 分桶与失效，本版不做。
-
-**线上实测**（`node:http` 发**原始**请求，走隧道 `127.0.0.1:25570`）：
-
-| 请求 | 线路字节 | `content-encoding` | `vary` |
-|---|---|---|---|
-| `/mods` + `Accept-Encoding: gzip` | **60,824** | `gzip` | `Accept-Encoding` |
-| `/mods` 不带 AE | 207,820 | （无） | `Accept-Encoding` |
-| `/mods` + `gzip;q=0` | 207,820 | （无） | `Accept-Encoding` |
-| `/healthz` + AE（74 字节） | 74 | （无 —— <1KB 不压） | `Accept-Encoding` |
-| `/theme.css` + AE | 6,346 | `gzip` | `Accept-Encoding` |
-
-**⚠️ 这条判据的坑：必须用 `node:http` 发原始请求，不能用 Node 的 `fetch`。**
-undici 的 `fetch` 会**自动解压** gzip，却**留着** `content-encoding: gzip` 头。
-同一地址实测：`fetch` 拿到 **207,820 字节**（已经是解压后的），头里却写着
-`content-encoding: gzip`、`content-length: 60824` —— 也就是说用它「看起来也像 gzip」，
-但**验不到实体**（拿到的字节数与 `content-length` 天然对不上），这条判据就废了。
-⑱ 因此自己用 `node:http` 的 `request()` 发请求、自己用内置 zlib 解压
-（`selftest-publisher.mjs:36-38`、`:953`）。
-
-**判据**：`site/selftest-publisher.mjs` 的 **⑱**（`:946` 起，对着它自己起的实例验）——
-带 AE 时**线上实体真的是 gzip 且解压后与明文逐字节相同**（sha256 相等）；不带 AE 就不压；
-`gzip;q=0` 不压而 `*` 压（**按 q 值判**，不是「出现过 gzip 字样就算」）；
-`/api/file/<id>` 的 zip 带 AE 也**一个字节都不压**（含 `Range` 那一路）；
-可压缩响应压与不压**都带** `Vary`；`content-length` 与压缩后实体一致；`/healthz` 这种小响应不压。
-**判据要求**：对着**改前**那一版 `server.mjs` 跑这一节必须红 —— 本次只核了「改后全绿」，
-**没有复跑改前那一版**（那一版已不在工作树里）。
-
-### 改完必跑的**四个**自测（2026-10-13 起）
+### 改完必跑的**六个**自测（2026-10-14 起）
 
 ```bash
 cd /opt/sp-modsite
@@ -784,71 +823,23 @@ cd /opt/sp-modsite
 /opt/sp-modsite/runtime/node/bin/node selftest-admin.mjs       # ② 审核台 / 公网列表**页面**跑不跑得起来
 /opt/sp-modsite/runtime/node/bin/node selftest-compat.mjs      # ③ 兼容包整条链 + 反例
 /opt/sp-modsite/runtime/node/bin/node selftest-publisher.mjs   # ④ 发布者自助（三档删除 / 功能类目）+ 管理员确认 + 筛选 + 审计日志
+/opt/sp-modsite/runtime/node/bin/node selftest-feedback.mjs    # ⑤ mod 反馈：提交 / 单看与合并 / 图文 / 仅维护者可读
+/opt/sp-modsite/runtime/node/bin/node selftest-packcheck.mjs   # ⑥ 契约预检（纯函数，不占端口）
 ```
 
-**四个全绿才算改完**（`selftest-publisher.mjs` 是 2026-10-13 新增的那一个，专测本次这条链）。
-⚠️ **四个必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`，
-**同时跑会互相抢端口**（`EADDRINUSE`，或更糟 —— 一个连到另一个的实例上，结果不可信）。
-四个都跑在**临时数据目录**（`/tmp/...`）上，**不碰** `/var/lib/sp-modsite`，不联网。
+**六个全绿才算改完**（⑥ 是 2026-10-14 新增的那一个：契约预检，见下面「契约预检」一节）。
+⚠️ **③ 与 ④ 必须串行跑**：`selftest-compat.mjs` 与 `selftest-publisher.mjs` 同用 `PORT 8807`，
+**同时跑会互相抢端口**（`EADDRINUSE`，或更糟 —— 一个连到另一个的实例上，结果不可信）；
+① ② ⑤ 各用 8799/8801、8809、8811，与它们都不撞。
+五个都跑在**临时数据目录**（`/tmp/...`）上，**不碰** `/var/lib/sp-modsite`，不联网。
 服务器上 `node` 不在 `PATH` 里，用单元文件里那个绝对路径（`/opt/sp-modsite/runtime/node/bin/node`）。
+
+> 第五个专门钉两条**隐私与安全**的反面：写完反馈后 `/api/mods` 必须**逐字节不变**（反馈不能漏进公开面），
+> 以及图片这一路 **SVG / HTML 必须被拒**（站点没有 CSP，那是脚本面不是图片面）。这两条哪天变绿成红，
+> 就是有人在反馈这一层改歪了。
 
 > `/var/lib/sp-modsite`（数据）**不在**这套步骤里 —— 更新代码不碰数据；回滚也不会回退数据。
 > 服务器上的 `sync.service`、gunicorn、nginx 等都不属于本服务，别动。
-
-## UI 包形态（`payload/` + `patches/` + `MANIFEST.json`，2026-10-15 起收录）
-
-业主 2026-10-15 裁定：站点**收**这一形态。它与工坊包（`pack.json` 那一种）**并列**，
-**不是**"没做兼容的原件"。
-
-### 怎么识别（判据只有一份：`site/review.mjs` 的 `looksLikeUiPack()`）
-
-zip 根**同时**满足才判为 UI 包形态：① 有 `MANIFEST.json`；② 有交接文档（`AGENTS.md`，或原作者的
-`AGENT-INTEGRATION.md`）；③ 有 `payload/`；④ 有安装路径（`patches/` 或 `tools/install.mjs` **至少一条**）；
-⑤ 根**没有** `pack.json` —— 有它就是工坊包，**工坊包判据优先**（既有逻辑一字未改）。
-
-命中就出一枚 `info` 档的 **`UI_PACK_FORM`** 旗标，取代以前那句会把人带错路的
-「没有 pack.json —— 像是原件（未兼容），按 `incoming/` 那条路处理」。**非 UI 形态的包行为逐字未变。**
-
-### 校验什么（`site/uiform-verify.mjs`）
-
-判据只有一份实现：它 **import** 上面那个 `looksLikeUiPack()`，不另写一套。
-
-```bash
-node site/uiform-verify.mjs <包.zip | 解开的目录> [--json]   # 退出码 0 = 全过
-node site/uiform-verify.mjs --selftest                       # 判据自检（正例 + 反例都要真判红）
-```
-
-判：清单每个文件的 sha256/bytes 与实物相符 · `payload/` 文件集与清单**一一对应** · 无重复路径 ·
-条目名无 `..`/绝对路径 · **无可执行物**（顶层脚本只有 `tools/install.mjs` 一条白名单）·
-`payload/` 与清单都**不许碰** `server/` `shared/` `data/`（红线 ①）· `patches/` 非空 ·
-`required-assets.txt` 每行是 `/` 开头的运行时路径或 `<标识>: <说明>`。
-
-**它不判**：补丁能不能 apply、目标仓库干不干净、资源齐不齐 —— 那些在**目标仓库侧**判。
-
-### 收录 ≠ 已安装（这是口径的一半）
-
-站点对 UI 包只做**收件 + 留档 + 审核**，**不给出装机结论**。装机走维护者「直装进目标仓库」那条线
-（`AGENT-INTEGRATION.md`：`--dry-run` → **`git apply --3way --check --binary`** → `--backup` 应用）。
-⚠️ 安装器的 `--dry-run` **不验证补丁能否应用**，所以第二条**不能省**。
-
-### 公开面怎么显示（一行动代码都不用改）
-
-- **功能类目**：`POST /api/<ADMIN_PATH>/funkind` 写 `funcKind = assets`（**素材替换**）——
-  这是**既有**闭枚举（6 类）里的桶，页面标签与说明早就有；技术维度按 `packKindFor()`
-  自动派生为 `functional`。所以它自带自己的桶与标签，**不会混进**「游戏玩法 / 拓展包 / 实用工具」的计数。
-- 待审期间它**不在公开面**（可见判据仍然是 `state === 'approved'`）；分类落在**批准之后**做。
-
-### 这一版动了什么
-
-**`server.mjs` 与 `pages/**` 一个字节都没动**（部署前后 `sha256` 相同）；改的是审核辅助 + 新增一个工具：
-
-| 文件 | 改动 |
-|---|---|
-| `site/review.mjs` | **新增** `UIFORM_DOCS` / `UIFORM_INSTALLER` / `looksLikeUiPack()`，并在 ⑥ 那一档前面插一条 UI 形态判据（**纯加法**） |
-| `site/uiform-verify.mjs` | **新增**（校验器 + `--selftest`） |
-
-**判据跟代码一起跑**：`uiform-verify.mjs --selftest` 15 条（含 6 条反例必须判红）；
-拿 `HEAD` 那一份 `review.mjs` 跑同一条断言**必红**（实测 `✖ 实际 codes = SIZE,NO_PACK_JSON`）。
 
 ## 边界（它**不**做什么）
 

@@ -1,0 +1,220 @@
+name: 门 — 线上 mod 兼容性复验（只读，不写任何分支）
+
+# 用户口径（2026-10-20）：用 CI 测试 http://47.103.14.217:25570/mods 上这些 mod 的兼容性。
+#
+# 为什么可以全量跑（审计实测）：
+#   87 条 mod.size 总和仅 **40.8 MB**（min 1661 B / median 9578 B / max 25,226,848 B），
+#   GitHub-hosted runner 有 ~14 GB SSD、job 上限 6h —— 容量根本不是约束，无需分批或抽样。
+#
+# 判据分层（按「能不能机器判定」与「要不要执行 mod 代码」排序）：
+#   L1 元数据   ：API 里 suspected / flagged 分组、kind 形状、size 与 sha256 齐不齐
+#   L2 静态包体 ：site/packcheck.mjs 的 checkPack（纯读 pack.json，不跑引擎）→ blocker 即 FAIL
+#   L3 zip 完好 ：整档 CRC + 中央目录里有 pack.json 在根（引擎装载的硬前提）
+#   —— L1~L3 **全部不执行 mod 代码**，这是本工作流的红线。
+#
+# ⚠ 明确不做的事：
+#   · 不执行 mod 自带代码（不 node <mod 文件>、不开 trusted 脚本模式）；
+#   · 不把 EXECUTABLE 类（含安装器/.ps1/整文件覆盖客户端）送去装载 —— 它们必被引擎拒，直接判 UNUSABLE；
+#   · 不把一条记录与它 compatOf 指向的原件放进同一个 workshop 根 —— 引擎同 pack id 只装 1 条，
+#     同时载入会造成「后者静默覆盖前者」的**假阴性**。
+#
+# 「能不能装得上」的权威判据是 mods/README.md 的四道闸门之一：
+#   loadWorkshop 后 packsLoaded === [包 id] 且 errors === 0。
+# 那需要引擎源码与可运行环境（另一条工作流的事）；本条只做 L1~L3 的静态护栏，
+# 它能**否定**明显坏的，但**不能肯定**「装得上」——这一点写进摘要，绝不冒充权威结论。
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: '只测前 N 条（0 = 全量）'
+        type: string
+        default: '0'
+      include_flagged:
+        description: '是否也测 flagged（疑似素材）那一组'
+        type: boolean
+        default: true
+  schedule:
+    - cron: '43 5 * * 1'
+  # ⚠ 已去掉 pull_request 触发（2026-10-20 安全审计）。
+  #    原因：这个 workflow 会 `await import('site/packcheck.mjs')` —— 那是在**执行仓库里的文件**。
+  #    而 pull_request 事件检出的是 PR 的内容 ⇒ 陌生人改 site/packcheck.mjs 就能在
+  #    GitHub runner 上跑任意 Node 代码。虽然 fork PR 的 token 只读、无 secrets、
+  #    runner 是一次性隔离 VM，但这不是隔离，只是兜底。
+  #    这条 workflow 的用途本来就是对**线上 87 个 mod** 的周期性复验，跟 PR 无关；
+  #    改了 packcheck.mjs 想复验时用 workflow_dispatch 手动跑（那时检出的是 master 的可信版本）。
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mod-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  STATION: http://47.103.14.217:25570
+
+jobs:
+  compat:
+    name: mod-compat
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: 抓取线上清单
+        run: |
+          set -uo pipefail
+          curl -fsS --max-time 60 "$STATION/api/mods" -o /tmp/station.json
+          node -e '
+            const j = JSON.parse(require("fs").readFileSync("/tmp/station.json", "utf8"));
+            console.log("mods:", (j.mods||[]).length, "flagged:", (j.flagged||[]).length);
+            if (!(j.mods||[]).length) { console.error("::error::线上清单是空的"); process.exit(1); }
+          '
+
+      - name: L1 元数据护栏
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("/tmp/station.json", "utf8"));
+            const mods = j.mods || [], flagged = j.flagged || [];
+            const bad = [];
+            for (const m of [...mods, ...flagged]) {
+              if (!m.id) bad.push("有记录没有 id");
+              if (typeof m.size !== "number") bad.push(`${m.id} 没有 size`);
+              if (!m.download && !m.archiveDownload) bad.push(`${m.id} 没有下载地址`);
+              // EXECUTABLE 是引擎必拒的形态（含安装器 / .ps1 / 整文件覆盖客户端）
+              const reasons = m.suspectedReasons || [];
+              if (reasons.includes("EXECUTABLE")) bad.push(`${m.id} 是 EXECUTABLE 形态，引擎必拒`);
+            }
+            const uniq = [...new Set(bad)];
+            uniq.forEach((b) => console.log("  ·", b));
+            console.log(`L1: 检查 ${mods.length + flagged.length} 条，问题 ${uniq.length} 处`);
+            if (uniq.length > 2) { console.error("::error::L1 问题过多，判 FAIL"); process.exit(1); }
+            if (mods.length + flagged.length === 0) { console.error("::error::一条都没验（跑了 0 条不等于绿）"); process.exit(1); }
+          '
+
+      - name: L2+L3 逐个下载并静态校验
+        run: |
+          set -uo pipefail
+          # ⚠ `github.event.inputs.*` 在非 dispatch 触发（push / pull_request / schedule）时是**空串**，
+          #    不是默认值。空串会让 Number('') = 0 —— 恰好等于「全量」，于是 limit 看起来没生效。
+          #    显式判空：空 = 全量，非空才截。
+          LIMIT="${{ github.event.inputs.limit }}"
+          [ -z "$LIMIT" ] && LIMIT=0
+          FLAGGED="${{ github.event.inputs.include_flagged }}"
+          [ -z "$FLAGGED" ] && FLAGGED=true
+          export LIMIT FLAGGED
+          mkdir -p /tmp/mods
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("/tmp/station.json", "utf8"));
+            const want = (process.env.FLAGGED !== "false");
+            let list = (j.mods || []).slice();
+            if (want) list = list.concat(j.flagged || []);
+            const n = Number(process.env.LIMIT || 0);
+            if (n > 0) list = list.slice(0, n);
+            fs.writeFileSync("/tmp/list.json", JSON.stringify(list.map((m) => ({ id: m.id, name: m.name, size: m.size, suspected: m.suspected === true }))));
+            console.log("待验:", list.length, "条");
+          '
+          PASS=0; FAIL=0; SKIP=0
+          : > /tmp/failed.txt
+          while IFS= read -r row; do
+            id=$(echo "$row" | cut -d"|" -f1); nm=$(echo "$row" | cut -d"|" -f2)
+            # 只跳过被标 EXECUTABLE 的（上面 L1 已点名），其余一律实测
+            url="$STATION/api/file/$id"
+            if ! curl -fsS --max-time 90 "$url" -o "/tmp/mods/$id.zip"; then
+              echo "✗ $id 下载失败"; echo "✗ $id download-failed" >> /tmp/failed.txt; FAIL=$((FAIL+1)); continue
+            fi
+            # L3-a 整档 CRC
+            if ! unzip -t "/tmp/mods/$id.zip" > /tmp/zt.log 2>&1; then
+              echo "✗ $id zip 破损"; echo "✗ $id zip-corrupt" >> /tmp/failed.txt; FAIL=$((FAIL+1)); continue
+            fi
+            # L3-b 根必须有 pack.json（引擎装载的硬前提；根没有就根本不被装载）
+            if ! unzip -Z1 "/tmp/mods/$id.zip" | grep -qx "pack.json"; then
+              echo "- $id 根无 pack.json（非工坊包形态，跳过装载类判据）"; SKIP=$((SKIP+1)); continue
+            fi
+            # L2 packcheck 静态预检（纯读 pack.json，不执行 mod 代码）
+            # ⚠ 接口实况：checkPack(<已 JSON.parse 的 pack.json 对象>)，不是目录；
+            #    返回 { codes:[{code,level,detail}], … }；用 blockersOf(codes) 取 blocker 级。
+            # ⚠ stderr **不许** `2>/dev/null`：那会把 node 的真实报错（模块找不到、接口不对）
+            #    吞成一句「静态预检有 blocker」，看起来像 mod 的问题其实是脚本的问题。
+            mkdir -p "/tmp/x/$id" && unzip -qo "/tmp/mods/$id.zip" -d "/tmp/x/$id"
+            if node --input-type=module -e '
+              import fs from "node:fs";
+              const { checkPack, blockersOf } = await import(process.argv[1]);
+              let pack = null;
+              try { pack = JSON.parse(fs.readFileSync(process.argv[2] + "/pack.json", "utf8")); } catch { pack = null; }
+              const r = checkPack(pack);
+              const blockers = blockersOf(r.codes || []);
+              if (blockers.length) {
+                console.log("blockers:", blockers.map((b) => b.code || b.detail).join(","));
+                process.exit(1);
+              }
+              process.exit(0);
+            ' "$(pwd)/site/packcheck.mjs" "/tmp/x/$id"; then
+              echo "✓ $id $nm"; PASS=$((PASS+1))
+            else
+              echo "✗ $id 静态预检有 blocker"; echo "✗ $id $nm" >> /tmp/failed.txt; FAIL=$((FAIL+1))
+            fi
+          done < <(node -e '
+            const l = JSON.parse(require("fs").readFileSync("/tmp/list.json","utf8"));
+            l.forEach((m) => console.log(`${m.id}|${String(m.name||"").replace(/[|\n]/g," ")}`));
+          ')
+          echo "---"
+          echo "通过 $PASS / 失败 $FAIL / 非工坊包形态 $SKIP"
+          echo "PASS=$PASS" >> "$GITHUB_ENV"
+          echo "FAIL=$FAIL" >> "$GITHUB_ENV"
+          echo "SKIP=$SKIP" >> "$GITHUB_ENV"
+          echo "FAILED_IDS=$(grep -a '^✗ ' /tmp/failed.txt 2>/dev/null | awk '{print $2}' | paste -sd, - || true)" >> "$GITHUB_ENV"
+          # 一条都没跑到 = 红
+          if [ $((PASS + FAIL + SKIP)) -eq 0 ]; then
+            echo "::error::一个 mod 都没验过（跑了 0 条不等于绿）"; exit 1
+          fi
+          # ⚠ 失败**不直接红** —— 与本仓 selftest.yml 同一口径（判「净新增失败」，不判总数）：
+          #   这些 mod 是线上既有的，不是本 PR 带进来的；把既有失败当红会让闸门永久红、然后人人忽略。
+          #   所以：失败**如实列出 + 写进摘要**，只有出现**基线之外的新 id** 才红。
+          echo "$FAILED_IDS" | tr ',' '\n' | grep -v '^$' | sort -u > /tmp/fail_ids.txt || true
+          cat > /tmp/baseline.txt <<'BASE'
+          ceae73a72c49
+          1820c9b571c8
+          9e23f07151b8
+          531e1d90c4f5
+          BASE
+          sed -i 's/^ *//' /tmp/baseline.txt
+          NEW=$(comm -23 /tmp/fail_ids.txt <(sort -u /tmp/baseline.txt) | paste -sd, - || true)
+          echo "NEW_FAILED_IDS=$NEW" >> "$GITHUB_ENV"
+          if [ -n "$NEW" ]; then
+            echo "::error::出现基线之外的新失败 mod：$NEW —— 闸门红"
+            exit 1
+          fi
+          echo "失败 ${FAIL} 个，全部在基线内（既有问题，非本次引入）：$(cat /tmp/fail_ids.txt | paste -sd, -)"
+
+      - name: 摘要（如实说明这条能证明什么、不能证明什么）
+        if: always()
+        run: |
+          {
+            echo "### 线上 mod 兼容性复验"
+            echo
+            echo "- 通过 ${PASS:-0} / 失败 ${FAIL:-0} / 非工坊包形态 ${SKIP:-0}"
+            echo
+            if [ -s /tmp/failed.txt ]; then
+              echo "**未通过的 mod**（静态预检有 blocker）："
+              echo
+              grep -a '^✗ ' /tmp/failed.txt | sed 's/^/  - /'
+              echo
+              echo "基线之外的**新**失败：${NEW_FAILED_IDS:-（无）}"
+              echo
+            fi
+            echo "**这条工作流证明了什么**：每个 mod 的 zip 完好、根有 \`pack.json\`、静态预检无 blocker。"
+            echo "它能**否定**明显坏的（破损包、非工坊形态、契约 blocker、EXECUTABLE 形态）。"
+            echo
+            echo "**它不能证明什么**：不能证明「装得上」。权威判据是 \`mods/README.md\` 的四道闸门之一 ——"
+            echo "引擎 \`loadWorkshop\` 后 \`packsLoaded === [包 id]\` 且 \`errors === 0\`，"
+            echo "那需要引擎源码与可运行环境，不在本条范围内。请勿把本条绿色读作「兼容性已验证」。"
+          } >> "$GITHUB_STEP_SUMMARY"

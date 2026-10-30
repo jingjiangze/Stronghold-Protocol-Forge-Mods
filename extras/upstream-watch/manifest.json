@@ -1,0 +1,39 @@
+{
+  "id": "upstream-watch",
+  "name": "上游 watch（源码快照）",
+  "version": "0.2.5",
+  "kind": "reference",
+  "source": {
+    "repo": "jingjiangze/stronghold-server",
+    "version": "0.2.5"
+  },
+  "note": "server/upstreamWatch.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件。",
+  "compatibility": {
+    "verdict": "self-contained",
+    "standalone": true,
+    "reason": "闭包 1 个文件。"
+  },
+  "closure": {
+    "upstreamWatch.js": {
+      "files": 1,
+      "lines": 143,
+      "kb": 7.8
+    }
+  },
+  "author": "未声明",
+  "license": "GPL-3.0-or-later",
+  "download": "extras/upstream-watch/upstream-watch-source.zip",
+  "zip": {
+    "name": "upstream-watch-source.zip",
+    "bytes": 3784,
+    "sha256": "2085a648e0e3be2e9535a2cc11dec3e361d9d8da653b15d37e54311bfd4efd47"
+  },
+  "files": [
+    {
+      "path": "upstreamWatch.js",
+      "bytes": 8028,
+      "lines": 143,
+      "sha256": "4483534549821ed2545cb4fd62ccdce10364b72a7ff018f79c887d0ab76ea4cb"
+    }
+  ]
+}

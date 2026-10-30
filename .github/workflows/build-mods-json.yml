@@ -1,0 +1,344 @@
+name: 生成 mod 站索引（静态，零 Cloudflare）
+
+# 把 mod 仓库的 `mods/index.json` 转成站点要读的 `mods.json`，并附上下载直链。
+#
+# 为什么生成而不是实时查（审计结论）：
+#   · 浏览器匿名 api.github.com 只有 **60 次/小时**，玩家一多就 403；
+#   · raw.githubusercontent 可达性按 URL/时刻波动（本机实测一批 5/5、另一批 0/4）；
+#   · 静态资源请求在 CF Pages 上「free and unlimited」，而 Pages Functions 请求计入 Workers 10 万/日。
+# ⇒ 所有 API 调用挪到 Actions 侧（GITHUB_TOKEN 1000/h），浏览器只读一个静态 JSON：省额度、且不抖。
+#
+# 下载直链：默认指向本仓库的 Git LFS / raw 路径；若配了 `MODSITE_RELEASE_REPO` 变量，
+# 则改为指向那个仓库的 Release assets（走 release-assets.githubusercontent.com，
+# **与 Cloudflare 完全无关，CF 额度恒为 0**，且总量官方不设限）。
+#
+# 触发：mods/ 有改动时 + 每 6 小时兜底 + 手动。
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'mods/**'
+      - 'tools/**'
+      - '.github/workflows/build-mods-json.yml'
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  # 开 PR 需要。缺了会在 gh pr create 时报 403（而不是一个清楚的错误）。
+  pull-requests: write
+
+concurrency:
+  group: build-mods-json
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 生成 mods.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: 合成 mods.json
+        env:
+          RELEASE_REPO: ${{ vars.MODSITE_RELEASE_REPO }}
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const src = JSON.parse(fs.readFileSync("mods/index.json", "utf8"));
+            const list = Array.isArray(src) ? src : (src.mods || []);
+            if (!list.length) { console.error("::error::mods/index.json 是空的"); process.exit(1); }
+            const repo = process.env.RELEASE_REPO || "";
+            // 署名从 PROVENANCE.md 读。那是 tools/build-index.mjs 机械生成的权威源，
+            // index.json 里没有 author 字段（实测 30 条字段并集：id name version sha256 packHash
+            // category categoryWhy stationId path sizeBytes fileCount unpackedBytes assets notes
+            // engineLoad —— 一个署名都没有）。解析失败就留空，页面负责「没有就不画」。
+            const prov = (id, ver) => {
+              try {
+                const t = fs.readFileSync(`mods/${id}/${ver}/PROVENANCE.md`, "utf8");
+                const cell = (label) => {
+                  const m = new RegExp("\\|\\s*" + label + "\\s*\\|\\s*([^|]+?)\\s*\\|").exec(t);
+                  return m ? m[1].trim() : "";
+                };
+                // 兼容改写者一栏「未声明」也算没有：页面要区分「未填」与「不是兼容包」
+                const isCompat = /\|\s*④\s*兼容改写者\s*\|/.test(t) && !/④\s*兼容改写者\s*\|\s*\*\*未声明\*\*/.test(t);
+                return {
+                  author: cell("② 原作者") || "",
+                  license: cell("③ 原件许可") || "",
+                  compatAuthor: cell("④ 兼容改写者") || "",
+                  isCompat,
+                  from: cell("⑤ 来源") || "",
+                };
+              } catch { return null; }
+            };
+            const flat = (x) => Array.isArray(x) ? x.join("\n") : (x == null ? "" : String(x));
+            const out = list
+              // 说明包不进站点（业主口径「去掉说明包」）。上游 build-index.mjs 的四道闸门第 3 条
+              // 本来就不收 documentation（mods/README.md:56），这里是**第二道**：万一有人手改
+              // index.json 绕过闸门，站点也不展示。数据仍留在 index.json 里，不丢。
+              .filter((m) => (m.category || "unknown") !== "documentation")
+              .map((m) => {
+                const id = m.id || "";
+                const ver = m.version || "";
+                // 有 Release 仓就指向 Release asset；否则退回本仓 raw 路径
+                const download = repo && id && ver
+                  ? `https://github.com/${repo}/releases/download/${id}-v${ver}/${id}-${ver}.zip`
+                  : (m.path ? `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/master/${m.path}` : "");
+                const p = prov(id, ver);
+                return {
+                  id,
+                  name: m.name || id,
+                  version: ver,
+                  category: m.category || "unknown",
+                  // 备注：保留，默认在页面上折叠。notes 是数组，join 成字符串（不靠隐式 String()）。
+                  note: flat(m.notes || m.note),
+                  author: p ? p.author : "",
+                  license: p ? p.license : "",
+                  compatAuthor: p ? p.compatAuthor : "",
+                  isCompat: p ? p.isCompat : false,
+                  from: p ? p.from : "",
+                  sizeBytes: m.sizeBytes || 0,
+                  fileCount: m.fileCount || 0,
+                  sha256: m.sha256 || "",
+                  packId: m.packId || "",
+                  // 新发布的优先：取 mod.zip 在本仓库**首次提交**的时间（毫秒）。取不到就 0，排在最后。
+                  addedAt: (() => {
+                    try {
+                      if (!m.path) return 0;
+                      const t = require("child_process").execSync(`git log --diff-filter=A --format=%ct -1 -- ${JSON.stringify(m.path)}`, { encoding: "utf8" }).trim();
+                      return t ? Number(t) * 1000 : 0;
+                    } catch { return 0; }
+                  })(),
+                  download,
+                };
+              }).filter((m) => m.id);
+            const dropped = list.length - out.length;
+            if (dropped > 0) console.log(`过滤掉说明包 ${dropped} 条（category === documentation，站点不展示；index.json 里仍在）`);
+            fs.writeFileSync("modsite/mods.json", JSON.stringify({ generatedAt: new Date().toISOString(), mods: out }, null, 1) + "\n");
+            console.log("写出 modsite/mods.json：", out.length, "条");
+            const noSha = out.filter((m) => !m.sha256).length;
+            if (noSha) console.log(`::warning::${noSha} 条没有 sha256 —— 下载到的到底是不是站上那份无法自证`);
+          '
+
+      - name: 自检：生成的索引必须站得住
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("modsite/mods.json", "utf8"));
+            const a = j.mods || [];
+            if (!a.length) { console.error("::error::生成结果是空的"); process.exit(1); }
+            let bad = 0;
+            for (const m of a) {
+              if (!m.id) { console.error("::error::有条目没有 id"); bad++; }
+              if (!m.download) { console.error(`::error::${m.id} 没有下载直链`); bad++; }
+            }
+            const docs = a.filter((m) => m.category === "documentation").length;
+            if (docs) { console.error(`::error::mods.json 里还有 ${docs} 条说明包 —— 站点不该展示它们`); bad += docs; }
+            if (bad) { console.error(`自检失败 ${bad} 处`); process.exit(1); }
+            console.log(`✓ 自检通过：${a.length} 条，全部有下载直链，无说明包`);
+          '
+
+      # ---- 目录签名（2026-10-29）-----------------------------------------------------------------
+      # 为什么在源站签：客户端 sp-modmgr.mjs 的 verifyCatalogue() 用内嵌公钥验 `sig`。目录是裸 JSON、
+      # sha256 与 download 同源 ⇒ 站点/DNS 被控时可把一次正常点击变成「装任意主机的包」。签名把
+      # 「这份目录是谁生成的」锚到一把只有本仓密钥的私钥上，改任何一个字节都验不过。
+      #
+      # 用**专用**工坊密钥（keyId sp-workshop-2026-10），不是 App 热更新那把（sp-2026-10）：
+      # 热更新私钥能改写每台设备的客户端包，把它放进一个接受第三方 PR 的仓库只会白白放大暴露面。
+      #
+      # 没配 secret ⇒ 保持未签名 + warning（fork 的定时任务不该因此变红）；配了
+      # vars.MODSITE_REQUIRE_SIG=1 ⇒ 没密钥直接红，绝不产出「看着签了其实没签」的目录。
+      - name: 签名 mods.json（Ed25519）
+        env:
+          SIGN_KEY: ${{ secrets.SP_CATALOG_SIGN_KEY }}
+          SIGN_KEY_ID: ${{ vars.MODSITE_SIGN_KEY_ID || 'sp-workshop-2026-10' }}
+          REQUIRE_SIG: ${{ vars.MODSITE_REQUIRE_SIG }}
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs"), crypto = require("crypto");
+            const PKCS8 = Buffer.from("302e020100300506032b657004220420", "hex");
+            const SPKI  = Buffer.from("302a300506032b6570032100", "hex");
+            const hex = String(process.env.SIGN_KEY || "").trim();
+            const p = "modsite/mods.json";
+            if (!hex) {
+              const msg = "SP_CATALOG_SIGN_KEY 未配置 —— 目录保持未签名";
+              if (String(process.env.REQUIRE_SIG || "") === "1") { console.error("::error::" + msg + "（MODSITE_REQUIRE_SIG=1：拒绝产出未签名目录）"); process.exit(1); }
+              console.log("::warning::" + msg + "（客户端要求签名时会拒绝载入）");
+              process.exit(0);
+            }
+            const seed = Buffer.from(hex, "hex");
+            if (seed.length !== 32) { console.error("::error::SP_CATALOG_SIGN_KEY 必须是 32 字节十六进制"); process.exit(1); }
+            // 规范化：键递归排序、无空白、去掉 sig。必须与客户端 canonicalize() 逐字节一致，
+            // 改这里就等于改协议（tools/apk/canonical.mjs 是同一套规则的权威实现）。
+            const canonicalize = (v) => {
+              if (v === null || v === undefined) return "null";
+              const t = typeof v;
+              if (t === "number") { if (!Number.isFinite(v) || !Number.isInteger(v)) throw new Error("non-integer number in payload"); return String(v); }
+              if (t === "boolean") return v ? "true" : "false";
+              if (t === "string") return JSON.stringify(v);
+              if (Array.isArray(v)) return "[" + v.map(canonicalize).join(",") + "]";
+              if (t === "object") { const ks = Object.keys(v).filter((k) => v[k] !== undefined).sort(); return "{" + ks.map((k) => JSON.stringify(k) + ":" + canonicalize(v[k])).join(",") + "}"; }
+              throw new Error("unsupported value type: " + t);
+            };
+            const key = crypto.createPrivateKey({ key: Buffer.concat([PKCS8, seed]), format: "der", type: "pkcs8" });
+            const pubDer = crypto.createPublicKey(key).export({ format: "der", type: "spki" });
+            const pub = pubDer.subarray(pubDer.length - 32);
+            const doc = JSON.parse(fs.readFileSync(p, "utf8"));
+            const { sig: _old, ...rest } = doc;
+            const payload = Object.assign({}, rest, { keyId: String(process.env.SIGN_KEY_ID || "sp-workshop-2026-10") });
+            const bytes = Buffer.from(canonicalize(payload), "utf8");
+            const sig = crypto.sign(null, bytes, key);
+            // 自验：签完立刻用公钥验一遍，不过就红 —— 绝不产出坏签名
+            const pubKey = crypto.createPublicKey({ key: Buffer.concat([SPKI, pub]), format: "der", type: "spki" });
+            if (!crypto.verify(null, bytes, pubKey, sig)) { console.error("::error::签名自验失败"); process.exit(1); }
+            doc.keyId = payload.keyId;
+            doc.sig = sig.toString("base64");
+            fs.writeFileSync(p, JSON.stringify(doc, null, 1) + "\n");
+            console.log("已签名 mods.json：payload " + bytes.length + " B, sig " + sig.length + " B, keyId " + payload.keyId);
+            console.log("公钥（客户端须内嵌这个）: " + pub.toString("hex"));
+          '
+
+      - name: 生成 extras.json（不兼容 / 参考件，不经闸门）
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const ROOT = "extras";
+            const items = [];
+            if (!fs.existsSync(ROOT)) {
+              console.log("没有 extras/ 目录 —— 跳过");
+            } else {
+              for (const d of fs.readdirSync(ROOT, { withFileTypes: true })) {
+                if (!d.isDirectory()) continue;
+                const mf = path.join(ROOT, d.name, "manifest.json");
+                if (!fs.existsSync(mf)) { console.log("  · 跳过 " + d.name + "（缺 manifest.json）"); continue; }
+                const m = JSON.parse(fs.readFileSync(mf, "utf8"));
+                // 必填字段自检：站点渲染依赖它们，缺一个就红（不要静默产出半截数据）
+                const need = ["id", "name", "note", "author", "license", "download", "compatibility", "zip"];
+                const miss = need.filter((k) => m[k] === undefined);
+                if (miss.length) { console.error("::error::extras/" + d.name + " 缺字段: " + miss.join(", ")); process.exit(1); }
+                const vp = m.compatibility && m.compatibility.verdict;
+                if (!vp) { console.error("::error::extras/" + d.name + " 缺 compatibility.verdict"); process.exit(1); }
+                items.push({
+                  id: m.id,
+                  name: m.name,
+                  version: m.version || "",
+                  kind: m.kind || "reference",
+                  note: m.note || "",
+                  author: m.author || "",
+                  license: m.license || "",
+                  compatibility: m.compatibility,
+                  closure: m.closure || null,
+                  download: m.download,
+                  zip: m.zip || null,
+                  files: m.files || [],
+                });
+                console.log("  + " + m.id + "  [" + vp + "]");
+              }
+            }
+            // 按 id 排序，保证生成的 JSON 稳定（同样的输入 ⇒ 同样的字节）
+            items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+            fs.writeFileSync("modsite/extras.json", JSON.stringify({ generatedAt: new Date().toISOString(), items: items }, null, 1) + "\n");
+            console.log("写出 modsite/extras.json：" + items.length + " 条");
+          '
+
+      - name: 自检：extras.json 必须站得住
+        run: |
+          set -uo pipefail
+          node -e '
+            const fs = require("fs");
+            const p = "modsite/extras.json";
+            if (!fs.existsSync(p)) { console.error("::error::extras.json 没生成"); process.exit(1); }
+            const j = JSON.parse(fs.readFileSync(p, "utf8"));
+            const a = j.items || [];
+            if (!a.length) { console.error("::error::extras.json 是空的"); process.exit(1); }
+            let bad = 0;
+            for (const m of a) {
+              if (!m.id) { console.error("::error::有条目没有 id"); bad++; }
+              if (!m.download) { console.error("::error::" + m.id + " 没有 download"); bad++; }
+              // 下载直链必须真有其物，否则站点给出死链
+              if (m.download && !fs.existsSync(m.download)) {
+                console.error("::error::" + m.id + " 的 download 指向的文件不存在: " + m.download); bad++;
+              }
+              // 不兼容的件必须真的标了不兼容 —— 否则会被当成能装的 mod
+              if (m.compatibility && m.compatibility.verdict === undefined) {
+                console.error("::error::" + m.id + " 没有 verdict"); bad++;
+              }
+            }
+            if (bad) { console.error("extras 自检失败 " + bad + " 处"); process.exit(1); }
+            console.log("✓ extras 自检通过：" + a.length + " 条，download 均指向存在的文件");
+          '
+
+      - name: 有 PAT 就自己开 PR 并等 mod-gate 过后自己合；没有就推分支等人开
+        run: |
+          set -uo pipefail
+          git config user.name "modsite-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add modsite/mods.json modsite/extras.json
+          if git diff --cached --quiet; then
+            echo "mods.json 无变化 —— 不推"
+            exit 0
+          fi
+          git commit -m "chore(modsite): 重新生成 mods.json（$(date -u +%Y-%m-%dT%H:%M:%SZ)）"
+          # 为什么先试 PAT：GITHUB_TOKEN 直推 master 会被保护规则 GH006 挡下
+          # （"Changes must be made through a pull request"），而它也不能开 PR
+          # （"GitHub Actions is not permitted to create or approve pull requests"）。
+          # 于是旧版本只能「推分支 + 在摘要里给一个 compare 链接」，**等人点一下** ——
+          # 实测就是这一步漏掉的：2026-10-29 上游合进 9 个 mod，索引分支没人开 PR，
+          # 线上一直停在 76 条。auto-promote 已经在用 MODSITE_PAT 直推 master，这里沿用同一把。
+          PAT="${{ secrets.MODSITE_PAT }}"
+          BR="chore/mods-json-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BR"
+          git push origin "HEAD:refs/heads/$BR"
+          # 为什么不再试着「直推 master」：实测**走不通**，即使是 admin 的 fine-grained PAT，
+          # git push 也会被分支保护挡下（2026-10-30 run 41067578710）：
+          #   ! [remote rejected] HEAD -> master (protected branch hook declined)
+          #   remote: - Required status check "mod-gate" is expected.
+          # ⇒ 改走「CI 自己开 PR，等 mod-gate 过了再自己合」。这样 mod-gate 一道没少，
+          #   少掉的只是「人去点一下」那步。
+          if [ -z "$PAT" ]; then
+            {
+              echo "### mods.json 已更新，待开 PR"
+              echo
+              echo "分支 \`$BR\` 已推上去。**没配 \`MODSITE_PAT\`** ⇒ CI 无权开 PR，请手动点："
+              echo
+              echo "**https://github.com/$GITHUB_REPOSITORY/compare/$BR?expand=1**"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          export GH_TOKEN="$PAT"
+          if ! gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$BR"                --title "chore(modsite): 重新生成 mods.json（$(date -u +%Y-%m-%dT%H:%M:%SZ)）"                --body "自动化产物：\`build-mods-json\` 从 \`mods/index.json\` 重新生成并 Ed25519 签名。合并后 \`deploy-pages\` 会跟这次 \`modsite/**\` 变更跑。"; then
+            echo "::warning::开 PR 失败（PAT 权限？）—— 分支 $BR 已推上去，请手动开"
+            exit 0
+          fi
+          # 等 mod-gate 出结论（最多 ~10 分钟），然后自己合。判据看 mergeStateStatus：
+          #   CLEAN / UNSTABLE（只是非必需检查红）才算可合；BLOCKED 继续等。
+          for _ in $(seq 1 40); do
+            ST=$(gh pr view "$BR" --repo "$GITHUB_REPOSITORY" --json mergeStateStatus --jq .mergeStateStatus 2>/dev/null || echo UNKNOWN)
+            echo "mergeStateStatus=$ST"
+            case "$ST" in CLEAN|UNSTABLE|HAS_HOOKS) break;; esac
+            sleep 15
+          done
+          if gh pr merge "$BR" --repo "$GITHUB_REPOSITORY" --merge --admin; then
+            {
+              echo "### mods.json 已更新并自动合并"
+              echo
+              echo "分支 \`$BR\`：mod-gate 通过后由 CI 自己合并（不再是「等人点一下」）。"
+              echo "本次 \`modsite/**\` 变更会触发 \`deploy-pages-cf\` 与 \`deploy-pages-gh\`。"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::自动合并失败 —— PR 已开着（$BR），请手动合"
+          fi

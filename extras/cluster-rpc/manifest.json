@@ -1,0 +1,39 @@
+{
+  "id": "cluster-rpc",
+  "name": "集群 RPC（源码快照）",
+  "version": "0.2.5",
+  "kind": "reference",
+  "source": {
+    "repo": "jingjiangze/stronghold-server",
+    "version": "0.2.5"
+  },
+  "note": "server/cluster/rpc.js 的源码快照。\n\n未拆成独立包的原因：闭包 1 个文件；但属集群内部环（platform↔game-host↔lobby↔directory），单独拆意义不大。",
+  "compatibility": {
+    "verdict": "self-contained",
+    "standalone": true,
+    "reason": "闭包 1 个文件；但属集群内部环（platform↔game-host↔lobby↔directory），单独拆意义不大。"
+  },
+  "closure": {
+    "rpc.js": {
+      "files": 1,
+      "lines": 185,
+      "kb": 10.6
+    }
+  },
+  "author": "未声明",
+  "license": "GPL-3.0-or-later",
+  "download": "extras/cluster-rpc/cluster-rpc-source.zip",
+  "zip": {
+    "name": "cluster-rpc-source.zip",
+    "bytes": 3625,
+    "sha256": "c3a9bef43f4254c535579cfc914a85ba8b288d06c28bc77698c3dd573149a9ee"
+  },
+  "files": [
+    {
+      "path": "rpc.js",
+      "bytes": 10809,
+      "lines": 185,
+      "sha256": "ef67329635686476c8da55faafd4222f3dd1d5f5b8ed63cf464c055bbecbb21b"
+    }
+  ]
+}

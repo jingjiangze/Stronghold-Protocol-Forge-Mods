@@ -6,7 +6,7 @@
 | 项 | 值 |
 |---|---|
 | ① 包 id / 版本 | `node-metrics-healthz` · 1.0.0 |
-| ② 原作者 | 逆向自 wei.isomer319.xyz / sp.isomer319.xyz（社区节点）· 打包 jingjiangze（来源：**未声明**） |
+| ② 原作者 | 逆向自 wei.isomer319.xyz / sp.isomer319.xyz（社区节点） |
 | ③ 原件许可 | **未声明** |
 | ④ 兼容改写者 | Mo233 |
 | ⑤ 来源 | 站上记录 `d2db0e73965f` · 由原件 `b10de1628b4f` 改写 |
