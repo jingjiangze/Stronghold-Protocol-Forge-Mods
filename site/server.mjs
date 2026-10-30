@@ -1663,7 +1663,16 @@ const server = createServer(async (req, res) => {
       //    各管一个维度（技术 / 功能），互不覆盖 —— 与 `/api/mods` 是同一份读法。
       const ff = funcKindFilterOf(url);
       if (ff.error) return sendJson(res, 400, { error: ff.error, funcs: FUNC_KINDS });
-      return renderPage(res, 'mods.html', { kinds: kf.kinds || [], funcs: ff.funcs || [] });
+      // ⭐ 关键字搜索（2026-10-15）：`/mods?q=…`。与上面两条**可以叠加**（AND）；自由文本，没有 400 那一档。
+      const qf = queryFilterOf(url);
+      // ⭐⭐ **服务端预渲染**：`#list` 由服务端按当前查询画好一起发出去，无 JS 也能看到列表与搜索结果。
+      //    ⚠️ 取数 / 过滤 / 计数一律调 `/api/mods` 用的同一个函数（collectPublicMods）——
+      //    绝不在这里把过滤逻辑再写一遍：两条路必然漂移，判据就变成两份了。
+      const data = await collectPublicMods({ kf, ff, qf });
+      const active = { kinds: kf.kinds || [], funcs: ff.funcs || [], q: qf.q || '' };
+      // 预渲染与客户端重渲染用的是**同一个** renderList（见 MOD_LIST_RENDERER_SRC）。
+      const listHtml = renderModListHtml({ mods: data.mods, flagged: data.flagged, active });
+      return renderPage(res, 'mods.html', { kinds: active.kinds, funcs: active.funcs, q: active.q, listHtml });
     }
     // 审核页本身就要认证 —— 只有**顶层导航**的 401 才会让浏览器弹登录框
     // （fetch 拿到 401 是不弹的，所以认证必须卡在页面这一层）。
@@ -1739,6 +1748,10 @@ const server = createServer(async (req, res) => {
         // 缺省 `uncategorized`（未分类）：老记录没有这一栏 ⇒ 落未分类，**绝不猜**。
         funcKind: funcKindOf(s),
         funcKindTitle: FUNC_KIND_TITLES[funcKindOf(s)],
+    // ⭐ 本地口径（上游那份 shape 没有这两栏）：卡片要在**下载之前**就说清
+    //   ① 这包会改对局结果（`combat: true` 的告知义务）② 契约预检（site/packcheck.mjs）已经点名的问题。
+    combat: s.combat === true,
+    packcheck: Array.isArray(s.packcheck) ? s.packcheck : [],
         // 包内 `pack.json` 的 `id`（兼容包取记录里那一栏）。**只用来做一件事**：让公网那一页
         // 能看出「哪几条是同一个 id」——引擎不允许同 id 并存，玩家一次只能装一条。
         // 读不到就是 null，页面不画那一行（不猜）。
@@ -4810,8 +4823,24 @@ function makeModListRenderer() {
     const fb = FUNC_BADGE[FUNC_OF(m)];
     head.append(D.el('span', fb[0], fb[1]));
     if (flagged) head.append(D.el('span', 'badge warn', '含疑似官方素材'));
+    // ⭐ 会改对局结果（2026-10-14）：业主口径是「标注清楚就算尽到，不另设闸门」⇒ 只画中性徽标，解释放下面一行。
+    if (m.combat === true) head.append(D.el('span', 'badge warn', '会改对局结果'));
     body.append(head);
     body.append(D.el('div', 'kv dim', `${(m.size / 1048576).toFixed(2)} MB · 上传于 ${String(m.uploadedAt).slice(0, 10)} · 编号 ${m.id}`));
+
+    // ⭐ 会改对局结果的那一行解释（与徽标配套）：说清「改了什么」而不是只丢一个词。
+    if (m.combat === true) {
+      body.append(D.el('div', 'kv dim',
+        '⚠ 这个包会改对局结果（`combat: true`）—— 它可能改变伤害 / 命中 / 胜负判定，'
+        + '不是纯界面或素材包。装之前请先看它的备注与 PROVENANCE.md。'));
+    }
+    // ⭐ 契约预检（site/packcheck.mjs）：引擎装载期会点名拒的那几条，**下载之前**就摆出来。
+    if (m.packcheck && m.packcheck.length) {
+      body.append(D.el('div', 'kv warn',
+        '⚠ 预检发现这个包可能装载失败：'
+        + m.packcheck.map((c) => c.detail).join('；')
+        + '（以引擎装载结果为准）'));
+    }
 
     // 同 id 提示（指令㉑）：同一行里把「另一条是谁」和「为什么一次只能装一条」都说清。
     if (peers && peers.length) {
@@ -4899,6 +4928,12 @@ function makeModListRenderer() {
       s.append(hh);
       body.append(s);
     }
+    // 反馈入口（2026-10-13）：链接里只带**编号** —— 那一页只是「写反馈」的表单，
+    // 反馈正文与图片都不公开（只有维护者能在审核口读到），所以这里不存在泄露别人反馈的问题。
+    const fbBtn = D.el('a', 'btn', '提交反馈');
+    fbBtn.href = `/feedback?mod=${encodeURIComponent(m.id)}`;
+    fbBtn.style.marginTop = '10px';
+    body.append(fbBtn);
     c.append(body);
     return { panel: c, body };
   }
