@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T09:20:00.000Z",
+  "generatedAt": "2026-10-30T10:15:00.000Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\Stronghold-Protocol-Forge-Mods\\_up\\modrepo-stage",
     "host": null,
@@ -775,32 +775,6 @@
         "**适配说明**：原件是「源码片段集」——`portable/`（可独立运行的兼容模块）+ `integration-fragments/`（接入片段），没有 pack.json。",
         "本次补写 pack.json（id=drag-facing-wheel, game=0.3.x），只收 `portable/` 与 `integration-fragments/`，**不收** `.ps1/.bat` 安装器与 demo/tests。",
         "`integration-fragments/` 依赖原闭包变量，不能当独立 ES 模块直接跑；它们是对接参考，实际接入要按 agent.md 手工合入。"
-      ]
-    },
-    {
-      "id": "drag-facing-wheel",
-      "name": "干员自由拖放与朝向轮盘（服务端兼容移植）",
-      "version": "1.0.1",
-      "sha256": "23ebc3b84d2d57b1eec97fa026699dccdd802e0f73d11b8eaae8d409e56f3291",
-      "packHash": "bac1af5f78536b4135ee703ee2314fa7cbd8e0f94ba93ee1158467af0256859d",
-      "category": "functional",
-      "categoryWhy": "补写了 pack.json（原件无清单，只有 manifest/安装器）",
-      "packId": "drag-facing-wheel",
-      "path": "mods/drag-facing-wheel/1.0.1/mod.zip",
-      "sizeBytes": 156874,
-      "fileCount": 37,
-      "unpackedBytes": 397306,
-      "assets": {
-        "assetFree": true,
-        "count": 0,
-        "bytes": 0,
-        "byKind": {},
-        "containers": []
-      },
-      "notes": [
-        "修版（原 1.0.0 引擎整包拒）：credits 是不合法顶层键",
-        "**适配说明**：原件是「源码片段集」——`portable/`（可独立运行的兼容模块）+ `integration-fragments/`（接入片段），没有 pack.json。",
-        "本次补写 pack.json（id=drag-facing-wheel, game=0.3.x），只收 `portable/` 与 `integration-fragments/`，**不收** `.ps1/.bat` 安装器与 demo/tests。"
       ]
     },
     {
