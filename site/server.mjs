@@ -1748,10 +1748,6 @@ const server = createServer(async (req, res) => {
         // 缺省 `uncategorized`（未分类）：老记录没有这一栏 ⇒ 落未分类，**绝不猜**。
         funcKind: funcKindOf(s),
         funcKindTitle: FUNC_KIND_TITLES[funcKindOf(s)],
-    // ⭐ 本地口径（上游那份 shape 没有这两栏）：卡片要在**下载之前**就说清
-    //   ① 这包会改对局结果（`combat: true` 的告知义务）② 契约预检（site/packcheck.mjs）已经点名的问题。
-    combat: s.combat === true,
-    packcheck: Array.isArray(s.packcheck) ? s.packcheck : [],
         // 包内 `pack.json` 的 `id`（兼容包取记录里那一栏）。**只用来做一件事**：让公网那一页
         // 能看出「哪几条是同一个 id」——引擎不允许同 id 并存，玩家一次只能装一条。
         // 读不到就是 null，页面不画那一行（不猜）。
@@ -5079,6 +5075,11 @@ const renderModListHtml = (data) => {
  */
 async function collectPublicMods({ kf, ff, qf }) {
   const shape = (s, sig) => ({
+    // ⭐ 本地口径：`sig` 是**包内 pack.json 的读时结论**（不是记录里的字段）。
+    //   卡片要在下载之前就说清 ① 这包会改对局结果（`combat: true` 的告知义务）
+    //   ② 契约预检（site/packcheck.mjs）已经点名的问题。上游那份 shape 没有这两栏。
+    combat: sig.combat === true ? true : (sig.combat === false ? false : null),
+    packcheck: Array.isArray(sig.packcheck) ? sig.packcheck : [],
     id: s.id, name: s.name, note: s.note, uploadedAt: s.uploadedAt, size: s.size,
     homepage: s.homepage || null, suspected: s.suspected === true,
     suspectedReasons: s.suspectedReasons || [],
