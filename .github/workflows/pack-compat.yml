@@ -1,0 +1,70 @@
+name: 门 — 线上包真装载（引擎抬版本后玩家现有的包还装不装得上）
+
+# 这是上游 `pack-compat.yml` 的**最小等价物**，不是它的拷贝：
+# 上游那份依赖 `tools/workshop-validate.mjs` → `shared/workshopValidate.mjs` / `shared/chessAuthoring.js`
+# / `server/workshop.js`，本仓没有这条依赖链（本仓走 `shared/plugins/*` 那套插件面）。
+# 所以这里只做一件事：把**已上架的包**逐个解到干净根，调**引擎自己的** `loadWorkshop`，
+# 判据与 `tools/build-index.mjs` 的四道闸门同源：`errors=0` 且 `packsLoaded` 恰好 `[packId]`。
+#
+# 为什么需要它：`engine-contract` 是静态判据（清单字段 / api / app / class），
+# 证明不了「引擎真的能装载」。引擎抬版本之后，玩家手里的旧包还能不能装上——只有真装载才知道。
+#
+# 不排到每个 PR：一轮要把 60+ 个包解压装载，属于「引擎变了才需要问」的问题。
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: '只判这些包（空格分隔的 id@version，留空 = 全部）'
+        required: false
+        type: string
+  schedule:
+    - cron: '41 7 * * 1'   # 每周一 07:41 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pack-compat
+  cancel-in-progress: true
+
+env:
+  ENGINE_REPO: jingjiangze/Stronghold-Protocol-Forge
+
+jobs:
+  load:
+    name: 线上包真装载
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: site
+          fetch-depth: 1
+
+      - name: 检出引擎（**main**：workshop 装载器所在的世系）
+        uses: actions/checkout@v4
+        with:
+          repository: jingjiangze/Stronghold-Protocol-Forge
+          ref: main
+          path: engine
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 判据完整性（引擎侧装载器在不在）
+        run: |
+          set -uo pipefail
+          [ -f engine/server/workshop.js ] || { echo "::error::引擎检出里没有 server/workshop.js —— 这条门失去判据，不报绿"; exit 1; }
+          grep -q 'export function loadWorkshop' engine/server/workshop.js \
+            || { echo "::error::server/workshop.js 里没有 loadWorkshop 的导出 —— 判据被改"; exit 1; }
+
+      - name: 真装载
+        env:
+          ONLY: ${{ github.event.inputs.only }}
+        run: |
+          set -uo pipefail
+          ARGS=(--repo site --engine engine)
+          if [ -n "$ONLY" ]; then ARGS+=(--only $ONLY); fi
+          node site/.github/ci/engine-load.mjs "${ARGS[@]}"
