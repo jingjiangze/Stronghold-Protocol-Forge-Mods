@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T10:15:00.000Z",
+  "generatedAt": "2026-10-30T21:10:00.000Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\Stronghold-Protocol-Forge-Mods\\_up\\modrepo-stage",
     "host": null,
@@ -1783,6 +1783,36 @@
         "含三款 2026-10-16 官方皮肤：黍·源远流长、烛煌·夜行烛火、琳琅诗怀雅·盛世之象（头像 / 商店立绘 / 战斗模型 Spine 三件套）。",
         "⚠️ **含官方素材**：全部从国服客户端用 UnityPy 解包，版权归鹰角网络 / Yostar，仅供非商业个人使用。",
         "另附 jibian_zhuiji（追忆）卡牌引擎修复：`_engine-fix-zhuiji/server/match/match/phases.js`，修「回到第 10 回合不出怪/卡死」。"
+      ]
+    },
+    {
+      "id": "nlc-skins",
+      "name": "国家图书馆联动皮肤（NLC 三款 + 追忆回合修复）",
+      "version": "1.0.1",
+      "sha256": "97d72087d90be6dcf36960a81ca2deae228ff8acda1a8fccf11a492a8c773df3",
+      "packHash": "98c51fa49dcaece095288e3582310ca182851d4c1e66a1adb281837733701bc6",
+      "category": "functional",
+      "categoryWhy": "插件形态（plugin.json）：声明 code.client 24 条 + code.data 4 张表（整份顶替）",
+      "packId": "nlc-skins",
+      "path": "mods/nlc-skins/1.0.1/mod.zip",
+      "sizeBytes": 5165208,
+      "fileCount": 37,
+      "unpackedBytes": 10574046,
+      "assets": {
+        "assetFree": false,
+        "count": 30,
+        "bytes": 7325735,
+        "byKind": {
+          "png": 18,
+          "atlas": 6,
+          "skel": 6
+        },
+        "containers": []
+      },
+      "notes": [
+        "插件包（plugin.json manifest 2，class=trusted）。2026-10-30 重打包：原 1.0.0 是 pack.json 形态、content 写成 [\"skins\",\"assets\"]，这两个名字引擎都不认，装载期整包被拒。",
+        "⚠️ 它会整份替换宿主 data/assets.json（7969 文件 / 485 MB 索引）+ avatars/skins/skins-installed 三张表。不是「加皮肤」，是「换整张表」——宿主素材已演进过就会 URL 对不上。",
+        "⚠️ 只有 2026-10-30 及以后的引擎才认 code.data 的任意 data/<name>.json；更早的引擎上本包装得上但四张表都不生效（静默）。trusted 需钉 plugin.lock.json 的 sha256（78b38a33…412c）并设 SP_PLUGIN_SCRIPTS=trusted。"
       ]
     },
     {
