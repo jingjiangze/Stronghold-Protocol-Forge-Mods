@@ -35,6 +35,7 @@ const repoRoot = path.resolve(String(argOf('--repo', '.')));
 const engineRoot = argOf('--engine');
 const only = listOf('--only');
 const listOnly = argv.includes('--list');
+const baselineFile = argOf('--baseline');
 if (!engineRoot) { console.error('::error::--engine <引擎检出> 必填'); process.exit(2); }
 
 const idxPath = path.join(repoRoot, 'mods', 'index.json');
@@ -75,8 +76,20 @@ if (typeof engineWorkshop.loadWorkshop !== 'function') {
   process.exit(2);
 }
 
+// 基线：已知装不上的包（与 `mod-compat.yml` 的 baseline 同一套做法）。
+// 理由和那里一样 —— **一个永远红的门等于没门**。基线里的包失败只报不拦；
+// 反过来，基线里的包**恢复了**也要报出来（该把它从基线删掉，别让基线烂在原地）。
+const baseline = new Set(
+  baselineFile && fs.existsSync(String(baselineFile))
+    ? fs.readFileSync(String(baselineFile), 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean)
+    : [],
+);
+if (baseline.size) console.log(`基线里有 ${baseline.size} 个已知装不上的包（失败只报不拦）`);
+
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sp-load-'));
 const bad = [];
+const known = [];
+const recovered = [];
 const skipped = [];
 let ok = 0;
 
@@ -85,7 +98,7 @@ for (const e of entries) {
   if (!fs.existsSync(zip)) { skipped.push({ ...e, why: 'zip 不存在（索引坏了，engine-contract 判）' }); continue; }
   const kind = manifestKind(zip);
   if (kind === 'plugin') { skipped.push({ ...e, why: 'plugin.json 插件包，不属于 workshop 装载面' }); continue; }
-  if (kind !== 'pack') { bad.push({ ...e, why: `zip 里没有 pack.json（${kind}）` }); continue; }
+  if (kind !== 'pack') { (baseline.has(e.id) ? known : bad).push({ ...e, why: `zip 里没有 pack.json（${kind}）` }); continue; }
 
   // 与 build-index.mjs 同一个做法：解到一个干净根，目录名 = packId（装载器按 <根>/<包 id>/pack.json 找包）
   const root = path.join(tmpRoot, `${e.id}-${e.version}`);
@@ -95,7 +108,7 @@ for (const e of entries) {
   try {
     execFileSync('unzip', ['-q', '-o', zip, '-d', packDir], { stdio: 'pipe' });
   } catch (err) {
-    bad.push({ ...e, why: `解压失败：${String(err.message).slice(0, 120)}` });
+    (baseline.has(e.id) ? known : bad).push({ ...e, why: `解压失败：${String(err.message).slice(0, 120)}` });
     continue;
   }
   // 套了一层 <id>/ 目录的：剥壳（与 build-index 的 prefix 处理等价）
@@ -109,24 +122,28 @@ for (const e of entries) {
   try {
     loaded = engineWorkshop.loadWorkshop(root, { log: () => {} });
   } catch (err) {
-    bad.push({ ...e, why: `装载抛错：${String(err.message).slice(0, 160)}` });
+    (baseline.has(e.id) ? known : bad).push({ ...e, why: `装载抛错：${String(err.message).slice(0, 160)}` });
     continue;
   }
   const ids = (loaded.packs ?? []).map((p) => p.id);
   const errs = (loaded.errors ?? []).map((x) => `${x.pack}: ${x.reason}`);
   if (errs.length === 0 && ids.length === 1 && ids[0] === e.id) {
     ok += 1;
+    if (baseline.has(e.id)) recovered.push(`${e.id}@${e.version}`);
     console.log(`  ✓ ${e.id}@${e.version}  packsLoaded=[${ids}] errors=0`);
   } else {
-    bad.push({ ...e, why: `packsLoaded=[${ids}] errors=${errs.length} ${errs.join(' | ')}` });
-    console.log(`  ✗ ${e.id}@${e.version}  packsLoaded=[${ids}] errors=${errs.length} ${errs.join(' | ')}`);
+    const why = `packsLoaded=[${ids}] errors=${errs.length} ${errs.join(' | ')}`;
+    if (baseline.has(e.id)) { known.push({ ...e, why }); console.log(`  ⚑ ${e.id}@${e.version}  ${why}（在基线里）`); }
+    else { bad.push({ ...e, why }); console.log(`  ✗ ${e.id}@${e.version}  ${why}`); }
   }
   fs.rmSync(root, { recursive: true, force: true });
 }
 
 console.log('\n──────── 汇总 ────────');
-console.log(`装载通过 ${ok} · 失败 ${bad.length} · 跳过 ${skipped.length}`);
+console.log(`装载通过 ${ok} · 新失败 ${bad.length} · 基线内已知失败 ${known.length} · 跳过 ${skipped.length}`);
+if (recovered.length) console.log(`⚑ 基线里这些已恢复，请从基线删掉：${recovered.join(', ')}`);
 for (const s of skipped) console.log(`  - 跳过 ${s.id}@${s.version}：${s.why}`);
+if (known.length) for (const k of known) console.log(`  - 已知 ${k.id}@${k.version}：${k.why}`);
 if (bad.length) {
   for (const b of bad) console.log(`::error::${b.id}@${b.version}：${b.why}`);
   fs.rmSync(tmpRoot, { recursive: true, force: true });

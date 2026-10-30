@@ -65,6 +65,6 @@ jobs:
           ONLY: ${{ github.event.inputs.only }}
         run: |
           set -uo pipefail
-          ARGS=(--repo site --engine engine)
+          ARGS=(--repo site --engine engine --baseline site/.github/ci/pack-load-baseline.txt)
           if [ -n "$ONLY" ]; then ARGS+=(--only $ONLY); fi
           node site/.github/ci/engine-load.mjs "${ARGS[@]}"
