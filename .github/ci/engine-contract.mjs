@@ -57,10 +57,9 @@ const scoped = failOn.length > 0;
 const isMine = (rel) => {
   if (strict) return true;
   if (!scoped) return false;
-  const r = rel.replace(/\\/g, '/');
-  if (failOn.includes(r)) return true;
-  // 同目录下任何文件改动，都算这个包被本次 PR 动过
-  return failOn.some((f) => f.startsWith(r.replace(/\/mod\.zip$/, '/')));
+  // 只认 **zip 本身**。以前还把「同目录下任何文件」算进来，结果改一下 PROVENANCE.md 就把整个包
+  // 的历史缺陷算到本次改动头上（2026-10-30 PR #71 实测：两个文档更新让两个存量坏包变成"硬失败"）。
+  return failOn.includes(rel);   // failOn 解析时已统一成 / 分隔
 };
 
 const hard = [];
