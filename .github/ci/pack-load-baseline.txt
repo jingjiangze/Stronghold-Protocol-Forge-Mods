@@ -3,7 +3,7 @@
 # 修好一个就删一行 —— 脚本会在汇总里报「基线里这些已恢复，请从基线删掉」。
 #
 # 首次基线（2026-10-30，引擎 jingjiangze/Stronghold-Protocol-Forge@main）：
-ave-mujica          # ART_UNKNOWN_TABLE: "sfxUnits" 不是 art 表（1.8.24）
+ave-mujica@1.8.24    # ART_UNKNOWN_TABLE: "sfxUnits" 不是 art 表（1.8.24）
 drag-facing-wheel   # PACK_UNKNOWN_FIELD: "credits"（装载器不认识的顶层键）
 fanpack-kazdel-mod  # UNKNOWN_CONTENT_FILE: content "config" 不是数据文件
 hubvideo            # EMPTY_PACK: 没声明任何内容面
