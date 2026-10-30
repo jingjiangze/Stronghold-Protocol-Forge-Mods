@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T02:10:00.000Z",
+  "generatedAt": "2026-10-30T09:20:00.000Z",
   "source": {
     "stage": "E:\\destop\\harness_1\\Stronghold-Protocol-Forge-Mods\\_up\\modrepo-stage",
     "host": null,
@@ -778,6 +778,32 @@
       ]
     },
     {
+      "id": "drag-facing-wheel",
+      "name": "干员自由拖放与朝向轮盘（服务端兼容移植）",
+      "version": "1.0.1",
+      "sha256": "23ebc3b84d2d57b1eec97fa026699dccdd802e0f73d11b8eaae8d409e56f3291",
+      "packHash": "bac1af5f78536b4135ee703ee2314fa7cbd8e0f94ba93ee1158467af0256859d",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件无清单，只有 manifest/安装器）",
+      "packId": "drag-facing-wheel",
+      "path": "mods/drag-facing-wheel/1.0.1/mod.zip",
+      "sizeBytes": 156874,
+      "fileCount": 37,
+      "unpackedBytes": 397306,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "修版（原 1.0.0 引擎整包拒）：credits 是不合法顶层键",
+        "**适配说明**：原件是「源码片段集」——`portable/`（可独立运行的兼容模块）+ `integration-fragments/`（接入片段），没有 pack.json。",
+        "本次补写 pack.json（id=drag-facing-wheel, game=0.3.x），只收 `portable/` 与 `integration-fragments/`，**不收** `.ps1/.bat` 安装器与 demo/tests。"
+      ]
+    },
+    {
       "id": "duel-assets",
       "name": "争锋频道 · 素材容器（客户端导出 · 非商业）",
       "version": "0.1.0",
@@ -1070,6 +1096,32 @@
         "**适配说明**：原件以 `install.mjs` + `files.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
         "修复立绘引用：payload/data 下的 chess.json / config.json 与立绘登记。",
         "站上已存在同名兼容改写版（stationId 1820c9b571c8）；本条是**原件（修复版）**。"
+      ]
+    },
+    {
+      "id": "fanpack-kazdel-mod",
+      "name": "卡兹戴尔同人内容包（立绘修复版）",
+      "version": "1.2.2",
+      "sha256": "46c45c5d1a9fd252a727311900619537d1ac36d0596ae3ae9d81e29f220fe2b8",
+      "packHash": "2130421bf1fa2fc72f79ccdae8e21d849ac0646a3de6b527250043d642602618",
+      "category": "functional",
+      "categoryWhy": "补写了 pack.json（原件是 install.mjs + manifest.json 形态）",
+      "packId": "fanpack-kazdel-mod",
+      "path": "mods/fanpack-kazdel-mod/1.2.2/mod.zip",
+      "sizeBytes": 619791,
+      "fileCount": 48,
+      "unpackedBytes": 3301467,
+      "assets": {
+        "assetFree": true,
+        "count": 0,
+        "bytes": 0,
+        "byKind": {},
+        "containers": []
+      },
+      "notes": [
+        "修版（原 1.2.1 引擎整包拒）：content 里的 config 不是数据文件",
+        "**适配说明**：原件以 `install.mjs` + `files.json` + `payload/` 形态交付，无 pack.json；本次补写 pack.json 并去掉 install.mjs。",
+        "修复立绘引用：payload/data 下的 chess.json / config.json 与立绘登记。"
       ]
     },
     {
@@ -2659,6 +2711,33 @@
         "containers": []
       },
       "notes": [
+        "原件形态：`pack/pack.json`（唯一顶层目录），已是规范工坊包。"
+      ]
+    },
+    {
+      "id": "test-sim",
+      "name": "测试模拟（Forge 工坊包样例）",
+      "version": "1.0.1",
+      "sha256": "6cc7834e4feb5b48424534d70ceb11c528519839ba72ce676a7336f2e5c677e8",
+      "packHash": "db2a9d75692cf7a6308e21d5ad161ccc8a1dd28f5b6ea6590db7077f25dc0297",
+      "category": "functional",
+      "categoryWhy": "声明了 server/content",
+      "packId": "test-sim",
+      "path": "mods/test-sim/1.0.1/mod.zip",
+      "sizeBytes": 11695,
+      "fileCount": 4,
+      "unpackedBytes": 34336,
+      "assets": {
+        "assetFree": false,
+        "count": 2,
+        "bytes": 1977128,
+        "byKind": {
+          "png": 2
+        },
+        "containers": []
+      },
+      "notes": [
+        "修版（原 1.0.0 引擎整包拒）：原件是安装器形态、顶层没有 pack.json",
         "原件形态：`pack/pack.json`（唯一顶层目录），已是规范工坊包。"
       ]
     },
