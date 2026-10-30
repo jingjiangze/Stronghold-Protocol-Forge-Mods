@@ -23,8 +23,8 @@
 | `game` / `api` | `0.3.x` / `>=1 <3` |
 | `content` | ['chess'] |
 | 声明 `server` / `client` | False / False |
-| 文件数 / 解压后 | 44 个 / 3,286,689 B |
-| zip / sha256 | 612,701 B / `fca5038c61265ab9f2839c1f56008c4896d1146befbdb1f41b90fea1d8d2b02f` |
+| 文件数 / 解压后 | 44 个 / 3,286,737 B |
+| zip / sha256 | 612,717 B / `d99e45602bcba65ad9001e8892c4e6efb7f03cff12bf746927f0862f72553d7e` |
 
 ## 素材与授权
 
